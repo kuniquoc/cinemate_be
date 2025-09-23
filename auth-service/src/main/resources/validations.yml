@@ -1,0 +1,98 @@
+#authentication
+sign_up_request:
+  email:
+    not_blank:
+      code: VAL.SU0101
+      message: Email must not be blank
+    email:
+      code: VAL.SU0102
+      message: Email must be a well-formed email address
+  first_name:
+    not_blank:
+      code: VAL.SU0201
+      message: First name must not be blank
+    size:
+      code: VAL.SU0202
+      message: First name size must be between 1 and 100
+  last_name:
+    not_blank:
+      code: VAL.SU0301
+      message: Last name must not be blank
+    size:
+      code: VAL.SU0302
+      message: Last name size must be between 1 and 100
+  password:
+    not_blank:
+      code: VAL.SU0401
+      message: Password must not be blank
+    pattern:
+      code: VAL.SU0402
+      message: Password has at least 8 characters, containing at least 1 uppercase letter, 1 lowercase letter, 1 numeric character.
+  password_confirmation:
+    pattern:
+      code: VAL.SU0402
+      message: Password has at least 8 characters, containing at least 1 uppercase letter, 1 lowercase letter, 1 numeric character.
+    not_blank:
+      code: VAL.SU0501
+      message: Password confirmation must not be blank
+
+account_verification_request:
+  account_verification_token:
+    not_blank:
+      code: VAL.AV0101
+      message: Account verification token must not be blank !
+login_request:
+  email:
+    not_blank:
+      code: VAL.LI0101
+      message: Email must not be blank
+    email:
+      code: VAL.LI0102
+      message: Email must be a well-formed email address
+  password:
+    not_blank:
+      code: VAL.LI0201
+      message: Password must not be blank
+
+
+forgot_password_request:
+  email:
+    not_blank:
+      code: VAL.FP0101
+      message: Email must not be blank
+    email:
+      code: VAL.FP0102
+      message: Email must be a well-formed email address
+
+otp_verification_request:
+  otp:
+    not_blank:
+      code: VAL.OV0101
+      message: OTP must not be blank
+  email:
+    not_blank:
+      code: VAL.OV0201
+      message: Email must not be blank
+    email:
+      code: VAL.OV0202
+      message: Email must be a well-formed email address
+
+reset_password_request:
+  email:
+    not_blank:
+      code: VAL.RP0101
+      message: Email must not be blank
+    email:
+      code: VAL.RP0102
+      message: Email must be a well-formed email address
+  otp:
+    not_blank:
+      code: VAL.RP0201
+      message: OTP must not be blank
+  new_password:
+    not_blank:
+      code: VAL.RP0301
+      message: New password must not be blank
+    pattern:
+      code: VAL.RP0302
+      message: New password has at least 8 characters, containing at least 1 uppercase letter
