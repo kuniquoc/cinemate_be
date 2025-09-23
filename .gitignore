@@ -25,3 +25,4 @@ replay_pid*
 .idea/
 auth-postgres-data
 .env
+env.yml
