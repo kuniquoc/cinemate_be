@@ -1,0 +1,30 @@
+package com.pbl6.cinemate.auth_service.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.util.Set;
+import java.util.UUID;
+
+@Entity
+@Table(name = "roles")
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class Role extends AbstractEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Column(nullable = false, unique = true, length = 50)
+    private String name;
+
+    @Column(length = 255)
+    private String description;
+
+    // One Role can have many Users
+    @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)
+    private Set<User> users;
+}

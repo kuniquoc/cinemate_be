@@ -1,0 +1,81 @@
+#common
+internal_server_error:
+  code: ERR.SER0101
+  message: Internal server error!
+url_not_found:
+  code: ERR.NFN0101
+  message: URL not found!
+field_not_match:
+  code: ERR.FNM0101
+  message: Your field is not match!
+wrong_format:
+  code: ERR.WRF0101
+  message: Your field is in wrong format!
+
+#sign up
+password_confirm_password_not_matched:
+  code: ERR.SU0101
+  message: Password and Confirm Password are not matched!
+
+#authentication
+unauthenticated:
+  code: ERR.AUTH0101
+  message: Unauthenticated!
+unauthorized:
+  code: ERR.AUTH0201
+  message: Unauthorized, You don’t have permission to access!
+invalid_email_or_password:
+  code: ERR.AUTH0102
+  message: Unauthenticated, incorrect email or password
+
+#role
+role_not_found:
+  code: ERR.ROL0101
+  message: Role was not found!
+
+#user
+user_not_found:
+  code: ERR.USE0101
+  message: User was not found!
+user_already_existed:
+  code: ERR.USE0102
+  message: User already existed
+
+#token
+token_not_found:
+  code: ERR.TOK0101
+  message: Token was not found!
+invalid_otp:
+  code: ERR.TOK0201
+  message: Invalid OTP!
+expired_otp:
+  code: ERR.TOK0202
+  message: Expired OTP!
+
+#state
+account_already_active:
+  code: ERR.STA0101
+  message: Account is already active!
+account_not_existed:
+  code: ERR.STA0102
+  message: Account does not exist!
+account_locked:
+  code: ERR.STA0103
+  message: Account is locked!
+account_not_active:
+  code: ERR.STA0104
+  message: Account is not active!
+
+#jwt
+invalid_access_token:
+  code: ERR.JWT0101
+  message: Invalid access token!
+invalid_refresh_token:
+  code: ERR.JWT0201
+  message: Invalid refresh token!
+expired_access_token:
+  code: ERR.JWT0102
+  message: Expired access token!
+expired_refresh_token:
+  code: ERR.JWT0202
+  message: Expired refresh token!
