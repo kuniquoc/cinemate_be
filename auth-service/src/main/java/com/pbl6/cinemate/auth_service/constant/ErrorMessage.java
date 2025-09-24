@@ -37,6 +37,12 @@ public final class ErrorMessage {
     public static final String ACCOUNT_LOCKED = "account_locked";
     public static final String ACCOUNT_NOT_ACTIVE = "account_not_active";
 
+    //    ROLE
+    public static final String ROLE_ALREADY_EXISTED = "role_already_existed";
+
+    //Permission
+    public static final String PERMISSION_NOT_FOUND = "permission_not_found";
+
     private ErrorMessage() {
     }
 }

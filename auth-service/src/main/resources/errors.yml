@@ -79,3 +79,13 @@ expired_access_token:
 expired_refresh_token:
   code: ERR.JWT0202
   message: Expired refresh token!
+
+#role
+role_already_existed:
+  code: ERR.ROL0201
+  message: Role already existed!
+
+#permissions
+permission_not_found:
+  code: ERR.PER0101
+  message: Permission was not found!

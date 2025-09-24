@@ -26,3 +26,8 @@ replay_pid*
 auth-postgres-data
 .env
 env.yml
+auth-service/target
+**/target/
+
+
+

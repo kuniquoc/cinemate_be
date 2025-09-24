@@ -1,4 +1,4 @@
-package com.pbl6.cinemate.auth_service.utils;
+package com.pbl6.cinemate.auth_service.mapper;
 
 import com.pbl6.cinemate.auth_service.entity.User;
 import com.pbl6.cinemate.auth_service.payload.request.SignUpRequest;
