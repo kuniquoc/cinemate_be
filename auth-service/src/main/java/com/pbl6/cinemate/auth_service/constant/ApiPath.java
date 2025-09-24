@@ -10,6 +10,9 @@ public final class ApiPath {
     public static final String VERIFY_OTP = API + "/verify-otp";
     public static final String RESET_PASSWORD = API + "/reset-password";
 
+    //       roles
+    public static final String ROLES = API + "/roles";
+
     //    permissions
     public static final String PERMISSIONS = API + "/permissions";
 
