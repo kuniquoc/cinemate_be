@@ -105,3 +105,30 @@ permission_request:
     not_blank:
       code: VAL.PR0201
       message: Permission description must not be blank
+
+#role
+role_request:
+  name:
+    not_blank:
+      code: VAL.RR0101
+      message: Role name must not be blank
+  description:
+    not_blank:
+      code: VAL.RR0201
+      message: Role description must not be blank
+
+#permission
+#adding_permission_request:
+#  permission_ids:
+#    not_blank:
+#      code: VAL.APR0101
+#      message: Permission ids must not be empty
+
+adding_permission_request:
+  permission_ids:
+    not_empty:
+      code: VAL.APR0101
+      message: Permission ids must not be empty
+    not_null:
+      code: VAL.APR0102
+      message: Permission id must not be null

@@ -6,6 +6,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -31,7 +32,17 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role.getName())); // chỉ 1 role
+        // Bắt buộc có role với prefix ROLE_
+        List<GrantedAuthority> authorities =
+                new ArrayList<>(List.of(new SimpleGrantedAuthority("ROLE_" + role.getName())));
+
+        // Thêm tất cả permission của role (nếu có)
+        if (role.getPermissions() != null) {
+            role.getPermissions().forEach(permission ->
+                    authorities.add(new SimpleGrantedAuthority(permission.getName())));
+        }
+
+        return authorities;
     }
 
     @Override
