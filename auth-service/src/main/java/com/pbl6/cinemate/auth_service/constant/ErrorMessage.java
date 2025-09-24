@@ -37,6 +37,9 @@ public final class ErrorMessage {
     public static final String ACCOUNT_LOCKED = "account_locked";
     public static final String ACCOUNT_NOT_ACTIVE = "account_not_active";
 
+    //Permission
+    public static final String PERMISSION_NOT_FOUND = "permission_not_found";
+
     private ErrorMessage() {
     }
 }

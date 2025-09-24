@@ -96,3 +96,12 @@ reset_password_request:
     pattern:
       code: VAL.RP0302
       message: New password has at least 8 characters, containing at least 1 uppercase letter
+permission_request:
+  name:
+    not_blank:
+      code: VAL.PR0101
+      message: Permission name must not be blank
+  description:
+    not_blank:
+      code: VAL.PR0201
+      message: Permission description must not be blank
