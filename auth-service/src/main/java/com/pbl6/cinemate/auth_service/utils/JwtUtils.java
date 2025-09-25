@@ -26,6 +26,7 @@ public class JwtUtils {
     public String generateToken(UserPrincipal userPrincipal, boolean isRefreshToken) {
         return Jwts.builder().setSubject(UUID.randomUUID().toString())
                 .claim("user_id", userPrincipal.getId())
+                .claim("username", userPrincipal.getUsername())
                 .claim("role", userPrincipal.getAuthorities().stream()
                         .map(role -> role.getAuthority()).toList())
                 .setIssuedAt(new Date())
@@ -81,4 +82,9 @@ public class JwtUtils {
     public String getJwtIdFromJWTClaims(Claims claims) {
         return claims.getSubject();
     }
+
+    public String getUsernameFromJWTClaims(Claims claims) {
+        return claims.get("username", String.class);
+    }
+
 }
