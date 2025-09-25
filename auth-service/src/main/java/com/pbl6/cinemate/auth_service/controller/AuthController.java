@@ -59,4 +59,12 @@ public class AuthController {
         ResponseData responseData = ResponseData.successWithoutMetaAndData(FeedbackMessage.RESET_PASSWORD);
         return ResponseEntity.ok(responseData);
     }
+
+    @PostMapping(ApiPath.LOGOUT)
+    public ResponseEntity<ResponseData> logout(@Valid @RequestBody LogoutRequest logoutRequest) {
+        authService.logout(logoutRequest);
+        ResponseData responseData = ResponseData.successWithoutMetaAndData(FeedbackMessage.LOGGED_OUT);
+        return ResponseEntity.ok(responseData);
+    }
+
 }

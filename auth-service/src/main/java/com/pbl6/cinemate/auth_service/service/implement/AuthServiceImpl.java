@@ -6,6 +6,7 @@ import com.pbl6.cinemate.auth_service.entity.Role;
 import com.pbl6.cinemate.auth_service.entity.Token;
 import com.pbl6.cinemate.auth_service.entity.User;
 import com.pbl6.cinemate.auth_service.entity.UserPrincipal;
+import com.pbl6.cinemate.auth_service.enums.CachePrefix;
 import com.pbl6.cinemate.auth_service.event.ForgotPasswordEvent;
 import com.pbl6.cinemate.auth_service.event.UserRegistrationEvent;
 import com.pbl6.cinemate.auth_service.exception.BadRequestException;
@@ -15,13 +16,12 @@ import com.pbl6.cinemate.auth_service.payload.request.*;
 import com.pbl6.cinemate.auth_service.payload.response.JwtLoginResponse;
 import com.pbl6.cinemate.auth_service.payload.response.LoginResponse;
 import com.pbl6.cinemate.auth_service.payload.response.SignUpResponse;
-import com.pbl6.cinemate.auth_service.service.AuthService;
-import com.pbl6.cinemate.auth_service.service.RoleService;
-import com.pbl6.cinemate.auth_service.service.TokenService;
-import com.pbl6.cinemate.auth_service.service.UserService;
+import com.pbl6.cinemate.auth_service.service.*;
 import com.pbl6.cinemate.auth_service.utils.JwtUtils;
+import io.jsonwebtoken.Claims;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
@@ -31,8 +31,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
     private final UserService userService;
@@ -42,6 +44,7 @@ public class AuthServiceImpl implements AuthService {
     private final TokenService tokenService;
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
+    private final CacheService cacheService;
 
     @Override
     public SignUpResponse signUp(SignUpRequest signUpRequest) {
@@ -135,5 +138,20 @@ public class AuthServiceImpl implements AuthService {
             userService.save(user);
             tokenService.deleteTokenByContent(request.getOtp());
         } else throw new BadRequestException(ErrorMessage.INVALID_OTP);
+    }
+
+    @Override
+    public void logout(LogoutRequest logoutRequest) {
+        String refreshToken = logoutRequest.getRefreshToken();
+
+        boolean isRefreshToken = true;
+        Claims refreshTokenClaims = jwtUtils.verifyToken(refreshToken, isRefreshToken);
+
+        String prefix = CachePrefix.BLACK_LIST_TOKENS.getPrefix();
+        log.info(prefix);
+        cacheService.set(prefix + jwtUtils.getJwtIdFromJWTClaims(refreshTokenClaims), 1,
+                jwtUtils.getTokenAvailableDuration(refreshTokenClaims), TimeUnit.MILLISECONDS);
+        log.info(jwtUtils.getJwtIdFromJWTClaims(refreshTokenClaims));
+        log.info(jwtUtils.getJwtIdFromJWTClaims(refreshTokenClaims));
     }
 }
