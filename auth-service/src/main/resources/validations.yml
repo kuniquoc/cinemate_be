@@ -106,6 +106,12 @@ permission_request:
       code: VAL.PR0201
       message: Permission description must not be blank
 
+logout_request:
+  refresh_token:
+    not_blank:
+      code: VAL.LO0101
+      message: Refresh token must not be blank
+
 #role
 role_request:
   name:
@@ -117,12 +123,6 @@ role_request:
       code: VAL.RR0201
       message: Role description must not be blank
 
-#permission
-#adding_permission_request:
-#  permission_ids:
-#    not_blank:
-#      code: VAL.APR0101
-#      message: Permission ids must not be empty
 
 adding_permission_request:
   permission_ids:

@@ -77,4 +77,8 @@ public class JwtUtils {
 
         return expiration.getTime() - now;
     }
+
+    public String getJwtIdFromJWTClaims(Claims claims) {
+        return claims.getSubject();
+    }
 }

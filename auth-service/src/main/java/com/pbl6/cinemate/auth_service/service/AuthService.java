@@ -19,4 +19,6 @@ public interface AuthService {
 
     @Transactional
     void resetPassword(ResetPasswordRequest request);
+
+    void logout(LogoutRequest logoutRequest);
 }
