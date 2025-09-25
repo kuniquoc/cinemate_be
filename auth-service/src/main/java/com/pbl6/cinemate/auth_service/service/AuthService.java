@@ -5,6 +5,8 @@ import com.pbl6.cinemate.auth_service.payload.response.LoginResponse;
 import com.pbl6.cinemate.auth_service.payload.response.SignUpResponse;
 import jakarta.transaction.Transactional;
 
+import java.util.UUID;
+
 public interface AuthService {
     SignUpResponse signUp(SignUpRequest signUpRequest);
 
@@ -21,4 +23,6 @@ public interface AuthService {
     void resetPassword(ResetPasswordRequest request);
 
     void logout(LogoutRequest logoutRequest);
+
+    void changePassword(UUID userId, PasswordChangingRequest passwordChangingRequest);
 }

@@ -8,6 +8,7 @@ public final class FeedbackMessage {
     public static final String OTP_VERIFIED = "OTP verified successfully";
     public static final String RESET_PASSWORD = "Password reset successfully";
     public static final String LOGGED_OUT = "Logged out successfully";
+    public static final String PASSWORD_CHANGED = "Password changed successfully";
 
     //    STATE
     public static final String ACCOUNT_VERIFIED = "Account verified successfully";
