@@ -19,6 +19,8 @@ public final class ErrorMessage {
     public static final String UNAUTHORIZED = "unauthorized";
     public static final String UNAUTHENTICATED = "unauthenticated";
     public static final String INVALID_EMAIL_OR_PASSWORD = "invalid_email_or_password";
+    public static final String NEW_PASSWORD_NOT_MATCHED = "new_password_not_matched";
+    public static final String OLD_PASSWORD_NOT_MATCHED = "old_password_not_matched";
 
     //    TOKEN
     public static final String TOKEN_NOT_FOUND = "token_not_found";
@@ -30,6 +32,8 @@ public final class ErrorMessage {
     public static final String EXPIRED_REFRESH_TOKEN = "expired_refresh_token";
     public static final String INVALID_ACCESS_TOKEN = "invalid_access_token";
     public static final String INVALID_REFRESH_TOKEN = "invalid_refresh_token";
+    public static final String MISSING_JWT = "missing_jwt";
+
 
     //    STATE
     public static final String ACCOUNT_ALREADY_ACTIVE = "account_already_active";

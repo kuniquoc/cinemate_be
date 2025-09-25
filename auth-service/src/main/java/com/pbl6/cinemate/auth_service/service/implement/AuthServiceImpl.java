@@ -31,6 +31,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -153,5 +155,17 @@ public class AuthServiceImpl implements AuthService {
                 jwtUtils.getTokenAvailableDuration(refreshTokenClaims), TimeUnit.MILLISECONDS);
         log.info(jwtUtils.getJwtIdFromJWTClaims(refreshTokenClaims));
         log.info(jwtUtils.getJwtIdFromJWTClaims(refreshTokenClaims));
+    }
+
+    @Override
+    public void changePassword(UUID userId, PasswordChangingRequest passwordChangingRequest) {
+        if (!Objects.equals(passwordChangingRequest.getNewPassword(), passwordChangingRequest.getNewPasswordConfirmation()))
+            throw new BadRequestException(ErrorMessage.NEW_PASSWORD_NOT_MATCHED);
+
+        User user = userService.findById(userId);
+        if (!passwordEncoder.matches(passwordChangingRequest.getOldPassword(), user.getPassword()))
+            throw new BadRequestException(ErrorMessage.OLD_PASSWORD_NOT_MATCHED);
+        user.setPassword(passwordEncoder.encode(passwordChangingRequest.getNewPassword()));
+        userService.save(user);
     }
 }
