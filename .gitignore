@@ -28,6 +28,7 @@ replay_pid*
 env.yml
 auth-service/target
 **/target/
+auth-redis-data/
 
 
 
