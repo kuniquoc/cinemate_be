@@ -2,8 +2,10 @@ package com.pbl6.cinemate.auth_service.controller;
 
 import com.pbl6.cinemate.auth_service.constant.ApiPath;
 import com.pbl6.cinemate.auth_service.constant.FeedbackMessage;
+import com.pbl6.cinemate.auth_service.entity.UserPrincipal;
 import com.pbl6.cinemate.auth_service.payload.general.ResponseData;
 import com.pbl6.cinemate.auth_service.payload.request.*;
+import com.pbl6.cinemate.auth_service.security.annotation.CurrentUser;
 import com.pbl6.cinemate.auth_service.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -64,6 +66,14 @@ public class AuthController {
     public ResponseEntity<ResponseData> logout(@Valid @RequestBody LogoutRequest logoutRequest) {
         authService.logout(logoutRequest);
         ResponseData responseData = ResponseData.successWithoutMetaAndData(FeedbackMessage.LOGGED_OUT);
+        return ResponseEntity.ok(responseData);
+    }
+
+    @PatchMapping(ApiPath.CHANGE_PASSWORD)
+    public ResponseEntity<ResponseData> changePassword(@CurrentUser UserPrincipal userPrincipal,
+                                                       @Valid @RequestBody PasswordChangingRequest request) {
+        authService.changePassword(userPrincipal.getId(), request);
+        ResponseData responseData = ResponseData.successWithoutMetaAndData(FeedbackMessage.PASSWORD_CHANGED);
         return ResponseEntity.ok(responseData);
     }
 

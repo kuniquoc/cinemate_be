@@ -27,6 +27,12 @@ unauthorized:
 invalid_email_or_password:
   code: ERR.AUTH0102
   message: Unauthenticated, incorrect email or password
+new_password_not_matched:
+  code: ERR.AUTH0301
+  message: New password and confirm new password are not matched!
+old_password_not_matched:
+  code: ERR.AUTH0302
+  message: Old password is not matched!
 
 #role
 role_not_found:
