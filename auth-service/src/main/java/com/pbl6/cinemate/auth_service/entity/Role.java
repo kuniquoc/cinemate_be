@@ -29,7 +29,7 @@ public class Role extends AbstractEntity {
     @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)
     private Set<User> users;
 
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
     @JoinTable(
             name = "role_permissions",
             joinColumns = @JoinColumn(name = "role_id"),

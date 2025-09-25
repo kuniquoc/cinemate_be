@@ -128,6 +128,9 @@ password_changing_request:
     not_blank:
       code: VAL.PC0301
       message: New password confirmation must not be blank
+    pattern:
+      code: VAL.PC0302
+      message: New password has at least 8 characters, containing at least 1 uppercase letter, 1 lowercase letter, 1 numeric character.
 
 #role
 role_request:
