@@ -132,6 +132,12 @@ password_changing_request:
       code: VAL.PC0302
       message: New password has at least 8 characters, containing at least 1 uppercase letter, 1 lowercase letter, 1 numeric character.
 
+refresh_token_request:
+  refresh_token:
+    not_blank:
+      code: VAL.RT0101
+      message: Refresh token must not be blank
+
 #role
 role_request:
   name:
@@ -152,3 +158,4 @@ adding_permission_request:
     not_null:
       code: VAL.APR0102
       message: Permission id must not be null
+

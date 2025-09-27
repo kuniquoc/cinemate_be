@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import java.security.Key;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Component
@@ -34,6 +35,17 @@ public class JwtUtils {
                         ? new Date(new Date().getTime() + appProperties.getAuth().getRefreshTokenExpirationMsec())
                         : new Date(new Date().getTime() + appProperties.getAuth().getAccessTokenExpirationMsec()))
                 .signWith(isRefreshToken ? getRefreshTokenSecretKey() : getAccessTokenSecretKey(),
+                        SignatureAlgorithm.HS512).compact();
+    }
+
+    public String refreshToken(Claims claims) {
+        return Jwts.builder().setSubject(UUID.randomUUID().toString())
+                .claim("user_id", claims.get("user_id", String.class))
+                .claim("username", claims.get("username", String.class))
+                .claim("role", claims.get("role", List.class))
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(new Date().getTime() + appProperties.getAuth().getAccessTokenExpirationMsec()))
+                .signWith(getAccessTokenSecretKey(),
                         SignatureAlgorithm.HS512).compact();
     }
 
