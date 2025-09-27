@@ -11,6 +11,7 @@ public final class ApiPath {
     public static final String RESET_PASSWORD = API + "/reset-password";
     public static final String LOGOUT = API + "/log-out";
     public static final String CHANGE_PASSWORD = API + "/change-password";
+    public static final String REFRESH_TOKEN = API + "/refresh-token";
 
     //       roles
     public static final String ROLES = API + "/roles";
