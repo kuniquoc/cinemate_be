@@ -36,7 +36,7 @@ public class JwtAuthEntryPoint implements AuthenticationEntryPoint {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
 
-        ResponseData responseData = ResponseData.error(error);
+        ResponseData responseData = ResponseData.error(error, request.getRequestURI(), request.getMethod());
 
         log.error("Unauthorized request {} {}: {}", request.getMethod(), request.getRequestURL(), authException.getMessage());
 
