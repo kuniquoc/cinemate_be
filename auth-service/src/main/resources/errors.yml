@@ -97,3 +97,6 @@ role_already_existed:
 permission_not_found:
   code: ERR.PER0101
   message: Permission was not found!
+permission_name_existed:
+  code: ERR.PER0201
+  message: Permission name already existed!
