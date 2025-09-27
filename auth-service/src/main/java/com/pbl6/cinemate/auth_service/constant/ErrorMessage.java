@@ -46,6 +46,7 @@ public final class ErrorMessage {
 
     //Permission
     public static final String PERMISSION_NOT_FOUND = "permission_not_found";
+    public static final String PERMISSION_NAME_EXISTED = "permission_name_existed";
 
     private ErrorMessage() {
     }

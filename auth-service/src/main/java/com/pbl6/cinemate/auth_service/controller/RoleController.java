@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,6 +26,7 @@ public class RoleController {
     private final RoleService roleService;
 
     // Thêm role mới
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ResponseData> addRole(
             @RequestBody @Valid RoleRequest request, HttpServletRequest httpServletRequest) {
@@ -50,6 +52,7 @@ public class RoleController {
     }
 
     // Cập nhật role
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseData> updateRole(
             @PathVariable UUID id,
@@ -63,6 +66,7 @@ public class RoleController {
     // ================== Nested Permissions ==================
 
     @PostMapping("/{roleId}/permissions")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseData> addPermissionsToRole(
             @PathVariable UUID roleId,
             @RequestBody @Valid AddingPermissionRequest request, HttpServletRequest httpServletRequest) {
@@ -80,6 +84,7 @@ public class RoleController {
                 httpServletRequest.getMethod()));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{roleId}/permissions/{permissionId}")
     public ResponseEntity<ResponseData> removePermissionFromRole(
             @PathVariable UUID roleId,

@@ -2,6 +2,7 @@ package com.pbl6.cinemate.auth_service.service.implement;
 
 import com.pbl6.cinemate.auth_service.constant.ErrorMessage;
 import com.pbl6.cinemate.auth_service.entity.Permission;
+import com.pbl6.cinemate.auth_service.exception.BadRequestException;
 import com.pbl6.cinemate.auth_service.exception.NotFoundException;
 import com.pbl6.cinemate.auth_service.mapper.PermissionMapper;
 import com.pbl6.cinemate.auth_service.payload.request.PermissionRequest;
@@ -22,6 +23,10 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public PermissionResponse createPermission(PermissionRequest request) {
+        if (permissionRepository.existsByName(request.getName())) {
+            throw new BadRequestException(ErrorMessage.PERMISSION_NAME_EXISTED);
+        }
+
         Permission permission = new Permission();
         permission.setName(request.getName());
         permission.setDescription(request.getDescription());
