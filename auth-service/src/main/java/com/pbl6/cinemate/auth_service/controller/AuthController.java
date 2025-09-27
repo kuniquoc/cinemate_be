@@ -7,6 +7,7 @@ import com.pbl6.cinemate.auth_service.payload.general.ResponseData;
 import com.pbl6.cinemate.auth_service.payload.request.*;
 import com.pbl6.cinemate.auth_service.security.annotation.CurrentUser;
 import com.pbl6.cinemate.auth_service.service.AuthService;
+import com.pbl6.cinemate.auth_service.service.JwtService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
+    private final JwtService jwtService;
 
     @PostMapping(ApiPath.SIGN_UP)
     public ResponseEntity<ResponseData> signUp(@Valid @RequestBody SignUpRequest signUpRequest) {
@@ -74,6 +76,13 @@ public class AuthController {
                                                        @Valid @RequestBody PasswordChangingRequest request) {
         authService.changePassword(userPrincipal.getId(), request);
         ResponseData responseData = ResponseData.successWithoutMetaAndData(FeedbackMessage.PASSWORD_CHANGED);
+        return ResponseEntity.ok(responseData);
+    }
+
+    @PostMapping(ApiPath.REFRESH_TOKEN)
+    public ResponseEntity<ResponseData> refreshJwt(@RequestBody @Valid RefreshTokenRequest refreshTokenRequest) {
+        ResponseData responseData = ResponseData.success(jwtService.refreshToken(refreshTokenRequest.getRefreshToken()),
+                FeedbackMessage.TOKEN_REFRESHED);
         return ResponseEntity.ok(responseData);
     }
 
