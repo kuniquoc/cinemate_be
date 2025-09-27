@@ -61,23 +61,23 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             log.error("Auth failed for {} {}: {}", request.getMethod(), request.getRequestURL(), ex.getMessage());
             String errorMessage = ex.getMessage();
             ErrorResponse error = ErrorUtils.getExceptionError(errorMessage);
-            writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, error);
+            writeErrorResponse(request, response, HttpServletResponse.SC_UNAUTHORIZED, error);
 
         } catch (Exception ex) {
             log.error("Internal error for {} {}: {}", request.getMethod(), request.getRequestURL(), ex.getMessage());
-            writeErrorResponse(response,
+            writeErrorResponse(request, response,
                     HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorUtils.getExceptionError(ErrorMessage.INTERNAL_SERVER_ERROR));
         }
     }
 
-    private void writeErrorResponse(HttpServletResponse response,
+    private void writeErrorResponse(HttpServletRequest reques, HttpServletResponse response,
                                     int status,
                                     ErrorResponse error) throws IOException {
         response.setStatus(status);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-        ResponseData responseData = ResponseData.error(error);
+        ResponseData responseData = ResponseData.error(error, reques.getRequestURI(), reques.getMethod());
         response.getWriter().write(Objects.requireNonNull(CommonUtils.toJsonString(responseData)));
     }
 

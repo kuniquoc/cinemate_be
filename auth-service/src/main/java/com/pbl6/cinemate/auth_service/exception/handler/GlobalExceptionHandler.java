@@ -5,6 +5,7 @@ import com.pbl6.cinemate.auth_service.exception.*;
 import com.pbl6.cinemate.auth_service.payload.general.ErrorResponse;
 import com.pbl6.cinemate.auth_service.payload.general.ResponseData;
 import com.pbl6.cinemate.auth_service.utils.ErrorUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,43 +26,44 @@ public class GlobalExceptionHandler {
 
 
     @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<ResponseData> handlingBadRequestException(BadRequestException ex) {
+    public ResponseEntity<ResponseData> handlingBadRequestException(BadRequestException ex, HttpServletRequest request) {
         ErrorResponse error = ErrorUtils.getExceptionError(ex.getMessage());
-        ResponseData responseData = ResponseData.error(error);
+        ResponseData responseData = ResponseData.error(error, request.getRequestURI(), request.getMethod());
         return new ResponseEntity<>(responseData, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(UnauthorizedException.class)
-    public ResponseEntity<ResponseData> handlingUnauthorizedException(UnauthorizedException ex) {
+    public ResponseEntity<ResponseData> handlingUnauthorizedException(UnauthorizedException ex, HttpServletRequest request) {
         ErrorResponse error = ErrorUtils.getExceptionError(ex.getMessage());
-        ResponseData responseData = ResponseData.error(error);
+        ResponseData responseData = ResponseData.error(error, request.getRequestURI(), request.getMethod());
         return new ResponseEntity<>(responseData, HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(UnauthenticatedException.class)
-    public ResponseEntity<ResponseData> handlingUnauthenticatedException(UnauthenticatedException ex) {
+    public ResponseEntity<ResponseData> handlingUnauthenticatedException(UnauthenticatedException ex, HttpServletRequest request) {
         ErrorResponse error = ErrorUtils.getExceptionError(ex.getMessage());
-        ResponseData responseData = ResponseData.error(error);
+        ResponseData responseData = ResponseData.error(error, request.getRequestURI(), request.getMethod());
         return new ResponseEntity<>(responseData, HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<ResponseData> handlingNotFoundException(NotFoundException ex) {
+    public ResponseEntity<ResponseData> handlingNotFoundException(NotFoundException ex, HttpServletRequest request) {
         ErrorResponse error = ErrorUtils.getExceptionError(ex.getMessage());
-        ResponseData responseData = ResponseData.error(error);
+        ResponseData responseData = ResponseData.error(error, request.getRequestURI(), request.getMethod());
         return new ResponseEntity<>(responseData, HttpStatus.NOT_FOUND);
     }
 
 
     @ExceptionHandler(InternalServerException.class)
-    public ResponseEntity<ResponseData> handlingInternalServerException(InternalServerException ex) {
+    public ResponseEntity<ResponseData> handlingInternalServerException(InternalServerException ex, HttpServletRequest request) {
         ErrorResponse error = ErrorUtils.getExceptionError(ex.getMessage());
-        ResponseData responseData = ResponseData.error(error);
+        ResponseData responseData = ResponseData.error(error, request.getRequestURI(), request.getMethod());
         return new ResponseEntity<>(responseData, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ResponseData> handlingMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ResponseData> handlingMethodArgumentNotValidException(MethodArgumentNotValidException ex,
+                                                                                HttpServletRequest request) {
         List<ObjectError> errors = ex.getBindingResult().getAllErrors();
         List<ErrorResponse> errorResponses = new ArrayList<>();
         errors.stream().forEach(objectError -> {
@@ -72,35 +74,35 @@ public class GlobalExceptionHandler {
             errorResponses.add(errorResponse);
         });
 
-        ResponseData responseData = ResponseData.valError(errorResponses);
+        ResponseData responseData = ResponseData.valError(errorResponses, request.getRequestURI(), request.getMethod());
 
         return new ResponseEntity<>(responseData, HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ResponseData> handlingAccessDeniedException(AccessDeniedException ex) {
+    public ResponseEntity<ResponseData> handlingAccessDeniedException(AccessDeniedException ex, HttpServletRequest request) {
         ErrorResponse error = ErrorUtils.getExceptionError(ErrorMessage.UNAUTHORIZED);
-        ResponseData responseData = ResponseData.error(error);
+        ResponseData responseData = ResponseData.error(error, request.getRequestURI(), request.getMethod());
         return new ResponseEntity<>(responseData, HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(ClassCastException.class)
-    public ResponseEntity<ResponseData> handlingClassCastException(Exception ex) {
+    public ResponseEntity<ResponseData> handlingClassCastException(Exception ex, HttpServletRequest request) {
         ErrorResponse error = ErrorResponse.builder()
                 .message(ErrorMessage.WRONG_FORMAT)
                 .build();
-        ResponseData responseData = ResponseData.error(error);
+        ResponseData responseData = ResponseData.error(error, request.getRequestURI(), request.getMethod());
         return new ResponseEntity<>(responseData, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ResponseData> handlingException(Exception ex) {
+    public ResponseEntity<ResponseData> handlingException(Exception ex, HttpServletRequest request) {
         log.error(ex.getMessage());
         log.error(ex.getClass().getName());
         ErrorResponse error = ErrorResponse.builder()
                 .message(ex.getMessage())
                 .build();
-        ResponseData responseData = ResponseData.error(error);
+        ResponseData responseData = ResponseData.error(error, request.getRequestURI(), request.getMethod());
         return new ResponseEntity<>(responseData, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 

@@ -14,40 +14,47 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ResponseData {
-
     String status;
-
     Object data;
-
     Object errors;
-
     Object meta;
-
     String message;
+    String title;
+    String detail;
+    String path;
+    String method;
 
     public static ResponseData successWithMeta(Object data, Object meta, String message) {
         return ResponseData.builder().status(CommonConstant.SUCCESS).data(data).meta(meta).message(message).build();
     }
 
-    public static ResponseData success(Object data, String message) {
-        return ResponseData.builder().status(CommonConstant.SUCCESS).data(data).message(message).build();
+    public static ResponseData success(Object data, String message, String apiPath, String method) {
+        return ResponseData.builder().status(CommonConstant.SUCCESS).message(message).path(apiPath).method(method)
+                .data(data).build();
     }
 
-    public static ResponseData successWithoutMetaAndData(String message) {
-        return ResponseData.builder().status(CommonConstant.SUCCESS).message(message).build();
+    public static ResponseData successWithoutMetaAndData(String message, String apiPath, String method) {
+        return ResponseData.builder().status(CommonConstant.SUCCESS).message(message).path(apiPath)
+                .method(method).build();
     }
 
-    public static ResponseData error(Object error) {
+    public static ResponseData error(Object error, String apiPath, String method) {
         ErrorResponse errorResponse = (ErrorResponse) error;
         return ResponseData.builder().status(CommonConstant.FAILURE)
-                .message(errorResponse.getMessage())
-                .errors(error).build();
+                .title("Error: " + errorResponse.getCode())
+                .detail(errorResponse.getMessage())
+                .path(apiPath)
+                .method(method)
+                .build();
     }
 
-    public static ResponseData valError(Object error) {
+    public static ResponseData valError(Object error, String apiPath, String method) {
         List<ErrorResponse> errorResponses = (List<ErrorResponse>) error;
         return ResponseData.builder().status(CommonConstant.FAILURE)
-                .message("Validation Error")
+                .title("Validation Error")
+                .detail("One or more validation errors occurred")
+                .path(apiPath)
+                .method(method)
                 .errors(errorResponses).build();
     }
 }
