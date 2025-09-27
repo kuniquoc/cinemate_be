@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public class PermissionController {
 
     // ================== CRUD Permission ==================
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ResponseData> createPermission(@RequestBody @Valid PermissionRequest request,
                                                          HttpServletRequest httpServletRequest) {
@@ -46,6 +48,7 @@ public class PermissionController {
                 httpServletRequest.getRequestURI(), httpServletRequest.getMethod()));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseData> updatePermission(@PathVariable UUID id,
                                                          @RequestBody @Valid PermissionRequest request,
@@ -55,6 +58,7 @@ public class PermissionController {
                 httpServletRequest.getRequestURI(), httpServletRequest.getMethod()));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseData> deletePermission(@PathVariable UUID id, HttpServletRequest httpServletRequest) {
         permissionService.deletePermission(id);
