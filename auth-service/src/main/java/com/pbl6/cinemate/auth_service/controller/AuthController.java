@@ -98,4 +98,11 @@ public class AuthController {
         return ResponseEntity.ok(responseData);
     }
 
+    @PostMapping(ApiPath.VERIFY_JWT)
+    public ResponseEntity<ResponseData> verifyJwt(@RequestBody @Valid JwtVerificationRequest jwtVerificationRequest,
+                                                  HttpServletRequest request) {
+        ResponseData responseData = ResponseData.success(jwtService.isTokenValid(jwtVerificationRequest.getToken()),
+                FeedbackMessage.TOKEN_VERIFIED, request.getRequestURI(), request.getMethod());
+        return ResponseEntity.ok(responseData);
+    }
 }
