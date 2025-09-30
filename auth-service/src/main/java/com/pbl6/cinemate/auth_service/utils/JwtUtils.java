@@ -29,7 +29,9 @@ public class JwtUtils {
                 .claim("user_id", userPrincipal.getId())
                 .claim("username", userPrincipal.getUsername())
                 .claim("role", userPrincipal.getAuthorities().stream()
-                        .map(role -> role.getAuthority()).toList())
+                        .findFirst()
+                        .map(role -> role.getAuthority())
+                        .orElse(null))
                 .setIssuedAt(new Date())
                 .setExpiration(isRefreshToken
                         ? new Date(new Date().getTime() + appProperties.getAuth().getRefreshTokenExpirationMsec())

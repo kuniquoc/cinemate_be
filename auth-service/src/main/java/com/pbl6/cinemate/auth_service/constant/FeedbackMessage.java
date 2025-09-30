@@ -10,6 +10,7 @@ public final class FeedbackMessage {
     public static final String LOGGED_OUT = "Logged out successfully";
     public static final String PASSWORD_CHANGED = "Password changed successfully";
     public static final String TOKEN_REFRESHED = "Token refreshed successfully";
+    public static final String TOKEN_VERIFIED = "Token is verified";
 
     //    STATE
     public static final String ACCOUNT_VERIFIED = "Account verified successfully";

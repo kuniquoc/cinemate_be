@@ -12,6 +12,7 @@ public final class ApiPath {
     public static final String LOGOUT = API + "/log-out";
     public static final String CHANGE_PASSWORD = API + "/change-password";
     public static final String REFRESH_TOKEN = API + "/refresh-token";
+    public static final String VERIFY_JWT = API + "/verify-jwt";
 
     //       roles
     public static final String ROLES = API + "/roles";

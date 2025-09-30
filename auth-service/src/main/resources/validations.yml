@@ -138,6 +138,12 @@ refresh_token_request:
       code: VAL.RT0101
       message: Refresh token must not be blank
 
+jwt_verification_request:
+  token:
+    not_blank:
+      code: VAL.JV0201
+      message: Jwt must not be blank
+
 #role
 role_request:
   name:
