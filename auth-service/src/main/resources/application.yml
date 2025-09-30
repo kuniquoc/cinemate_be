@@ -1,15 +1,15 @@
 spring:
-  config:
-    import: "optional:file:env.yml"
+  #  config:
+  #    import: "optional:file:env.yml"
   application:
     name: auth-service
   data:
     redis:
-      host: localhost
-      port: 6399
+      host: ${SPRING_REDIS_HOST}
+      port: ${SPRING_REDIS_PORT}
       password:
   datasource:
-    url: jdbc:postgresql://localhost:5532/auth_db
+    url: ${SPRING_DATASOURCE_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     jpa:
@@ -48,7 +48,7 @@ app:
     first-name: ${ADMIN_FIRST_NAME}
     last-name: ${ADMIN_LAST_NAME}
 
-web-url: http://localhost:3000
+web-url: ${WEB_URL}
 
 springdoc:
   api-docs:
