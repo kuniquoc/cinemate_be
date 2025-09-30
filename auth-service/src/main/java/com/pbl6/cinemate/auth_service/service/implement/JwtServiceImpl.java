@@ -31,4 +31,15 @@ public class JwtServiceImpl implements JwtService {
 
         return new RefreshTokenResponse(jwtUtils.refreshToken(claims));
     }
+
+    @Override
+    public boolean isTokenValid(String token) {
+        try {
+            Claims claims = jwtUtils.verifyToken(token, false);
+            return !cacheService.hasKey(CachePrefix.BLACK_LIST_TOKENS.getPrefix()
+                    + jwtUtils.getJwtIdFromJWTClaims(claims));
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

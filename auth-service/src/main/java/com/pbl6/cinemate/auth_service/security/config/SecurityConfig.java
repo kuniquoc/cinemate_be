@@ -37,7 +37,8 @@ public class SecurityConfig {
             ApiPath.RESET_PASSWORD,
             ApiPath.VERIFY_ACCOUNT,
             ApiPath.VERIFY_OTP,
-            ApiPath.REFRESH_TOKEN
+            ApiPath.REFRESH_TOKEN,
+            ApiPath.VERIFY_JWT
     };
 
     @Bean

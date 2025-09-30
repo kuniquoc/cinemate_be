@@ -23,6 +23,7 @@ public class ResponseData {
     String detail;
     String path;
     String method;
+    String code;
 
     public static ResponseData successWithMeta(Object data, Object meta, String message) {
         return ResponseData.builder().status(CommonConstant.SUCCESS).data(data).meta(meta).message(message).build();
@@ -41,7 +42,8 @@ public class ResponseData {
     public static ResponseData error(Object error, String apiPath, String method) {
         ErrorResponse errorResponse = (ErrorResponse) error;
         return ResponseData.builder().status(CommonConstant.FAILURE)
-                .title("Error: " + errorResponse.getCode())
+                .code(errorResponse.getCode())
+                .title("Error Occurred ")
                 .detail(errorResponse.getMessage())
                 .path(apiPath)
                 .method(method)
