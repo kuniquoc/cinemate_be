@@ -17,6 +17,11 @@ server:
   servlet:
     context-path: /customers
 
+app:
+  auth:
+    access-token-secret: ${ACCESS_TOKEN_SECRET}
+    access-token-expiration-msec: 7200000
+
 springdoc:
   api-docs:
     path: /api-docs
