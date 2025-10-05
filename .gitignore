@@ -33,3 +33,16 @@ auth-redis-data/
 
 
 
+
+#Visual studio code
+.vscode/
+
+# IntelliJ
+.idea/
+
+# Environment variable files
+.env
+
+large-video.mp4
+sample-video.mp4
+
