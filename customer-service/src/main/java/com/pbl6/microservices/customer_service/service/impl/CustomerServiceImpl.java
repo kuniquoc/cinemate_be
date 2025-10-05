@@ -3,6 +3,7 @@ package com.pbl6.microservices.customer_service.service.impl;
 import com.pbl6.microservices.customer_service.constants.ErrorMessage;
 import com.pbl6.microservices.customer_service.entity.Customer;
 import com.pbl6.microservices.customer_service.enums.Gender;
+import com.pbl6.microservices.customer_service.event.kafka.UserRegisteredEvent;
 import com.pbl6.microservices.customer_service.exception.NotFoundException;
 import com.pbl6.microservices.customer_service.mapper.CustomerMapper;
 import com.pbl6.microservices.customer_service.payload.request.UpdateProfileRequest;
@@ -35,5 +36,15 @@ public class CustomerServiceImpl implements CustomerService {
 
 
         return CustomerMapper.toResponse(customerRepository.save(customer));
+    }
+
+    @Override
+    public void createCustomer(UserRegisteredEvent userRegisteredEvent) {
+        Customer customer = Customer.builder()
+                .accountId(userRegisteredEvent.getAccountId())
+                .firstName(userRegisteredEvent.getFirstName())
+                .lastName(userRegisteredEvent.getLastName())
+                .build();
+        customerRepository.save(customer);
     }
 }
