@@ -133,7 +133,7 @@ services:
     volumes:
       - minio-data:/data
     networks:
-      - cinetmate-network
+      - cinemate-network
 
   # gateway:
   #   build:
@@ -144,7 +144,7 @@ services:
   #   ports:
   #     - "8080:8080"
   #   networks:
-  #     - cinetmate-network
+  #     - cinemate-network
 
   movie-api:
     build:
@@ -161,7 +161,7 @@ services:
     ports:
       - "8081:8080"
     networks:
-      - cinetmate-network
+      - cinemate-network
 
   movie-db:
     image: postgres:latest
@@ -176,7 +176,7 @@ services:
     volumes:
       - movie-db-data:/var/lib/postgresql/data
     networks:
-      - cinetmate-network
+      - cinemate-network
 
 volumes:
   minio-data:
@@ -189,5 +189,5 @@ volumes:
 
 
 networks:
-  cinetmate-network:
+  cinemate-network:
     driver: bridge
