@@ -16,7 +16,7 @@ services:
       AUTH_DATASOURCE_PASSWORD: ${AUTH_POSTGRES_PASSWORD}
       AUTH_SERVICE_PORT: ${AUTH_SERVICE_PORT}
 
-      #      KAFKA
+      # KAFKA
       CINEMATE_BROKER_PORT: ${CINEMATE_BROKER_PORT}
 
       SMTP_EMAIL: ${SMTP_EMAIL}
@@ -39,6 +39,8 @@ services:
     depends_on:
       - auth-postgres
       - auth-redis
+    networks:
+      - cinemate-network
 
   auth-postgres:
     image: postgres:latest
@@ -52,6 +54,8 @@ services:
       - "${AUTH_POSTGRES_HOST_PORT}:${AUTH_POSTGRES_PORT}"
     volumes:
       - auth-postgres-data:/var/lib/postgresql/data
+    networks:
+      - cinemate-network
 
   auth-redis:
     image: redis:7.2
@@ -61,6 +65,8 @@ services:
       - "${AUTH_REDIS_HOST_PORT}:${AUTH_REDIS_PORT}"
     volumes:
       - auth-redis-data:/data
+    networks:
+      - cinemate-network
 
   customer-postgres:
     image: postgres:latest
@@ -75,6 +81,8 @@ services:
       - "${CUSTOMER_POSTGRES_HOST_PORT}:${CUSTOMER_POSTGRES_PORT}"
     volumes:
       - customer-postgres-data:/var/lib/postgresql/data
+    networks:
+      - cinemate-network
 
   cinemate-zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
@@ -87,6 +95,9 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     volumes:
       - cinemate-zookeeper-data:/var/lib/zookeeper/data
+    networks:
+      - cinemate-network
+
   cinemate-broker:
     image: confluentinc/cp-kafka:7.5.0
     container_name: cinemate-broker
@@ -105,6 +116,9 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     volumes:
       - cinemate-kafka-data:/var/lib/kafka/data
+    networks:
+      - cinemate-network
+
   cinemate-kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: cinemate-kafka-ui
@@ -119,6 +133,8 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: cinemate-broker:${CINEMATE_BROKER_PORT}
       KAFKA_CLUSTERS_0_ZOOKEEPER: cinemate-zookeeper:${CINEMATE_ZOOKEEPER_PORT}
       DYNAMIC_CONFIG_ENABLED: 'true'
+    networks:
+      - cinemate-network
 
   minio:
     image: minio/minio:latest
@@ -133,7 +149,7 @@ services:
     volumes:
       - minio-data:/data
     networks:
-      - cinetmate-network
+      - cinemate-network
 
   # gateway:
   #   build:
@@ -144,7 +160,7 @@ services:
   #   ports:
   #     - "8080:8080"
   #   networks:
-  #     - cinetmate-network
+  #     - cinemate-network
 
   movie-api:
     build:
@@ -161,7 +177,7 @@ services:
     ports:
       - "8081:8080"
     networks:
-      - cinetmate-network
+      - cinemate-network
 
   movie-db:
     image: postgres:latest
@@ -176,7 +192,7 @@ services:
     volumes:
       - movie-db-data:/var/lib/postgresql/data
     networks:
-      - cinetmate-network
+      - cinemate-network
 
 volumes:
   minio-data:
@@ -189,5 +205,5 @@ volumes:
 
 
 networks:
-  cinetmate-network:
+  cinemate-network:
     driver: bridge
