@@ -18,3 +18,4 @@ public class UserRegisteredEvent {
     private String firstName;
     private String lastName;
 }
+

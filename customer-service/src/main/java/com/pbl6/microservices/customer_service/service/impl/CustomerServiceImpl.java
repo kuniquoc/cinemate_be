@@ -40,11 +40,12 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public void createCustomer(UserRegisteredEvent userRegisteredEvent) {
-        Customer customer = Customer.builder()
-                .accountId(userRegisteredEvent.getAccountId())
-                .firstName(userRegisteredEvent.getFirstName())
-                .lastName(userRegisteredEvent.getLastName())
-                .build();
+        Customer customer = new Customer();
+        customer.setAccountId(userRegisteredEvent.getAccountId());
+
+        customer.setFirstName(userRegisteredEvent.getFirstName());
+        customer.setLastName(userRegisteredEvent.getLastName());
+        
         customerRepository.save(customer);
     }
 }

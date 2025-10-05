@@ -1,35 +1,12 @@
 spring:
+  profiles:
+    active: dev
   application:
     name: customer-service
-  datasource:
-    url: ${CUSTOMER_DB_URL}
-    username: ${CUSTOMER_DB_USERNAME}
-    password: ${CUSTOMER_DB_PASSWORD}
-    jpa:
-      hibernate:
-        ddl-auto: none
-    flyway:
-      enabled: true
-      locations: classpath:db/migration
-  kafka:
-    bootstrap-servers: localhost:9093
-    consumer:
-      group-id: customer-service
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "com.pbl6.events"
-
 
 server:
-  port: 8685
   servlet:
     context-path: /customers
-
-app:
-  auth:
-    access-token-secret: ${ACCESS_TOKEN_SECRET}
-    access-token-expiration-msec: 7200000
 
 springdoc:
   api-docs:
