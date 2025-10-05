@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   auth-service:
     build:
@@ -11,14 +9,14 @@ services:
       - "${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}"
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      
+
       # Database
       AUTH_DATASOURCE_URL: jdbc:postgresql://auth-postgres:${AUTH_POSTGRES_PORT}/${AUTH_POSTGRES_DB}
       AUTH_DATASOURCE_USERNAME: ${AUTH_POSTGRES_USER}
       AUTH_DATASOURCE_PASSWORD: ${AUTH_POSTGRES_PASSWORD}
       AUTH_SERVICE_PORT: ${AUTH_SERVICE_PORT}
-    
-#      KAFKA
+
+      #      KAFKA
       CINEMATE_BROKER_PORT: ${CINEMATE_BROKER_PORT}
 
       SMTP_EMAIL: ${SMTP_EMAIL}
@@ -92,7 +90,7 @@ services:
   cinemate-broker:
     image: confluentinc/cp-kafka:7.5.0
     container_name: cinemate-broker
-#    hostname: cinemate-broker
+    #    hostname: cinemate-broker
     depends_on:
       - cinemate-zookeeper
     ports:
@@ -103,7 +101,7 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://cinemate-broker:${CINEMATE_BROKER_PORT}, PLAINTEXT_HOST://localhost:${CINEMATE_BROKER_HOST_PORT}
       KAFKA_LISTENERS: PLAINTEXT_HOST://0.0.0.0:${CINEMATE_BROKER_HOST_PORT},PLAINTEXT://0.0.0.0:${CINEMATE_BROKER_PORT}
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT_HOST:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      
+
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     volumes:
       - ./docker-data/cinemate-kafka-data:/var/lib/kafka/data
@@ -121,3 +119,70 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: cinemate-broker:${CINEMATE_BROKER_PORT}
       KAFKA_CLUSTERS_0_ZOOKEEPER: cinemate-zookeeper:${CINEMATE_ZOOKEEPER_PORT}
       DYNAMIC_CONFIG_ENABLED: 'true'
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    networks:
+      - cinetmate-network
+
+  gateway:
+    build:
+      context: .
+      dockerfile: ./gateway/Dockerfile
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    ports:
+      - "8080:8080"
+    networks:
+      - cinetmate-network
+
+  movie-api:
+    build:
+      context: .
+      dockerfile: ./movie-service/Dockerfile
+    container_name: movie-api
+    env_file:
+      - .env
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    depends_on:
+      - movie-db
+      - minio
+    ports:
+      - "8081:8080"
+    networks:
+      - cinetmate-network
+
+  movie-db:
+    image: postgres:latest
+    container_name: movie-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: movie_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - movie-db-data:/var/lib/postgresql/data
+    networks:
+      - cinetmate-network
+
+volumes:
+  minio-data:
+  movie-db-data:
+
+
+networks:
+  cinetmate-network:
+    driver: bridge
