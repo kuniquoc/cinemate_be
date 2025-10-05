@@ -28,6 +28,7 @@ public class UserRegistrationListener implements ApplicationListener<UserRegistr
         User user = event.getUser();
         Token token = tokenService.createToken(user, TokenType.ACCOUNT_VERIFICATION);
         log.info("Verification token created: {}", token);
+
         emailService.sendMailConfirmRegister(user.getFirstName(), user.getLastName(), user.getEmail(),
                 token.getContent(), CommonConstant.LANGUAGE_CODE);
     }

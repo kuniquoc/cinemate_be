@@ -30,6 +30,13 @@ spring:
           starttls:
             enable: true
     default-encoding: UTF-8
+  kafka:
+    bootstrap-servers: localhost:9093
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    template:
+      default-topic: user-registered
 
 
 server:
@@ -55,3 +62,4 @@ springdoc:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
+
