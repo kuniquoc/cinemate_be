@@ -1,37 +1,46 @@
 version: "3.9"
 
 services:
-#  auth-service:
-#    build:
-#      context: ./auth-service
-#      dockerfile: Dockerfile
-#    container_name: auth-service
-#    restart: unless-stopped
-#    ports:
-#      - "${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}"
-#    environment:
-#      # Database
-#      AUTH_DATASOURCE_URL: jdbc:postgresql://postgres:${AUTH_POSTGRES_PORT}/${POSTGRES_DB}
-#      AUTH_DATASOURCE_USERNAME: ${AUTH_POSTGRES_USER}
-#      AUTH_DATASOURCE_PASSWORD: ${AUTH_POSTGRES_PASSWORD}
-#
-#      # Redis
-#      AUTH_REDIS_HOST: ${AUTH_REDIS_HOST}
-#      AUTH_REDIS_PORT: ${AUTH_REDIS_PORT}
-#
-#      # JWT / Admin
-#      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
-#      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
-#      ADMIN_EMAIL: ${ADMIN_EMAIL}
-#      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-#      ADMIN_FIRST_NAME: ${ADMIN_FIRST_NAME}
-#      ADMIN_LAST_NAME: ${ADMIN_LAST_NAME}
-#
-#      # Web URL
-#      WEB_URL: ${WEB_URL}
-#    depends_on:
-#      - postgres
-#      - redis
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    restart: unless-stopped
+    ports:
+      - "${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      
+      # Database
+      AUTH_DATASOURCE_URL: jdbc:postgresql://auth-postgres:${AUTH_POSTGRES_PORT}/${AUTH_POSTGRES_DB}
+      AUTH_DATASOURCE_USERNAME: ${AUTH_POSTGRES_USER}
+      AUTH_DATASOURCE_PASSWORD: ${AUTH_POSTGRES_PASSWORD}
+      AUTH_SERVICE_PORT: ${AUTH_SERVICE_PORT}
+    
+#      KAFKA
+      CINEMATE_BROKER_PORT: ${CINEMATE_BROKER_PORT}
+
+      SMTP_EMAIL: ${SMTP_EMAIL}
+      SMTP_APP_PASSWORD: ${SMTP_APP_PASSWORD}
+
+      # Redis
+      AUTH_REDIS_HOST: ${AUTH_REDIS_HOST}
+      AUTH_REDIS_PORT: ${AUTH_REDIS_PORT}
+
+      # JWT / Admin
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
+      AUTH_ADMIN_EMAIL: ${AUTH_ADMIN_EMAIL}
+      AUTH_ADMIN_PASSWORD: ${AUTH_ADMIN_PASSWORD}
+      AUTH_ADMIN_FIRST_NAME: ${AUTH_ADMIN_FIRST_NAME}
+      AUTH_ADMIN_LAST_NAME: ${AUTH_ADMIN_LAST_NAME}
+
+      # Web URL
+      WEB_URL: ${WEB_URL}
+    depends_on:
+      - auth-postgres
+      - auth-redis
 
   auth-postgres:
     image: postgres:latest
@@ -91,7 +100,7 @@ services:
     environment:
       KAFKA_BROKER_ID: 2
       KAFKA_ZOOKEEPER_CONNECT: 'cinemate-zookeeper:${CINEMATE_ZOOKEEPER_PORT}'
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://cinemate-broker:${CINEMATE_BROKER_PORT}, PLAINTEXT_HOST://localhost:${CINEMATE_BROKER_HOST_PORT},
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://cinemate-broker:${CINEMATE_BROKER_PORT}, PLAINTEXT_HOST://localhost:${CINEMATE_BROKER_HOST_PORT}
       KAFKA_LISTENERS: PLAINTEXT_HOST://0.0.0.0:${CINEMATE_BROKER_HOST_PORT},PLAINTEXT://0.0.0.0:${CINEMATE_BROKER_PORT}
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT_HOST:PLAINTEXT,PLAINTEXT:PLAINTEXT
       
