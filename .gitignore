@@ -29,8 +29,7 @@ env.yml
 auth-service/target
 **/target/
 auth-redis-data/
-customer-postgres-data
-customer-service/target
+/docker-data/
 
 
 

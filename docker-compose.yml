@@ -1,115 +1,103 @@
 version: "3.9"
 
 services:
-  auth-service:
-    build:
-      context: ./auth-service
-      dockerfile: Dockerfile
-    container_name: auth-service
-    restart: unless-stopped
-    ports:
-      - "${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}"
-    environment:
-      # Database
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
-      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+#  auth-service:
+#    build:
+#      context: ./auth-service
+#      dockerfile: Dockerfile
+#    container_name: auth-service
+#    restart: unless-stopped
+#    ports:
+#      - "${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}"
+#    environment:
+#      # Database
+#      AUTH_DATASOURCE_URL: jdbc:postgresql://postgres:${AUTH_POSTGRES_PORT}/${POSTGRES_DB}
+#      AUTH_DATASOURCE_USERNAME: ${AUTH_POSTGRES_USER}
+#      AUTH_DATASOURCE_PASSWORD: ${AUTH_POSTGRES_PASSWORD}
+#
+#      # Redis
+#      AUTH_REDIS_HOST: ${AUTH_REDIS_HOST}
+#      AUTH_REDIS_PORT: ${AUTH_REDIS_PORT}
+#
+#      # JWT / Admin
+#      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
+#      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
+#      ADMIN_EMAIL: ${ADMIN_EMAIL}
+#      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+#      ADMIN_FIRST_NAME: ${ADMIN_FIRST_NAME}
+#      ADMIN_LAST_NAME: ${ADMIN_LAST_NAME}
+#
+#      # Web URL
+#      WEB_URL: ${WEB_URL}
+#    depends_on:
+#      - postgres
+#      - redis
 
-      # Redis
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
-
-      # JWT / Admin
-      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
-      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
-      ADMIN_EMAIL: ${ADMIN_EMAIL}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-      ADMIN_FIRST_NAME: ${ADMIN_FIRST_NAME}
-      ADMIN_LAST_NAME: ${ADMIN_LAST_NAME}
-
-      # Web URL
-      WEB_URL: ${WEB_URL}
-    depends_on:
-      - postgres
-      - redis
-
-  postgres:
+  auth-postgres:
     image: postgres:latest
     container_name: auth-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${AUTH_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${AUTH_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${AUTH_POSTGRES_DB}
     ports:
-      - "5532:5432"
+      - "${AUTH_POSTGRES_HOST_PORT}:${AUTH_POSTGRES_PORT}"
     volumes:
-      - ./auth-postgres-data:/var/lib/postgresql/data
+      - ./docker-data/auth-postgres-data:/var/lib/postgresql/data
 
-  redis:
+  auth-redis:
     image: redis:7.2
     container_name: auth-redis
     restart: unless-stopped
     ports:
-      - "6399:6379"
+      - "${AUTH_REDIS_HOST_PORT}:${AUTH_REDIS_PORT}"
     volumes:
-      - ./auth-redis-data:/data
+      - ./docker-data/auth-redis-data:/data
 
   customer-postgres:
     image: postgres:latest
     container_name: customer-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${CUSTOMER_DB_USERNAME}
-      POSTGRES_PASSWORD: ${CUSTOMER_DB_PASSWORD}
+      POSTGRES_USER: ${CUSTOMER_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${CUSTOMER_POSTGRES_PASSWORD}
       POSTGRES_DB: ${CUSTOMER_POSTGRES_DB}
       TZ: Asia/Ho_Chi_Minh
     ports:
-      - "5632:5432"
+      - "${CUSTOMER_POSTGRES_HOST_PORT}:${CUSTOMER_POSTGRES_PORT}"
     volumes:
-      - ./customer-postgres-data:/var/lib/postgresql/data
+      - ./docker-data/customer-postgres-data:/var/lib/postgresql/data
 
   cinemate-zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: cinemate-zookeeper
     hostname: cinemate-zookeeper
     ports:
-      - "2182:2182"
+      - "${CINEMATE_ZOOKEEPER_HOST_PORT}:${CINEMATE_ZOOKEEPER_PORT}"
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2182
+      ZOOKEEPER_CLIENT_PORT: ${CINEMATE_ZOOKEEPER_PORT}
       ZOOKEEPER_TICK_TIME: 2000
     volumes:
-      - ./cinemate-zookeeper-data:/var/lib/zookeeper/data
+      - ./docker-data/cinemate-zookeeper-data:/var/lib/zookeeper/data
   cinemate-broker:
     image: confluentinc/cp-kafka:7.5.0
     container_name: cinemate-broker
-    hostname: cinemate-broker
+#    hostname: cinemate-broker
     depends_on:
       - cinemate-zookeeper
     ports:
-      - "9093:9093"
+      - "${CINEMATE_BROKER_HOST_PORT}:${CINEMATE_BROKER_HOST_PORT}"
     environment:
       KAFKA_BROKER_ID: 2
-      KAFKA_ZOOKEEPER_CONNECT: 'cinemate-zookeeper:2182'
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://cinemate-broker:29093,PLAINTEXT_HOST://localhost:9093
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ZOOKEEPER_CONNECT: 'cinemate-zookeeper:${CINEMATE_ZOOKEEPER_PORT}'
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://cinemate-broker:${CINEMATE_BROKER_PORT}, PLAINTEXT_HOST://localhost:${CINEMATE_BROKER_HOST_PORT},
+      KAFKA_LISTENERS: PLAINTEXT_HOST://0.0.0.0:${CINEMATE_BROKER_HOST_PORT},PLAINTEXT://0.0.0.0:${CINEMATE_BROKER_PORT}
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT_HOST:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     volumes:
-      - ./cinemate-kafka-data:/var/lib/kafka/data
-
-  cinemate-schema-registry:
-    image: confluentinc/cp-schema-registry:7.5.0
-    container_name: cinemate-schema-registry
-    hostname: cinemate-schema-registry
-    depends_on:
-      - cinemate-zookeeper
-      - cinemate-broker
-    ports:
-      - "8086:8081"
-    environment:
-      SCHEMA_REGISTRY_HOST_NAME: cinemate-schema-registry
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'cinemate-broker:29093'
-      SCHEMA_REGISTRY_LISTENERS: http://cinemate-schema-registry:8081
+      - ./docker-data/cinemate-kafka-data:/var/lib/kafka/data
   cinemate-kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: cinemate-kafka-ui
@@ -117,12 +105,10 @@ services:
     depends_on:
       - cinemate-zookeeper
       - cinemate-broker
-      - cinemate-schema-registry
     ports:
-      - "8087:8080"
+      - "${CINEMATE_KAFKA_UI_HOST_PORT}:${CINEMATE_KAFKA_UI_PORT}"
     environment:
-      KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: cinemate-broker:29093
-      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://cinemate-schema-registry:8081
-      KAFKA_CLUSTERS_0_ZOOKEEPER: cinemate-zookeeper:2182
+      KAFKA_CLUSTERS_0_NAME: cinemate
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: cinemate-broker:${CINEMATE_BROKER_PORT}
+      KAFKA_CLUSTERS_0_ZOOKEEPER: cinemate-zookeeper:${CINEMATE_ZOOKEEPER_PORT}
       DYNAMIC_CONFIG_ENABLED: 'true'
