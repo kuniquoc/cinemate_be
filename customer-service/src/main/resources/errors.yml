@@ -1,0 +1,50 @@
+#common
+internal_server_error:
+  code: ERR.SER0101
+  message: Internal server error!
+url_not_found:
+  code: ERR.NFN0101
+  message: URL not found!
+field_not_match:
+  code: ERR.FNM0101
+  message: Your field is not match!
+wrong_format:
+  code: ERR.WRF0101
+  message: Your field is in wrong format!
+
+
+
+#authentication
+unauthenticated:
+  code: ERR.AUTH0101
+  message: Unauthenticated!
+unauthorized:
+  code: ERR.AUTH0201
+  message: Unauthorized, You don’t have permission to access!
+invalid_email_or_password:
+  code: ERR.AUTH0102
+  message: Unauthenticated, incorrect email or password
+
+
+
+#user
+user_not_found:
+  code: ERR.USE0101
+  message: User was not found!
+user_already_existed:
+  code: ERR.USE0102
+  message: User already existed
+
+
+#jwt
+invalid_access_token:
+  code: ERR.JWT0101
+  message: Invalid access token!
+expired_access_token:
+  code: ERR.JWT0102
+  message: Expired access token!
+missing_jwt:
+  code: ERR.JWT0301
+  message: Missing JWT!
+
+

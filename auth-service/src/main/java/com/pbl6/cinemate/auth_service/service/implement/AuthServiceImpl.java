@@ -9,6 +9,8 @@ import com.pbl6.cinemate.auth_service.entity.UserPrincipal;
 import com.pbl6.cinemate.auth_service.enums.CachePrefix;
 import com.pbl6.cinemate.auth_service.event.ForgotPasswordEvent;
 import com.pbl6.cinemate.auth_service.event.UserRegistrationEvent;
+import com.pbl6.cinemate.auth_service.event.kafka.UserRegisteredEvent;
+import com.pbl6.cinemate.auth_service.event.kafka.publisher.UserRegisteredPublisher;
 import com.pbl6.cinemate.auth_service.exception.BadRequestException;
 import com.pbl6.cinemate.auth_service.exception.UnauthenticatedException;
 import com.pbl6.cinemate.auth_service.mapper.UserMapper;
@@ -47,6 +49,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
     private final CacheService cacheService;
+    private final UserRegisteredPublisher userRegisteredPublisher;
 
     @Override
     public SignUpResponse signUp(SignUpRequest signUpRequest) {
@@ -80,6 +83,9 @@ public class AuthServiceImpl implements AuthService {
         user.setIsEnabled(true);
         user.setAccountVerifiedAt(LocalDateTime.now());
         tokenService.deleteTokenByContent(accountVerificationRequest.getAccountVerificationToken());
+
+        userRegisteredPublisher.publishUserRegistered(new UserRegisteredEvent(user.getId(), user.getEmail(),
+                user.getFirstName(), user.getLastName()));
     }
 
     @Override
