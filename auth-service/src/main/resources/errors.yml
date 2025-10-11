@@ -16,7 +16,9 @@ wrong_format:
 password_confirm_password_not_matched:
   code: ERR.SU0101
   message: Password and Confirm Password are not matched!
-
+token_not_belongs_to_email:
+  code: ERR.SU0201
+  message: Token does not belong to email!
 #authentication
 unauthenticated:
   code: ERR.AUTH0101

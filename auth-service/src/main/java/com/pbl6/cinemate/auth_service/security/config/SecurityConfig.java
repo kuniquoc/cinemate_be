@@ -38,7 +38,12 @@ public class SecurityConfig {
             ApiPath.VERIFY_ACCOUNT,
             ApiPath.VERIFY_OTP,
             ApiPath.REFRESH_TOKEN,
-            ApiPath.VERIFY_JWT
+            ApiPath.VERIFY_JWT,
+            ApiPath.VERIFY_EMAIL,
+            ApiPath.VERIFY_TOKEN,
+            "/api/v3/api-docs/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html"
     };
 
     @Bean

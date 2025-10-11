@@ -18,6 +18,7 @@ import com.pbl6.cinemate.auth_service.payload.request.*;
 import com.pbl6.cinemate.auth_service.payload.response.JwtLoginResponse;
 import com.pbl6.cinemate.auth_service.payload.response.LoginResponse;
 import com.pbl6.cinemate.auth_service.payload.response.SignUpResponse;
+import com.pbl6.cinemate.auth_service.payload.response.VerifyTokenResponse;
 import com.pbl6.cinemate.auth_service.service.*;
 import com.pbl6.cinemate.auth_service.utils.JwtUtils;
 import io.jsonwebtoken.Claims;
@@ -51,41 +52,11 @@ public class AuthServiceImpl implements AuthService {
     private final CacheService cacheService;
     private final UserRegisteredPublisher userRegisteredPublisher;
 
-    @Override
-    public SignUpResponse signUp(SignUpRequest signUpRequest) {
-        if (!signUpRequest.getPassword().equals(signUpRequest.getPasswordConfirmation())) {
-            throw new BadRequestException(ErrorMessage.PASSWORD_CONFIRM_PASSWORD_NOT_MATCHED);
-        }
-
-        if (userService.isExistedUser(signUpRequest.getEmail())) {
-            throw new BadRequestException(ErrorMessage.USER_ALREADY_EXISTED);
-        }
-
-        Role userRole = roleService.findByName(RoleName.USER);
-
-        User user = UserMapper.toUser(signUpRequest);
-        user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
-        user.setRole(userRole);
-        User savedUser = userService.save(user);
-
-        eventPublisher.publishEvent(new UserRegistrationEvent(savedUser));
-
-        return new SignUpResponse(UserMapper.toUserResponse(savedUser));
-    }
-
     @Transactional
     @Override
-    public void verifyAccount(AccountVerificationRequest accountVerificationRequest) {
-        User user = userService.findByToken(accountVerificationRequest.getAccountVerificationToken());
-        if (user.getAccountVerifiedAt() != null) {
-            throw new BadRequestException(ErrorMessage.ACCOUNT_ALREADY_ACTIVE);
-        }
-        user.setIsEnabled(true);
-        user.setAccountVerifiedAt(LocalDateTime.now());
-        tokenService.deleteTokenByContent(accountVerificationRequest.getAccountVerificationToken());
-
-        userRegisteredPublisher.publishUserRegistered(new UserRegisteredEvent(user.getId(), user.getEmail(),
-                user.getFirstName(), user.getLastName()));
+    public VerifyTokenResponse verifyToken(VerifyTokenRequest request) {
+        User user = userService.findByToken(request.getToken());
+        return VerifyTokenResponse.builder().email(user.getEmail()).build();
     }
 
     @Override
@@ -174,4 +145,40 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(passwordChangingRequest.getNewPassword()));
         userService.save(user);
     }
+
+    @Override
+    public void verifyEmail(VerifyEmailRequest request) {
+        if (userService.isExistedUser(request.getEmail())) {
+            throw new BadRequestException(ErrorMessage.USER_ALREADY_EXISTED);
+        }
+
+        Role userRole = roleService.findByName(RoleName.USER);
+
+        User user = new User();
+        user.setEmail(request.getEmail());
+        user.setRole(userRole);
+        User savedUser = userService.save(user);
+
+        eventPublisher.publishEvent(new UserRegistrationEvent(savedUser));
+    }
+
+    @Override
+    public SignUpResponse signUp(SignUpRequest signUpRequest) {
+        User user = userService.findByToken(signUpRequest.getToken());
+        if (!user.getEmail().equals(signUpRequest.getEmail())) {
+            throw new BadRequestException(ErrorMessage.TOKEN_NOT_BELONGS_TO_EMAIL);
+        }
+        user.setIsEnabled(true);
+        user.setAccountVerifiedAt(LocalDateTime.now());
+        tokenService.deleteTokenByContent(signUpRequest.getToken());
+        user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
+        User savedUser = userService.save(user);
+
+        userRegisteredPublisher.publishUserRegistered(new UserRegisteredEvent(user.getId(), user.getEmail(),
+                user.getFirstName(), user.getLastName()));
+
+
+        return new SignUpResponse(UserMapper.toUserResponse(savedUser));
+    }
+
 }

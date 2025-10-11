@@ -29,12 +29,30 @@ public class AuthController {
         return ResponseEntity.ok(responseData);
     }
 
-    @PatchMapping(ApiPath.VERIFY_ACCOUNT)
-    public ResponseEntity<ResponseData> verifyAccount(@Valid @RequestBody AccountVerificationRequest
-                                                              accountVerificationRequest, HttpServletRequest request) {
-        authService.verifyAccount(accountVerificationRequest);
+//    @PatchMapping(ApiPath.VERIFY_ACCOUNT)
+//    public ResponseEntity<ResponseData> verifyAccount(@Valid @RequestBody AccountVerificationRequest
+//                                                              accountVerificationRequest, HttpServletRequest request) {
+//        authService.verifyAccount(accountVerificationRequest);
+//        ResponseData responseData = ResponseData
+//                .successWithoutMetaAndData(FeedbackMessage.ACCOUNT_VERIFIED, request.getRequestURI(), request.getMethod());
+//        return ResponseEntity.ok(responseData);
+//    }
+
+    @PostMapping(ApiPath.VERIFY_EMAIL)
+    public ResponseEntity<ResponseData> verifyEmail(@Valid @RequestBody VerifyEmailRequest verifyEmailRequest,
+                                                    HttpServletRequest request) {
+        authService.verifyEmail(verifyEmailRequest);
         ResponseData responseData = ResponseData
-                .successWithoutMetaAndData(FeedbackMessage.ACCOUNT_VERIFIED, request.getRequestURI(), request.getMethod());
+                .successWithoutMetaAndData(FeedbackMessage.EMAIL_SENT, request.getRequestURI(), request.getMethod());
+        return ResponseEntity.ok(responseData);
+    }
+
+    @PostMapping(ApiPath.VERIFY_TOKEN)
+    public ResponseEntity<ResponseData> verifyToken(@Valid @RequestBody VerifyTokenRequest verifyTokenRequest,
+                                                    HttpServletRequest request) {
+        ResponseData responseData = ResponseData
+                .success(authService.verifyToken(verifyTokenRequest),
+                        FeedbackMessage.EMAIL_VERIFIED, request.getRequestURI(), request.getMethod());
         return ResponseEntity.ok(responseData);
     }
 
