@@ -7,6 +7,7 @@ public final class ErrorMessage {
 
     //Sign up
     public static final String PASSWORD_CONFIRM_PASSWORD_NOT_MATCHED = "password_confirm_password_not_matched";
+    public static final String TOKEN_NOT_BELONGS_TO_EMAIL = "token_not_belongs_to_email";
 
     //Role
     public static final String ROLE_NOT_FOUND = "role_not_found";

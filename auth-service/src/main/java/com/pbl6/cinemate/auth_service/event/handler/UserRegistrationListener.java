@@ -29,7 +29,7 @@ public class UserRegistrationListener implements ApplicationListener<UserRegistr
         Token token = tokenService.createToken(user, TokenType.ACCOUNT_VERIFICATION);
         log.info("Verification token created: {}", token);
 
-        emailService.sendMailConfirmRegister(user.getFirstName(), user.getLastName(), user.getEmail(),
+        emailService.sendMailConfirmRegister("User ", user.getEmail(), user.getEmail(),
                 token.getContent(), CommonConstant.LANGUAGE_CODE);
     }
 }
