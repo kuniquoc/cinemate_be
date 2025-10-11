@@ -1,4 +1,19 @@
 #authentication
+verify_email_request:
+  email:
+    not_blank:
+      code: VAL.VE0101
+      message: Email must not be blank
+    email:
+      code: VAL.VE0102
+      message: Email must be a well-formed email address
+
+verify_token_request:
+  token:
+    not_blank:
+      code: VAL.VT0101
+      message: Token must not be blank
+
 sign_up_request:
   email:
     not_blank:
@@ -7,34 +22,17 @@ sign_up_request:
     email:
       code: VAL.SU0102
       message: Email must be a well-formed email address
-  first_name:
-    not_blank:
-      code: VAL.SU0201
-      message: First name must not be blank
-    size:
-      code: VAL.SU0202
-      message: First name size must be between 1 and 100
-  last_name:
-    not_blank:
-      code: VAL.SU0301
-      message: Last name must not be blank
-    size:
-      code: VAL.SU0302
-      message: Last name size must be between 1 and 100
   password:
     not_blank:
-      code: VAL.SU0401
+      code: VAL.SU0201
       message: Password must not be blank
     pattern:
-      code: VAL.SU0402
+      code: VAL.SU0202
       message: Password has at least 8 characters, containing at least 1 uppercase letter, 1 lowercase letter, 1 numeric character.
-  password_confirmation:
-    pattern:
-      code: VAL.SU0402
-      message: Password has at least 8 characters, containing at least 1 uppercase letter, 1 lowercase letter, 1 numeric character.
+  token:
     not_blank:
-      code: VAL.SU0501
-      message: Password confirmation must not be blank
+      code: VAL.SU0301
+      message: Token must not be blank
 
 account_verification_request:
   account_verification_token:
@@ -164,4 +162,5 @@ adding_permission_request:
     not_null:
       code: VAL.APR0102
       message: Permission id must not be null
+
 

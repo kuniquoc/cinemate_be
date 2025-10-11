@@ -24,8 +24,7 @@ public final class UserMapper {
 
         return User.builder()
                 .email(request.getEmail())
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
+                .password(request.getPassword())
                 .build();
     }
 

@@ -11,6 +11,8 @@ public final class FeedbackMessage {
     public static final String PASSWORD_CHANGED = "Password changed successfully";
     public static final String TOKEN_REFRESHED = "Token refreshed successfully";
     public static final String TOKEN_VERIFIED = "Token is verified";
+    public static final String EMAIL_SENT = "Verify email token was sent";
+    public static final String EMAIL_VERIFIED = "Email verified successfully";
 
     //    STATE
     public static final String ACCOUNT_VERIFIED = "Account verified successfully";
