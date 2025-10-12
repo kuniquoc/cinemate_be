@@ -1,4 +1,6 @@
 spring:
+  profiles:
+    active: dev
   application:
     name: movie
 
@@ -20,6 +22,7 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+    baseline-version: 0
     locations: classpath:db/migration
 
   servlet:
