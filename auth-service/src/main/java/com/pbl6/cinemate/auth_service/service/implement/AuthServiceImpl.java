@@ -174,11 +174,16 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
         User savedUser = userService.save(user);
 
+        boolean isRefreshToken = true;
+        UserPrincipal userPrincipal = UserPrincipal.createUserPrincipal(savedUser);
+        String accessToken = jwtUtils.generateToken(userPrincipal, !isRefreshToken);
+        String refreshToken = jwtUtils.generateToken(userPrincipal, isRefreshToken);
+
         userRegisteredPublisher.publishUserRegistered(new UserRegisteredEvent(user.getId(), user.getEmail(),
                 user.getFirstName(), user.getLastName()));
 
 
-        return new SignUpResponse(UserMapper.toUserResponse(savedUser));
+        return new SignUpResponse(UserMapper.toUserResponse(savedUser), accessToken, refreshToken);
     }
 
 }

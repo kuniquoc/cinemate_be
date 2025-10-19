@@ -30,17 +30,17 @@ public class SecurityConfig {
     private final JwtAuthEntryPoint jwtAuthEntryPoint;
 
     public final String[] PUBLIC_ENDPOINT = {
-            ApiPath.SIGN_UP,
-            ApiPath.LOGIN,
-            ApiPath.LOGOUT,
-            ApiPath.FORGOT_PASSWORD,
-            ApiPath.RESET_PASSWORD,
-            ApiPath.VERIFY_ACCOUNT,
-            ApiPath.VERIFY_OTP,
-            ApiPath.REFRESH_TOKEN,
-            ApiPath.VERIFY_JWT,
-            ApiPath.VERIFY_EMAIL,
-            ApiPath.VERIFY_TOKEN,
+            ApiPath.AUTH + "/sign-up",
+            ApiPath.AUTH + "/login",
+            ApiPath.AUTH + "/log-out",
+            ApiPath.AUTH + "/forgot-password",
+            ApiPath.AUTH + "/reset-password",
+            ApiPath.AUTH + "/verify-account",
+            ApiPath.AUTH + "/verify-otp",
+            ApiPath.AUTH + "/refresh-token",
+            ApiPath.AUTH + "/verify-jwt",
+            ApiPath.AUTH + "/verify-email",
+            ApiPath.AUTH + "/verify-token",
             "/api/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html"

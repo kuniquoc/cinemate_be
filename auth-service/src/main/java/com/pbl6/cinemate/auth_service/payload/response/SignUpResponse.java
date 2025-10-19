@@ -15,4 +15,6 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SignUpResponse {
     UserResponse user;
+    String accessToken;
+    String refreshToken;
 }
