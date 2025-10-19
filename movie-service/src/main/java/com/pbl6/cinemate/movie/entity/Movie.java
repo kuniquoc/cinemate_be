@@ -10,6 +10,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import com.pbl6.cinemate.movie.enums.MovieStatus;
@@ -38,6 +39,15 @@ public class Movie {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private String qualitiesJson;
+
+    // New fields
+    private String verticalPoster;
+    private String horizontalPoster;
+    private LocalDate releaseDate;
+    private String trailerUrl;
+    private Integer age;
+    private Integer year;
+    private String country;
 
     public Movie(String title, String description, MovieStatus status) {
         this.title = title;
