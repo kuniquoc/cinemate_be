@@ -15,13 +15,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping
+@RequestMapping(ApiPath.AUTH)
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
     private final JwtService jwtService;
 
-    @PostMapping(ApiPath.SIGN_UP)
+    @PostMapping("/sign-up")
     public ResponseEntity<ResponseData> signUp(@Valid @RequestBody SignUpRequest signUpRequest,
                                                HttpServletRequest request) {
         ResponseData responseData = ResponseData.success(authService.signUp(signUpRequest),
@@ -29,16 +29,7 @@ public class AuthController {
         return ResponseEntity.ok(responseData);
     }
 
-//    @PatchMapping(ApiPath.VERIFY_ACCOUNT)
-//    public ResponseEntity<ResponseData> verifyAccount(@Valid @RequestBody AccountVerificationRequest
-//                                                              accountVerificationRequest, HttpServletRequest request) {
-//        authService.verifyAccount(accountVerificationRequest);
-//        ResponseData responseData = ResponseData
-//                .successWithoutMetaAndData(FeedbackMessage.ACCOUNT_VERIFIED, request.getRequestURI(), request.getMethod());
-//        return ResponseEntity.ok(responseData);
-//    }
-
-    @PostMapping(ApiPath.VERIFY_EMAIL)
+    @PostMapping("/verify-email")
     public ResponseEntity<ResponseData> verifyEmail(@Valid @RequestBody VerifyEmailRequest verifyEmailRequest,
                                                     HttpServletRequest request) {
         authService.verifyEmail(verifyEmailRequest);
@@ -47,7 +38,7 @@ public class AuthController {
         return ResponseEntity.ok(responseData);
     }
 
-    @PostMapping(ApiPath.VERIFY_TOKEN)
+    @PostMapping("/verify-token")
     public ResponseEntity<ResponseData> verifyToken(@Valid @RequestBody VerifyTokenRequest verifyTokenRequest,
                                                     HttpServletRequest request) {
         ResponseData responseData = ResponseData
@@ -56,7 +47,7 @@ public class AuthController {
         return ResponseEntity.ok(responseData);
     }
 
-    @PostMapping(ApiPath.LOGIN)
+    @PostMapping("/login")
     public ResponseEntity<ResponseData> login(@Valid @RequestBody LoginRequest loginRequest,
                                               HttpServletRequest httpServletRequest) {
         ResponseData responseData = ResponseData.success(authService.login(loginRequest),
@@ -64,7 +55,7 @@ public class AuthController {
         return ResponseEntity.ok(responseData);
     }
 
-    @PostMapping(ApiPath.FORGOT_PASSWORD)
+    @PostMapping("/forgot-password")
     public ResponseEntity<ResponseData> requestPasswordReset(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest,
                                                              HttpServletRequest request) {
         authService.forgotPassword(forgotPasswordRequest);
@@ -73,7 +64,7 @@ public class AuthController {
         return ResponseEntity.ok(responseData);
     }
 
-    @PostMapping(ApiPath.VERIFY_OTP)
+    @PostMapping("/verify-otp")
     public ResponseEntity<ResponseData> verifyOTP(@Valid @RequestBody OtpVerificationRequest request,
                                                   HttpServletRequest httpServletRequest) {
         ResponseData responseData = ResponseData.success(authService.verifyOTP(request.getEmail(), request.getOtp()),
@@ -81,7 +72,7 @@ public class AuthController {
         return ResponseEntity.ok(responseData);
     }
 
-    @PostMapping(ApiPath.RESET_PASSWORD)
+    @PostMapping("/reset-password")
     public ResponseEntity<ResponseData> resetPassword(@Valid @RequestBody ResetPasswordRequest request,
                                                       HttpServletRequest httpServletRequest) {
         authService.resetPassword(request);
@@ -90,7 +81,7 @@ public class AuthController {
         return ResponseEntity.ok(responseData);
     }
 
-    @PostMapping(ApiPath.LOGOUT)
+    @PostMapping("/log-out")
     public ResponseEntity<ResponseData> logout(@Valid @RequestBody LogoutRequest logoutRequest, HttpServletRequest request) {
         authService.logout(logoutRequest);
         ResponseData responseData = ResponseData.successWithoutMetaAndData(FeedbackMessage.LOGGED_OUT,
@@ -98,7 +89,7 @@ public class AuthController {
         return ResponseEntity.ok(responseData);
     }
 
-    @PatchMapping(ApiPath.CHANGE_PASSWORD)
+    @PatchMapping("/change-password")
     public ResponseEntity<ResponseData> changePassword(@CurrentUser UserPrincipal userPrincipal,
                                                        @Valid @RequestBody PasswordChangingRequest request,
                                                        HttpServletRequest httpServletRequest) {
@@ -108,7 +99,7 @@ public class AuthController {
         return ResponseEntity.ok(responseData);
     }
 
-    @PostMapping(ApiPath.REFRESH_TOKEN)
+    @PostMapping("/refresh-token")
     public ResponseEntity<ResponseData> refreshJwt(@RequestBody @Valid RefreshTokenRequest refreshTokenRequest,
                                                    HttpServletRequest request) {
         ResponseData responseData = ResponseData.success(jwtService.refreshToken(refreshTokenRequest.getRefreshToken()),
@@ -116,7 +107,7 @@ public class AuthController {
         return ResponseEntity.ok(responseData);
     }
 
-    @PostMapping(ApiPath.VERIFY_JWT)
+    @PostMapping("/verify-jwt")
     public ResponseEntity<ResponseData> verifyJwt(@RequestBody @Valid JwtVerificationRequest jwtVerificationRequest,
                                                   HttpServletRequest request) {
         ResponseData responseData = ResponseData.success(jwtService.isTokenValid(jwtVerificationRequest.getToken()),
