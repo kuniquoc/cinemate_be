@@ -3,6 +3,7 @@ package com.pbl6.cinemate.auth_service.constant;
 public final class ApiPath {
     //    auth
     public static final String API = "/api/v1";
+    public static final String AUTH = API + "/auth";
     public static final String VERIFY_EMAIL = API + "/verify-email";
     public static final String VERIFY_TOKEN = API + "/verify-token";
     public static final String SIGN_UP = API + "/sign-up";
