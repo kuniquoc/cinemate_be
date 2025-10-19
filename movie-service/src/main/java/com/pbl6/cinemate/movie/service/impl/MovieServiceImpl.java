@@ -2,9 +2,11 @@ package com.pbl6.cinemate.movie.service.impl;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.pbl6.cinemate.movie.dto.response.MovieResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -69,9 +71,13 @@ public class MovieServiceImpl implements MovieService {
     public MovieInfoResponse getMovieInfo(UUID movieId) {
         Movie movie = repo.findById(movieId)
                 .orElseThrow(() -> new NotFoundException("Movie not found with id: " + movieId));
-        Map<String, String> qualities = parseQualitiesJson(movie.getQualitiesJson());
-        return new MovieInfoResponse(movie.getId(), movie.getTitle(), movie.getDescription(),
-                movie.getStatus().name(), qualities);
+        return mapToMovieInfoResponse(movie);
+    }
+
+    @Override
+    public List<MovieResponse> getAllMovies() {
+        List<Movie> movies = repo.findAll();
+        return movies.stream().map(this::mapToMovieResponse).toList();
     }
 
     private Path createTempFile() {
@@ -100,5 +106,28 @@ public class MovieServiceImpl implements MovieService {
         } catch (Exception e) {
             throw new InternalServerException("Failed to parse movie qualities JSON: " + e.getMessage());
         }
+    }
+
+    private MovieResponse mapToMovieResponse(Movie movie) {
+        return new MovieResponse(movie.getId(), movie.getTitle(), movie.getDescription(),
+                         movie.getHorizontalPoster(), movie.getVerticalPoster());
+    }
+
+    private MovieInfoResponse mapToMovieInfoResponse(Movie movie) {
+        Map<String, String> qualities = parseQualitiesJson(movie.getQualitiesJson());
+        return new MovieInfoResponse(
+                movie.getId(),
+                movie.getTitle(),
+                movie.getDescription(),
+                movie.getStatus().name(),
+                qualities,
+                movie.getVerticalPoster(),
+                movie.getHorizontalPoster(),
+                movie.getReleaseDate(),
+                movie.getTrailerUrl(),
+                movie.getAge(),
+                movie.getYear(),
+                movie.getCountry()
+        );
     }
 }
