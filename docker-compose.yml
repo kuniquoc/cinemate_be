@@ -1,4 +1,26 @@
 services:
+  # API Gateway
+  gateway:
+    build:
+      context: .
+      dockerfile: ./gateway/Dockerfile
+    container_name: cinemate-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      MOVIE_SERVICE_URL: http://movie-service:8080
+      AUTH_SERVICE_URL: http://auth-service:8080
+      CUSTOMER_SERVICE_URL: http://customer-service:8080
+      FRONTEND_URL: ${WEB_URL}
+      ADMIN_URL: ${ADMIN_URL:-https://admin.cinemate.com}
+    depends_on:
+      - movie-api
+      - auth-service
+    networks:
+      - cinemate-network
+
   auth-service:
     build:
       context: ./auth-service
@@ -150,17 +172,6 @@ services:
       - minio-data:/data
     networks:
       - cinemate-network
-
-  # gateway:
-  #   build:
-  #     context: .
-  #     dockerfile: ./gateway/Dockerfile
-  #   environment:
-  #     - SPRING_PROFILES_ACTIVE=docker
-  #   ports:
-  #     - "8080:8080"
-  #   networks:
-  #     - cinemate-network
 
   movie-api:
     build:

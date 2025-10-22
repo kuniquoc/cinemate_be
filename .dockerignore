@@ -1,0 +1,49 @@
+# Build artifacts
+target/
+*.jar
+*.war
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+docs/
+README.md
+*.md
+
+# Docker
+.dockerignore
+docker-compose*.yml
+
+# Environment files
+.env*
+
+# Logs
+logs/
+*.log
+
+# Node modules (if any)
+node_modules/
+
+# Test data
+test-data/
+
+# Auth service standalone files (not needed for multi-module build)
+auth-service/target/
+auth-service/.mvn/
+
+# Customer service standalone files  
+customer-service/target/
+customer-service/.mvn/
