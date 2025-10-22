@@ -10,17 +10,17 @@ COPY shared-kernel/pom.xml ./shared-kernel/pom.xml
 COPY movie-service/pom.xml ./movie-service/pom.xml
 COPY gateway/pom.xml ./gateway/pom.xml
 
-# Download dependencies for movie-service and its dependencies
-RUN mvn -f pom.xml -pl movie-service -am -B -DskipTests dependency:go-offline
+# Download dependencies for gateway and its dependencies
+RUN mvn -f pom.xml -pl gateway -am -B -DskipTests dependency:go-offline
 
 # Copy shared-kernel source (if exists)
 COPY shared-kernel/src ./shared-kernel/src
 
-# Copy movie-service source
-COPY movie-service/src ./movie-service/src
+# Copy gateway source
+COPY gateway/src ./gateway/src
 
-# Build movie-service with all dependencies
-RUN mvn -f pom.xml -pl movie-service -am -B -DskipTests package
+# Build gateway with all dependencies
+RUN mvn -f pom.xml -pl gateway -am -B -DskipTests package
 
 
 # ----------------------------------------------------
@@ -28,7 +28,7 @@ RUN mvn -f pom.xml -pl movie-service -am -B -DskipTests package
 FROM eclipse-temurin:21-jre-alpine AS runtime
 
 RUN apk update \
-    && apk add --no-cache curl ffmpeg \
+    && apk add --no-cache curl \
     && addgroup -S spring \
     && adduser -S spring -G spring \
     && rm -rf /var/cache/apk/*
@@ -36,13 +36,12 @@ RUN apk update \
 WORKDIR /app
 
 # Copy the final JAR from the build stage
-COPY --from=build /app/movie-service/target/*.jar app.jar
+COPY --from=build /app/gateway/target/*.jar app.jar
 
 RUN chown spring:spring app.jar
 USER spring
 
 EXPOSE 8080
-
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8080/actuator/health || exit 1

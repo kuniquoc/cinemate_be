@@ -184,7 +184,7 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
                     MovieStatus.PENDING));
 
             // Compose chunks directly in MinIO (server-side)
-            String finalObjectPath = "movies/" + movie.getId() + "/original/" + chunkUpload.getFilename();
+            String finalObjectPath = movie.getId() + "/original/" + chunkUpload.getFilename();
             minioStorageService.composeChunks(uploadId, finalObjectPath, chunkUpload.getTotalChunks());
 
             // Create temporary file for transcoding

@@ -1,0 +1,77 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        # Movie Service Routes (Production)
+        - id: movie-service-prod
+          uri: ${MOVIE_SERVICE_URL:http://movie-service:8080}
+          predicates:
+            - Path=/api/movies/**
+          filters:
+            - StripPrefix=1
+            
+        # Movie File Upload Routes (Production)
+        - id: movie-upload-prod
+          uri: ${MOVIE_SERVICE_URL:http://movie-service:8080}
+          predicates:
+            - Path=/api/upload/**
+          filters:
+            - StripPrefix=1
+
+        # Auth Service Routes (Production)
+        - id: auth-service-prod
+          uri: ${AUTH_SERVICE_URL:http://auth-service:8080}
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
+
+        # Customer Service Routes (Production)
+        - id: customer-service-prod
+          uri: ${CUSTOMER_SERVICE_URL:http://customer-service:8080}
+          predicates:
+            - Path=/api/customers/**
+          filters:
+            - StripPrefix=1
+
+      # Global CORS configuration for production
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: 
+              - "${FRONTEND_URL:https://cinemate.com}"
+              - "${ADMIN_URL:https://admin.cinemate.com}"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+
+# Management endpoints for production
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# Production logging
+logging:
+  level:
+    '[org.springframework.cloud.gateway]': INFO
+    '[reactor.netty]': WARN
+    '[root]': INFO
+  file:
+    name: logs/gateway.log

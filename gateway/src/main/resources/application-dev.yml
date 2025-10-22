@@ -1,0 +1,83 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        # Movie Service Routes (Development)
+        - id: movie-service-dev
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/movies/**
+          filters:
+            - StripPrefix=1
+            
+        # Movie File Upload Routes (Development)
+        - id: movie-upload-dev
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/upload/**
+          filters:
+            - StripPrefix=1
+
+        # Auth Service Routes (Development)
+        - id: auth-service-dev
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
+
+        # Customer Service Routes (Development)
+        - id: customer-service-dev
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/customers/**
+          filters:
+            - StripPrefix=1
+
+      # Global CORS configuration for development
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: 
+              - "http://localhost:3000"
+              - "http://localhost:4200"
+              - "http://localhost:5173"
+              - "http://127.0.0.1:3000"
+              - "http://127.0.0.1:4200"
+              - "http://127.0.0.1:5173"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
+# Development logging
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.web: DEBUG
+    reactor.netty: INFO
+    root: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

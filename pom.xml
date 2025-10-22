@@ -10,25 +10,36 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>shared-kernel</module>
         <module>movie-service</module>
-        
+        <module>gateway</module>
     </modules>
 
     <properties>
         <java.version>21</java.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <lombok.version>1.18.34</lombok.version>
-        <springdoc.version>2.8.9</springdoc.version>
+        <springdoc.version>2.6.0</springdoc.version>
         <minio.version>8.5.11</minio.version>
+        <spring-cloud.version>2023.0.3</spring-cloud.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-            <!-- Spring Boot BOM -->
+            <!-- ✅ Spring Boot BOM (đã hạ xuống bản tương thích) -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
-                <version>3.5.6</version>
+                <version>3.3.4</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- ✅ Spring Cloud BOM -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -38,7 +49,7 @@
     <build>
         <pluginManagement>
             <plugins>
-                <!-- Compiler plugin for all modules -->
+                <!-- Compiler plugin cho tất cả modules -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -49,11 +60,11 @@
                     </configuration>
                 </plugin>
 
-                <!-- Spring Boot plugin -->
+                <!-- ✅ Spring Boot plugin (đã hạ xuống cùng version BOM) -->
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
-                    <version>3.5.6</version>
+                    <version>3.3.4</version>
                 </plugin>
             </plugins>
         </pluginManagement>
