@@ -35,6 +35,16 @@ public class ResponseData {
                 .build();
     }
 
+    public static ResponseData success(String message, String apiPath, String method) {
+        return ResponseData.builder()
+                .status("success")
+                .message(message)
+                .path(apiPath)
+                .method(method)
+                .timestamp(System.currentTimeMillis())
+                .build();
+    }
+
     public static ResponseData error(Object error, String apiPath, String method) {
         ErrorResponse errorResponse = (ErrorResponse) error;
         return ResponseData.builder()
