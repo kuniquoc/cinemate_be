@@ -1,10 +1,12 @@
 package com.pbl6.cinemate.movie.dto.general;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.pbl6.cinemate.movie.dto.response.PaginatedResponse;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
@@ -34,6 +36,26 @@ public class ResponseData {
                 .timestamp(System.currentTimeMillis())
                 .build();
     }
+
+    public static ResponseData successWithMeta(Object data, String message, String apiPath, String method) {
+        PaginatedResponse response = (PaginatedResponse) data;
+        Map<String, Object> metaInfo = Map.of(
+                "current_page", response.getCurrentPage() + 1,
+                "limit", response.getPageSize(),
+                "total_pages", response.getTotalPages()
+        );
+
+        return ResponseData.builder()
+                .status("success")
+                .message(message)
+                .path(apiPath)
+                .method(method)
+                .data(response.getContent())
+                .meta(metaInfo)
+                .timestamp(System.currentTimeMillis())
+                .build();
+    }
+
 
     public static ResponseData success(String message, String apiPath, String method) {
         return ResponseData.builder()

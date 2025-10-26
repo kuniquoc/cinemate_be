@@ -1,28 +1,23 @@
 package com.pbl6.cinemate.movie.controller;
 
-import java.util.List;
-import java.util.UUID;
-
-import com.pbl6.cinemate.movie.dto.response.*;
-import com.pbl6.cinemate.movie.service.ReviewService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
 import com.pbl6.cinemate.movie.dto.general.ResponseData;
-import com.pbl6.cinemate.movie.dto.request.MovieActorRequest;
-import com.pbl6.cinemate.movie.dto.request.MovieUploadRequest;
-import com.pbl6.cinemate.movie.dto.request.ReviewCreationRequest;
-import com.pbl6.cinemate.movie.dto.request.ReviewUpdateRequest;
+import com.pbl6.cinemate.movie.dto.request.*;
+import com.pbl6.cinemate.movie.dto.response.*;
 import com.pbl6.cinemate.movie.service.MovieActorService;
 import com.pbl6.cinemate.movie.service.MovieService;
+import com.pbl6.cinemate.movie.service.ReviewService;
 import com.pbl6.cinemate.movie.service.impl.ReviewServiceImpl;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/movies")
@@ -71,7 +66,7 @@ public class MovieController {
 
     // New: Get all movies (list)
     @Operation(summary = "Get all movies", description = "Retrieve a list of movies with basic info")
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<ResponseData> getAllMovies(HttpServletRequest httpServletRequest) {
         List<MovieResponse> response = movieService.getAllMovies();
         return ResponseEntity.ok(ResponseData.success(
@@ -80,7 +75,6 @@ public class MovieController {
                 httpServletRequest.getRequestURI(),
                 httpServletRequest.getMethod()));
     }
-
 
 
     @Operation(summary = "Get movie detail", description = "Get detailed information about a movie including title, description, and available qualities")
@@ -131,7 +125,7 @@ public class MovieController {
                 httpServletRequest.getMethod()));
     }
 
-//    TODO: admin only
+    //    TODO: admin only
     @Operation(summary = "Update movie actors", description = "Replace all actors for a specific movie with the provided list")
     @PutMapping("/{movieId}/actors")
     public ResponseEntity<ResponseData> updateMovieActors(
@@ -181,7 +175,7 @@ public class MovieController {
                 httpServletRequest.getMethod()));
     }
 
-//    TODO: only review owner can update
+    //    TODO: only review owner can update
 //    TODO: get customer id from JWT token instead of payload
     @Operation(summary = "Update review for movie", description = "Update an existing review for a movie (only by the review owner)")
     @PutMapping("/{movieId}/reviews/{reviewId}")
@@ -200,7 +194,7 @@ public class MovieController {
                 httpServletRequest.getMethod()));
     }
 
-//    TODO: get customer id from JWT token instead of request param
+    //    TODO: get customer id from JWT token instead of request param
     @Operation(summary = "Delete review for movie", description = "Delete a review for a movie (only by the review owner)")
     @DeleteMapping("/{movieId}/reviews/{reviewId}")
     public ResponseEntity<ResponseData> deleteReviewForMovie(
@@ -244,6 +238,69 @@ public class MovieController {
         return ResponseEntity.ok(ResponseData.success(
                 reviewCount,
                 "Review count retrieved successfully",
+                httpServletRequest.getRequestURI(),
+                httpServletRequest.getMethod()));
+    }
+
+    @Operation(summary = "Create a new movie", description = "Create a new movie with the provided details")
+    @PostMapping
+    public ResponseEntity<ResponseData> createMovie(
+            @Valid @RequestBody MovieRequest movieRequest,
+            HttpServletRequest httpServletRequest) {
+
+        MovieResponse movieResponse = movieService.createMovie(movieRequest);
+
+        return ResponseEntity.ok(ResponseData.success(
+                movieResponse,
+                "Movie created successfully",
+                httpServletRequest.getRequestURI(),
+                httpServletRequest.getMethod()));
+    }
+
+    @Operation(summary = "Update an existing movie", description = "Update movie details by ID")
+    @PutMapping("/{movieId}")
+    public ResponseEntity<ResponseData> updateMovie(
+            @PathVariable UUID movieId,
+            @Valid @RequestBody MovieRequest movieRequest,
+            HttpServletRequest httpServletRequest) {
+
+        MovieResponse movieResponse = movieService.updateMovie(movieId, movieRequest);
+
+        return ResponseEntity.ok(ResponseData.success(
+                movieResponse,
+                "Movie updated successfully",
+                httpServletRequest.getRequestURI(),
+                httpServletRequest.getMethod()));
+    }
+
+    @Operation(summary = "Delete a movie", description = "Delete a movie by ID")
+    @DeleteMapping("/{movieId}")
+    public ResponseEntity<ResponseData> deleteMovie(
+            @PathVariable UUID movieId,
+            HttpServletRequest httpServletRequest) {
+
+        movieService.deleteMovie(movieId);
+
+        return ResponseEntity.ok(ResponseData.success(
+                "Movie deleted successfully",
+                httpServletRequest.getRequestURI(),
+                httpServletRequest.getMethod()));
+    }
+
+    @Operation(summary = "Get movies with pagination and sorting", description = "Retrieve a paginated and sorted list of movies")
+    @GetMapping
+    public ResponseEntity<ResponseData> getMovies(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "title") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDirection,
+            HttpServletRequest httpServletRequest) {
+
+        PaginatedResponse<MovieResponse> data = movieService.getMovies(page - 1, size, sortBy, sortDirection);
+
+        return ResponseEntity.ok(ResponseData.successWithMeta(
+                data,
+                "Movies retrieved successfully",
                 httpServletRequest.getRequestURI(),
                 httpServletRequest.getMethod()));
     }

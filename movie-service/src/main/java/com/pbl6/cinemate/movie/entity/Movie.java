@@ -1,19 +1,14 @@
 package com.pbl6.cinemate.movie.entity;
 
+import com.pbl6.cinemate.movie.enums.MovieStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
-
-import com.pbl6.cinemate.movie.enums.MovieStatus;
 
 @Entity
 @Table(name = "movies")
@@ -55,6 +50,14 @@ public class Movie {
         this.status = status;
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
+    }
+
+    @PrePersist
+    public void prePersist() {
+        Instant now = Instant.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+        this.status = MovieStatus.PENDING;
     }
 
     @PreUpdate
