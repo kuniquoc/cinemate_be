@@ -1,46 +1,41 @@
 package com.pbl6.cinemate.movie.service.impl;
 
+import com.pbl6.cinemate.movie.dto.request.MovieRequest;
+import com.pbl6.cinemate.movie.dto.request.MovieUploadRequest;
+import com.pbl6.cinemate.movie.dto.response.*;
+import com.pbl6.cinemate.movie.entity.Movie;
+import com.pbl6.cinemate.movie.enums.MovieStatus;
+import com.pbl6.cinemate.movie.event.MovieCreatedEvent;
+import com.pbl6.cinemate.movie.exception.InternalServerException;
+import com.pbl6.cinemate.movie.exception.NotFoundException;
+import com.pbl6.cinemate.movie.repository.MovieRepository;
+import com.pbl6.cinemate.movie.service.MinioStorageService;
+import com.pbl6.cinemate.movie.service.MovieService;
+import com.pbl6.cinemate.movie.util.MovieUtils;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.pbl6.cinemate.movie.dto.response.MovieResponse;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pbl6.cinemate.movie.dto.request.MovieUploadRequest;
-import com.pbl6.cinemate.movie.dto.response.MovieInfoResponse;
-import com.pbl6.cinemate.movie.dto.response.MovieStatusResponse;
-import com.pbl6.cinemate.movie.dto.response.MovieUploadResponse;
-import com.pbl6.cinemate.movie.entity.Movie;
-import com.pbl6.cinemate.movie.enums.MovieStatus;
-import com.pbl6.cinemate.movie.exception.InternalServerException;
-import com.pbl6.cinemate.movie.exception.NotFoundException;
-import com.pbl6.cinemate.movie.repository.MovieRepository;
-import com.pbl6.cinemate.movie.service.MinioStorageService;
-import com.pbl6.cinemate.movie.service.MovieService;
-import com.pbl6.cinemate.movie.event.MovieCreatedEvent;
-
-import org.springframework.context.ApplicationEventPublisher;
-
 @Service
 public class MovieServiceImpl implements MovieService {
     private final MinioStorageService minio;
     private final MovieRepository repo;
     private final ApplicationEventPublisher eventPublisher;
-    private final ObjectMapper mapper;
 
     public MovieServiceImpl(MinioStorageService minio, MovieRepository repo,
-            ApplicationEventPublisher eventPublisher, ObjectMapper mapper) {
+                            ApplicationEventPublisher eventPublisher) {
         this.minio = minio;
         this.repo = repo;
         this.eventPublisher = eventPublisher;
-        this.mapper = mapper;
     }
 
     @Override
@@ -63,7 +58,7 @@ public class MovieServiceImpl implements MovieService {
     public MovieStatusResponse getMovieStatus(UUID movieId) {
         Movie movie = repo.findById(movieId)
                 .orElseThrow(() -> new NotFoundException("Movie not found with id: " + movieId));
-        Map<String, String> qualities = parseQualitiesJson(movie.getQualitiesJson());
+        Map<String, String> qualities = MovieUtils.parseQualitiesJson(movie.getQualitiesJson());
         return new MovieStatusResponse(movie.getId(), movie.getStatus().name(), qualities);
     }
 
@@ -71,13 +66,48 @@ public class MovieServiceImpl implements MovieService {
     public MovieInfoResponse getMovieInfo(UUID movieId) {
         Movie movie = repo.findById(movieId)
                 .orElseThrow(() -> new NotFoundException("Movie not found with id: " + movieId));
-        return mapToMovieInfoResponse(movie);
+        return MovieUtils.mapToMovieInfoResponse(movie);
     }
 
     @Override
     public List<MovieResponse> getAllMovies() {
         List<Movie> movies = repo.findAll();
-        return movies.stream().map(this::mapToMovieResponse).toList();
+        return movies.stream().map(MovieUtils::mapToMovieResponse).toList();
+    }
+
+    @Override
+    @Transactional
+    public MovieResponse createMovie(MovieRequest movieRequest) {
+        Movie movie = MovieUtils.mapToMovie(movieRequest);
+        Movie savedMovie = repo.save(movie);
+        return MovieUtils.mapToMovieResponse(savedMovie);
+    }
+
+    @Override
+    @Transactional
+    public MovieResponse updateMovie(UUID movieId, MovieRequest movieRequest) {
+        Movie movie = repo.findById(movieId).orElseThrow(() -> new NotFoundException("Movie not found"));
+        movie.setTitle(movieRequest.getTitle());
+        movie.setDescription(movieRequest.getDescription());
+        Movie updatedMovie = repo.save(movie);
+        return MovieUtils.mapToMovieResponse(updatedMovie);
+    }
+
+    @Override
+    @Transactional
+    public void deleteMovie(UUID movieId) {
+        if (!repo.existsById(movieId)) {
+            throw new NotFoundException("Movie not found");
+        }
+        repo.deleteById(movieId);
+    }
+
+    @Override
+    public PaginatedResponse<MovieResponse> getMovies(int page, int size, String sortBy, String sortDirection) {
+        var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
+        var moviePage = repo.findAll(pageable);
+        List<MovieResponse> movies = moviePage.getContent().stream().map(MovieUtils::mapToMovieResponse).toList();
+        return new PaginatedResponse<>(movies, moviePage.getNumber(), moviePage.getSize(), moviePage.getTotalPages());
     }
 
     private Path createTempFile() {
@@ -96,38 +126,5 @@ public class MovieServiceImpl implements MovieService {
         }
     }
 
-    private Map<String, String> parseQualitiesJson(String qualitiesJson) {
-        if (qualitiesJson == null) {
-            return Map.of();
-        }
-        try {
-            return mapper.readValue(qualitiesJson, new TypeReference<>() {
-            });
-        } catch (Exception e) {
-            throw new InternalServerException("Failed to parse movie qualities JSON: " + e.getMessage());
-        }
-    }
 
-    private MovieResponse mapToMovieResponse(Movie movie) {
-        return new MovieResponse(movie.getId(), movie.getTitle(), movie.getDescription(),
-                         movie.getHorizontalPoster(), movie.getVerticalPoster());
-    }
-
-    private MovieInfoResponse mapToMovieInfoResponse(Movie movie) {
-        Map<String, String> qualities = parseQualitiesJson(movie.getQualitiesJson());
-        return new MovieInfoResponse(
-                movie.getId(),
-                movie.getTitle(),
-                movie.getDescription(),
-                movie.getStatus().name(),
-                qualities,
-                movie.getVerticalPoster(),
-                movie.getHorizontalPoster(),
-                movie.getReleaseDate(),
-                movie.getTrailerUrl(),
-                movie.getAge(),
-                movie.getYear(),
-                movie.getCountry()
-        );
-    }
 }
