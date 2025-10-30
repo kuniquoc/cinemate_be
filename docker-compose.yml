@@ -65,7 +65,7 @@ services:
       - cinemate-network
 
   auth-postgres:
-    image: postgres:latest
+    image: postgres:15
     container_name: cinemate-auth-postgres
     restart: unless-stopped
     environment:
@@ -91,7 +91,7 @@ services:
       - cinemate-network
 
   customer-postgres:
-    image: postgres:latest
+    image: postgres:15
     container_name: customer-postgres
     restart: unless-stopped
     environment:
@@ -191,7 +191,7 @@ services:
       - cinemate-network
 
   movie-db:
-    image: postgres:latest
+    image: postgres:15
     container_name: cinemate-movie-postgres
     restart: unless-stopped
     environment:

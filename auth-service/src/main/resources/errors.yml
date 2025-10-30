@@ -102,3 +102,17 @@ permission_not_found:
 permission_name_existed:
   code: ERR.PER0201
   message: Permission name already existed!
+
+#account management
+account_already_banned:
+  code: ERR.ACC0101
+  message: Account is already banned!
+account_already_unlocked:
+  code: ERR.ACC0102
+  message: Account is already unlocked!
+cannot_ban_own_account:
+  code: ERR.ACC0103
+  message: You cannot ban your own account!
+cannot_delete_own_account:
+  code: ERR.ACC0104
+  message: You cannot delete your own account!
