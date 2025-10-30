@@ -70,6 +70,9 @@ public class GlobalExceptionHandler {
             String error = ErrorUtils.convertToSnakeCase(Objects.requireNonNull(objectError.getCode()));
             String fieldName = ErrorUtils.convertToSnakeCase(((FieldError) objectError).getField());
             String resource = ErrorUtils.convertToSnakeCase(objectError.getObjectName());
+            
+            log.debug("Validation error - Resource: {}, Field: {}, Error: {}", resource, fieldName, error);
+            
             ErrorResponse errorResponse = ErrorUtils.getValidationError(resource, fieldName, error);
             errorResponses.add(errorResponse);
         });

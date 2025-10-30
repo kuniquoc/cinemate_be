@@ -18,10 +18,13 @@ public final class ApiPath {
     public static final String VERIFY_JWT = API + "/verify-jwt";
 
     //       roles
-    public static final String ROLES = API + "/roles";
+    public static final String ROLES = AUTH + "/roles";
 
     //    permissions
-    public static final String PERMISSIONS = API + "/permissions";
+    public static final String PERMISSIONS = AUTH + "/permissions";
+
+    //    accounts
+    public static final String ACCOUNTS = AUTH + "/accounts";
 
     private ApiPath() {
     }

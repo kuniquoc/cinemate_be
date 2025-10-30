@@ -49,6 +49,12 @@ public final class ErrorMessage {
     public static final String PERMISSION_NOT_FOUND = "permission_not_found";
     public static final String PERMISSION_NAME_EXISTED = "permission_name_existed";
 
+    //    ACCOUNT
+    public static final String ACCOUNT_ALREADY_BANNED = "account_already_banned";
+    public static final String ACCOUNT_ALREADY_UNLOCKED = "account_already_unlocked";
+    public static final String CANNOT_BAN_OWN_ACCOUNT = "cannot_ban_own_account";
+    public static final String CANNOT_DELETE_OWN_ACCOUNT = "cannot_delete_own_account";
+
     private ErrorMessage() {
     }
 }

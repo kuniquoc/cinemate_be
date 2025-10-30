@@ -52,7 +52,6 @@ login_request:
       code: VAL.LI0201
       message: Password must not be blank
 
-
 forgot_password_request:
   email:
     not_blank:
@@ -153,7 +152,6 @@ role_request:
       code: VAL.RR0201
       message: Role description must not be blank
 
-
 adding_permission_request:
   permission_ids:
     not_empty:
@@ -163,4 +161,42 @@ adding_permission_request:
       code: VAL.APR0102
       message: Permission id must not be null
 
+#account management
+create_account_request:
+  email:
+    not_blank:
+      code: VAL.CA0101
+      message: Email must not be blank
+    email:
+      code: VAL.CA0102
+      message: Email must be a well-formed email address
+  password:
+    not_blank:
+      code: VAL.CA0201
+      message: Password must not be blank
+    pattern:
+      code: VAL.CA0202
+      message: Password has at least 8 characters, containing at least 1 uppercase letter, 1 lowercase letter, 1 numeric character.
+  first_name:
+    not_blank:
+      code: VAL.CA0301
+      message: First name must not be blank
+  last_name:
+    not_blank:
+      code: VAL.CA0401
+      message: Last name must not be blank
 
+update_account_request:
+  email:
+    email:
+      code: VAL.UA0101
+      message: Email must be a well-formed email address
+
+admin_reset_password_request:
+  new_password:
+    not_blank:
+      code: VAL.ARP0101
+      message: New password must not be blank
+    pattern:
+      code: VAL.ARP0102
+      message: New password has at least 8 characters, containing at least 1 uppercase letter, 1 lowercase letter, 1 numeric character.
