@@ -35,6 +35,17 @@ public final class FeedbackMessage {
     public static final String PERMISSIONS_FETCHED_FOR_ROLE = "Permissions fetched for role";
     public static final String PERMISSION_REMOVED_FROM_ROLE = "Permission removed from role successfully";
 
+    //    ACCOUNT
+    public static final String ACCOUNT_CREATED = "Account created successfully";
+    public static final String ACCOUNT_UPDATED = "Account updated successfully";
+    public static final String ACCOUNT_DELETED = "Account deleted successfully";
+    public static final String ACCOUNT_FETCHED = "Account fetched successfully";
+    public static final String ACCOUNTS_FETCHED = "Accounts fetched successfully";
+    public static final String ACCOUNT_BANNED = "Account banned successfully";
+    public static final String ACCOUNT_UNLOCKED = "Account unlocked successfully";
+    public static final String ACCOUNT_PASSWORD_RESET = "Account password reset successfully";
+    public static final String ACCOUNTS_FETCHED_BY_ROLE = "Accounts fetched by role successfully";
+
     private FeedbackMessage() {
     }
 }
