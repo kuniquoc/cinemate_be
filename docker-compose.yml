@@ -65,7 +65,7 @@ services:
       - cinemate-network
 
   auth-postgres:
-    image: postgres:latest
+    image: postgres:15
     container_name: cinemate-auth-postgres
     restart: unless-stopped
     environment:
@@ -91,8 +91,8 @@ services:
       - cinemate-network
 
   customer-postgres:
-    image: postgres:latest
-    container_name: cinemate-customer-postgres
+    image: postgres:15
+    container_name: customer-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${CUSTOMER_POSTGRES_USER}
@@ -191,7 +191,7 @@ services:
       - cinemate-network
 
   movie-db:
-    image: postgres:latest
+    image: postgres:15
     container_name: cinemate-movie-postgres
     restart: unless-stopped
     environment:
@@ -202,6 +202,23 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - movie-db-data:/var/lib/postgresql/data
+    networks:
+      - cinemate-network
+  
+  customer-service:
+    build:
+      context: ./customer-service
+      dockerfile: Dockerfile
+    container_name: customer-service
+    restart: unless-stopped
+    ports:
+      - "${CUSTOMER_SERVICE_HOST_PORT}:${CUSTOMER_SERVICE_PORT}"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+    env_file:
+      - .env
+    depends_on:
+      - customer-postgres
     networks:
       - cinemate-network
 
