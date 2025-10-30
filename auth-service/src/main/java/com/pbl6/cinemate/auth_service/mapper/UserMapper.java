@@ -14,6 +14,8 @@ public final class UserMapper {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .isEnabled(user.getIsEnabled())
+                .role(user.getRole() != null ? RoleMapper.mapToResponse(user.getRole()) : null)
+                .accountVerifiedAt(user.getAccountVerifiedAt())
                 .build();
     }
 
