@@ -116,6 +116,38 @@ public class UserDeviceServiceImpl implements UserDeviceService {
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.DEVICE_NOT_FOUND));
     }
 
+    @Override
+    public List<UserDevice> adminGetUserDevices(UUID userId) {
+        // Verify user exists
+        userService.findById(userId);
+        return userDeviceRepository.findAllByUserId(userId);
+    }
+
+    @Override
+    @Transactional
+    public void adminLogoutFromDevice(UUID deviceId) {
+        UserDevice device = userDeviceRepository.findById(deviceId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.DEVICE_NOT_FOUND));
+        
+        device.setDeletedAt(LocalDateTime.now());
+        device.setIsCurrent(false);
+        userDeviceRepository.save(device);
+    }
+
+    @Override
+    @Transactional
+    public void adminLogoutFromAllUserDevices(UUID userId) {
+        // Verify user exists
+        userService.findById(userId);
+        
+        List<UserDevice> devices = userDeviceRepository.findAllByUserId(userId);
+        for (UserDevice device : devices) {
+            device.setDeletedAt(LocalDateTime.now());
+            device.setIsCurrent(false);
+            userDeviceRepository.save(device);
+        }
+    }
+
     private String extractIpAddress(HttpServletRequest request) {
         String ipAddress = request.getHeader("X-Forwarded-For");
         if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {

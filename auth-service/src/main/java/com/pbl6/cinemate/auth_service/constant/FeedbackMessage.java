@@ -50,6 +50,9 @@ public final class FeedbackMessage {
     public static final String DEVICES_FETCHED = "Devices fetched successfully";
     public static final String DEVICE_LOGGED_OUT = "Logged out from device successfully";
     public static final String ALL_DEVICES_LOGGED_OUT = "Logged out from all other devices successfully";
+    public static final String USER_DEVICES_FETCHED = "User devices fetched successfully";
+    public static final String USER_DEVICE_LOGGED_OUT = "User device logged out successfully";
+    public static final String ALL_USER_DEVICES_LOGGED_OUT = "All user devices logged out successfully";
 
     private FeedbackMessage() {
     }
