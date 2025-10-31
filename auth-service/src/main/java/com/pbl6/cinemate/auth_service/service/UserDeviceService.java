@@ -18,4 +18,11 @@ public interface UserDeviceService {
     void logoutFromAllDevices(UUID userId, UUID currentDeviceId);
 
     UserDevice findById(UUID deviceId);
+
+    // Admin methods
+    List<UserDevice> adminGetUserDevices(UUID userId);
+
+    void adminLogoutFromDevice(UUID deviceId);
+
+    void adminLogoutFromAllUserDevices(UUID userId);
 }
