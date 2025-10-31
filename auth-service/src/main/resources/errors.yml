@@ -116,3 +116,8 @@ cannot_ban_own_account:
 cannot_delete_own_account:
   code: ERR.ACC0104
   message: You cannot delete your own account!
+
+#device management
+device_not_found:
+  code: ERR.DEV0101
+  message: Device was not found!
