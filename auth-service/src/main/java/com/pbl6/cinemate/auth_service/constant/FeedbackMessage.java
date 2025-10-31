@@ -46,6 +46,11 @@ public final class FeedbackMessage {
     public static final String ACCOUNT_PASSWORD_RESET = "Account password reset successfully";
     public static final String ACCOUNTS_FETCHED_BY_ROLE = "Accounts fetched by role successfully";
 
+    //    DEVICE
+    public static final String DEVICES_FETCHED = "Devices fetched successfully";
+    public static final String DEVICE_LOGGED_OUT = "Logged out from device successfully";
+    public static final String ALL_DEVICES_LOGGED_OUT = "Logged out from all other devices successfully";
+
     private FeedbackMessage() {
     }
 }

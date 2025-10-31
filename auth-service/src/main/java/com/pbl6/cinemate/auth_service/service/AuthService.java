@@ -4,6 +4,7 @@ import com.pbl6.cinemate.auth_service.payload.request.*;
 import com.pbl6.cinemate.auth_service.payload.response.LoginResponse;
 import com.pbl6.cinemate.auth_service.payload.response.SignUpResponse;
 import com.pbl6.cinemate.auth_service.payload.response.VerifyTokenResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 
 import java.util.UUID;
@@ -16,7 +17,7 @@ public interface AuthService {
     @Transactional
     VerifyTokenResponse verifyToken(VerifyTokenRequest verifyTokenRequest);
 
-    LoginResponse login(LoginRequest loginRequest);
+    LoginResponse login(LoginRequest loginRequest, HttpServletRequest httpServletRequest);
 
     void forgotPassword(ForgotPasswordRequest request);
 

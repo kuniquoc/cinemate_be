@@ -55,6 +55,9 @@ public final class ErrorMessage {
     public static final String CANNOT_BAN_OWN_ACCOUNT = "cannot_ban_own_account";
     public static final String CANNOT_DELETE_OWN_ACCOUNT = "cannot_delete_own_account";
 
+    //    DEVICE
+    public static final String DEVICE_NOT_FOUND = "device_not_found";
+
     private ErrorMessage() {
     }
 }

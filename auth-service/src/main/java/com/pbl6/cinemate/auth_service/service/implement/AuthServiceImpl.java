@@ -22,6 +22,7 @@ import com.pbl6.cinemate.auth_service.payload.response.VerifyTokenResponse;
 import com.pbl6.cinemate.auth_service.service.*;
 import com.pbl6.cinemate.auth_service.utils.JwtUtils;
 import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,6 +52,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtUtils jwtUtils;
     private final CacheService cacheService;
     private final UserRegisteredPublisher userRegisteredPublisher;
+    private final UserDeviceService userDeviceService;
 
     @Transactional
     @Override
@@ -60,7 +62,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public LoginResponse login(LoginRequest loginRequest) {
+    public LoginResponse login(LoginRequest loginRequest, HttpServletRequest httpServletRequest) {
         try {
             Authentication authentication = authenticationManager
                     .authenticate(new UsernamePasswordAuthenticationToken(
@@ -68,6 +70,9 @@ public class AuthServiceImpl implements AuthService {
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+
+            // Track device on login
+            userDeviceService.trackDeviceOnLogin(userPrincipal.getId(), loginRequest.getDeviceInfo(), httpServletRequest);
 
             boolean isRefreshToken = true;
             String refreshToken = jwtUtils.generateToken(userPrincipal, isRefreshToken);

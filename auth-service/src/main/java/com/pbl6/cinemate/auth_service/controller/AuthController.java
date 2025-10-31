@@ -50,7 +50,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ResponseData> login(@Valid @RequestBody LoginRequest loginRequest,
                                               HttpServletRequest httpServletRequest) {
-        ResponseData responseData = ResponseData.success(authService.login(loginRequest),
+        ResponseData responseData = ResponseData.success(authService.login(loginRequest, httpServletRequest),
                 FeedbackMessage.LOGGED_IN, httpServletRequest.getRequestURI(), httpServletRequest.getMethod());
         return ResponseEntity.ok(responseData);
     }

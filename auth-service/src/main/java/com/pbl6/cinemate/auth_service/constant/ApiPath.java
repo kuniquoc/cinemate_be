@@ -26,6 +26,9 @@ public final class ApiPath {
     //    accounts
     public static final String ACCOUNTS = AUTH + "/accounts";
 
+    //    devices
+    public static final String DEVICES = AUTH + "/devices";
+
     private ApiPath() {
     }
 }
