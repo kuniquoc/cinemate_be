@@ -29,6 +29,9 @@ public final class ApiPath {
     //    devices
     public static final String DEVICES = AUTH + "/devices";
 
+    //    admin devices
+    public static final String ADMIN_DEVICES = AUTH + "/admin/devices";
+
     private ApiPath() {
     }
 }
