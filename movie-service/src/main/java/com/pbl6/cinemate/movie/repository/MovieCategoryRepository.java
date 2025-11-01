@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface MovieCategoryRepository extends JpaRepository<MovieCategory, Long> {
+public interface MovieCategoryRepository extends JpaRepository<MovieCategory, UUID> {
     List<MovieCategory> findByMovieId(UUID movieId);
     List<MovieCategory> findByCategoryId(UUID categoryId);
     void deleteByMovieId(UUID movieId);
