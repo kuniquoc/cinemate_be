@@ -1,5 +1,4 @@
 services:
-  # API Gateway
   gateway:
     build:
       context: .
@@ -16,11 +15,38 @@ services:
       FRONTEND_URL: ${WEB_URL}
       ADMIN_URL: ${ADMIN_URL:-https://admin.cinemate.com}
     depends_on:
-      - movie-api
+      - movie-service
       - auth-service
     networks:
       - cinemate-network
 
+  minio:
+    image: minio/minio:latest
+    container_name: cinemate-minio
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    networks:
+      - cinemate-network
+
+  cinemate-redis:
+    image: redis:7.2
+    container_name: cinemate-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_HOST_PORT}:${REDIS_PORT}"
+    volumes:
+      - cinemate-redis-data:/data
+    networks:
+      - cinemate-network
+
+  #region auth service
   auth-service:
     build:
       context: ./auth-service
@@ -78,34 +104,9 @@ services:
       - auth-postgres-data:/var/lib/postgresql/data
     networks:
       - cinemate-network
+  #endregion
 
-  cinemate-redis:
-    image: redis:7.2
-    container_name: cinemate-redis
-    restart: unless-stopped
-    ports:
-      - "${REDIS_HOST_PORT}:${REDIS_PORT}"
-    volumes:
-      - cinemate-redis-data:/data
-    networks:
-      - cinemate-network
-
-  customer-postgres:
-    image: postgres:latest
-    container_name: customer-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${CUSTOMER_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${CUSTOMER_POSTGRES_PASSWORD}
-      POSTGRES_DB: ${CUSTOMER_POSTGRES_DB}
-      TZ: Asia/Ho_Chi_Minh
-    ports:
-      - "${CUSTOMER_POSTGRES_HOST_PORT}:${CUSTOMER_POSTGRES_PORT}"
-    volumes:
-      - customer-postgres-data:/var/lib/postgresql/data
-    networks:
-      - cinemate-network
-
+  #region kafka
   cinemate-zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: cinemate-zookeeper
@@ -157,27 +158,14 @@ services:
       DYNAMIC_CONFIG_ENABLED: 'true'
     networks:
       - cinemate-network
+    #endregion
 
-  minio:
-    image: minio/minio:latest
-    container_name: cinemate-minio
-    environment:
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
-    command: server /data --console-address ":9001"
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    volumes:
-      - minio-data:/data
-    networks:
-      - cinemate-network
-
-  movie-api:
+    #region movie service
+  movie-service:
     build:
       context: .
       dockerfile: ./movie-service/Dockerfile
-    container_name: cinemate-movie-api
+    container_name: cinemate-movie-service
     env_file:
       - .env
     environment:
@@ -186,7 +174,7 @@ services:
       - movie-db
       - minio
     ports:
-      - "{MOVIE_SERVICE_PORT:-8081}:8080"
+      - "${MOVIE_SERVICE_PORT:-8081}:8080"
     networks:
       - cinemate-network
 
@@ -204,7 +192,9 @@ services:
       - movie-db-data:/var/lib/postgresql/data
     networks:
       - cinemate-network
-  
+  #endregion
+
+  #region customer service
   customer-service:
     build:
       context: ./customer-service
@@ -221,6 +211,23 @@ services:
       - customer-postgres
     networks:
       - cinemate-network
+
+  customer-postgres:
+    image: postgres:15
+    container_name: customer-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${CUSTOMER_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${CUSTOMER_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${CUSTOMER_POSTGRES_DB}
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "${CUSTOMER_POSTGRES_HOST_PORT}:${CUSTOMER_POSTGRES_PORT}"
+    volumes:
+      - customer-postgres-data:/var/lib/postgresql/data
+    networks:
+      - cinemate-network
+  #endregion
 
 volumes:
   minio-data:

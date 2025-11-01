@@ -12,32 +12,24 @@ spring:
           uri: http://localhost:8081
           predicates:
             - Path=/api/movies/**
-          filters:
-            - StripPrefix=2
             
         # Movie File Upload Routes
         - id: movie-upload
           uri: http://localhost:8081
           predicates:
             - Path=/api/upload/**
-          filters:
-            - StripPrefix=1
 
         # Auth Service Routes  
         - id: auth-service
           uri: http://localhost:8082
           predicates:
             - Path=/api/auth/**
-          filters:
-            - StripPrefix=1
 
         # Customer Service Routes
         - id: customer-service
           uri: http://localhost:8083
           predicates:
             - Path=/api/customers/**
-          filters:
-            - StripPrefix=1
 
       # Global CORS configuration
       globalcors:
