@@ -17,12 +17,12 @@ spring:
 
 logging:
   level:
-    root: WARN
-    '[org.hibernate.SQL]': WARN
-    '[org.hibernate.type.descriptor.sql.BasicBinder]': WARN
+    root: INFO
+    "[org.hibernate.SQL]": WARN
+    "[org.hibernate.type.descriptor.sql.BasicBinder]": WARN
 
 server:
-  port: ${SERVER_PORT:8080}
+  port: 8080
 
 management:
   endpoints:
