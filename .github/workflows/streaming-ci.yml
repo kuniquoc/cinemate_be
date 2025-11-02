@@ -1,0 +1,42 @@
+name: Streaming CI
+
+on:
+  push:
+    branches: ["main", "dev"]
+    paths:
+      - "streaming/**"
+      - "pom.xml"
+      - ".github/workflows/streaming-ci.yml"
+  pull_request:
+    branches: ["main", "dev"]
+    paths:
+      - "streaming/**"
+      - "pom.xml"
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+          cache: "maven"
+
+      - name: Build & test streaming module
+        run: mvn -B -pl streaming -am verify
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build streaming Docker image
+        run: |
+          docker build \
+            --file streaming/Dockerfile \
+            --tag streaming-service:${{ github.sha }} \
+            .
