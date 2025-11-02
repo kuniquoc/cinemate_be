@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: streaming
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:streaming-signaling}
+      auto-offset-reset: latest
+    listener:
+      ack-mode: record
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: PT2S
+
+server:
+  port: ${SERVER_PORT:8083}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+streaming:
+  signaling:
+    redis-ttl-segment-keys: PT90S
+    peer-last-seen-ttl: PT60S
+  seeder:
+    enabled: ${SEEDER_ENABLED:true}
+    cache-path: ${SEEDER_CACHE_PATH:./cache}
+    redis-ttl-segment-keys: PT90S
+    cache-maintenance-interval: PT30S
+    seeder-cache-window: PT4M
+  playback:
+    max-active-peers: ${STREAMING_MAX_ACTIVE_PEERS:3}
+    peer-connect-timeout: PT5S
+    segment-request-wait: PT0.15S
+    who-has-query-timeout: PT0.15S
+    fallback-http-timeout: PT0.7S
+    min-buffer-prefetch: 3
+    critical-buffer-threshold: 1
+  messaging:
+    topic-prefix: ${STREAMING_TOPIC_PREFIX:stream.}
+    group-id: ${KAFKA_CONSUMER_GROUP:streaming-signaling}
+
+logging:
+  level:
+    root: INFO
+    '[com.pbl6.cinemate.streaming]': DEBUG

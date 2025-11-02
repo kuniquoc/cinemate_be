@@ -1,0 +1,32 @@
+{
+    "properties": [
+        {
+            "name": "streaming.seeder.enabled",
+            "type": "java.lang.String",
+            "description": "A description for 'streaming.seeder.enabled'"
+        },
+        {
+            "name": "streaming.signaling.peer-last-seen-ttl",
+            "type": "java.lang.String",
+            "description": "A description for 'streaming.signaling.peer-last-seen-ttl'"
+        },
+        {
+            "name": "streaming.signaling.redis-ttl-segment-keys",
+            "type": "java.lang.String",
+            "description": "A description for 'streaming.signaling.redis-ttl-segment-keys'"
+        },
+        {
+            "type": "java.lang.String",
+            "description": "A description for 'streaming.signaling.redis-ttl-segment-keys'"
+        },
+        {
+            "name": "streaming.signaling.redis-ttl-segment-keys",
+            "type": "java.lang.String",
+            "description": "A description for 'streaming.signaling.redis-ttl-segment-keys'"
+        },
+        {
+            "type": "java.lang.String",
+            "description": "A description for 'streaming.signaling.redis-ttl-segment-keys'"
+        }
+    ]
+}
