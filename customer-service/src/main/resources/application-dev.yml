@@ -16,9 +16,6 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
 
-
-
-
 server:
   port: ${DEV_CUSTOMER_SERVICE_PORT}
 
@@ -26,3 +23,8 @@ app:
   auth:
     access-token-secret: ${DEV_ACCESS_TOKEN_SECRET}
     access-token-expiration-msec: 7200000
+  minio:
+    url: http://localhost:9000
+    access-key: minioadmin
+    secret-key: minioadmin
+    bucket-name: images

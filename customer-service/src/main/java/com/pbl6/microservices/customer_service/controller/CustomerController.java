@@ -5,15 +5,18 @@ import com.pbl6.microservices.customer_service.payload.general.ResponseData;
 import com.pbl6.microservices.customer_service.payload.request.FavoriteCreateRequest;
 import com.pbl6.microservices.customer_service.payload.request.UpdateProfileRequest;
 import com.pbl6.microservices.customer_service.payload.response.FavoriteResponse;
+import com.pbl6.microservices.customer_service.payload.response.ImageUploadResponse;
 import com.pbl6.microservices.customer_service.security.UserPrincipal;
 import com.pbl6.microservices.customer_service.security.annotation.CurrentUser;
 import com.pbl6.microservices.customer_service.service.CustomerService;
 import com.pbl6.microservices.customer_service.service.FavoriteService;
+import com.pbl6.microservices.customer_service.service.StorageService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -25,6 +28,7 @@ public class CustomerController {
 
     private final CustomerService customerService;
     private final FavoriteService favoriteService;
+    private final StorageService storageService;
 
     @GetMapping("/profile")
     public ResponseEntity<ResponseData> getProfile(@CurrentUser UserPrincipal userPrincipal,
@@ -41,6 +45,19 @@ public class CustomerController {
         ResponseData responseData = ResponseData.success(customerService.updateProfile(userPrincipal.getUserId(),
                         updateProfileRequest),
                 FeedbackMessage.PROFILE_UPDATED, request.getRequestURI(), request.getMethod());
+        return ResponseEntity.ok(responseData);
+    }
+
+    @PostMapping("/upload-image")
+    public ResponseEntity<ResponseData> uploadImage(@CurrentUser UserPrincipal userPrincipal,
+                                                    @RequestParam("file") MultipartFile file,
+                                                    HttpServletRequest request) {
+        String imageUrl = storageService.uploadImage(file);
+        ImageUploadResponse response = ImageUploadResponse.builder()
+                .imageUrl(imageUrl)
+                .build();
+        ResponseData responseData = ResponseData.success(response,
+                FeedbackMessage.IMAGE_UPLOADED, request.getRequestURI(), request.getMethod());
         return ResponseEntity.ok(responseData);
     }
 

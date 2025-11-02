@@ -10,12 +10,22 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "app")
 public class AppProperties {
     private final Auth auth = new Auth();
+    private final Minio minio = new Minio();
 
     @Getter
     @Setter
     public static class Auth {
         private String accessTokenSecret;
         private long accessTokenExpirationMsec;
+    }
+
+    @Getter
+    @Setter
+    public static class Minio {
+        private String url;
+        private String accessKey;
+        private String secretKey;
+        private String bucketName;
     }
 
 }
