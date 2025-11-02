@@ -59,8 +59,9 @@ public class StorageServiceImpl implements StorageService {
             inputStream.close();
 
             // Return the URL to access the file
+            // TO DO: using deployed url
             String fileUrl = String.format("%s/%s/%s",
-                    appProperties.getMinio().getUrl(),
+                    "http://localhost:9000",
                     appProperties.getMinio().getBucketName(),
                     fileName
             );

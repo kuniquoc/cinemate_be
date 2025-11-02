@@ -3,6 +3,7 @@ package com.pbl6.microservices.customer_service.config;
 import io.minio.BucketExistsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
+import io.minio.SetBucketPolicyArgs;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -44,6 +45,29 @@ public class MinioConfig {
             } else {
                 log.info("MinIO bucket already exists: {}", bucketName);
             }
+
+            // Set public read policy for the bucket
+            String policy = String.format("""
+                {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {"AWS": "*"},
+                            "Action": ["s3:GetObject"],
+                            "Resource": ["arn:aws:s3:::%s/*"]
+                        }
+                    ]
+                }
+                """, bucketName);
+
+            minioClient.setBucketPolicy(
+                    SetBucketPolicyArgs.builder()
+                            .bucket(bucketName)
+                            .config(policy)
+                            .build()
+            );
+            log.info("Set public read policy for bucket: {}", bucketName);
 
             return minioClient;
         } catch (Exception e) {
