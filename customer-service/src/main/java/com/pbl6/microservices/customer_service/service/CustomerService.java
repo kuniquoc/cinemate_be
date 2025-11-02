@@ -8,6 +8,8 @@ import jakarta.transaction.Transactional;
 import java.util.UUID;
 
 public interface CustomerService {
+    CustomerResponse getProfile(UUID accountId);
+
     @Transactional
     CustomerResponse updateProfile(UUID accountId, UpdateProfileRequest request);
 
