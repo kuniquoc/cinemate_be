@@ -13,6 +13,7 @@
         <module>shared-kernel</module>
         <module>movie-service</module>
         <module>gateway</module>
+        <module>streaming</module>
     </modules>
 
     <properties>

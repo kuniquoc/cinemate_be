@@ -8,6 +8,7 @@ COPY pom.xml ./pom.xml
 # Copy all service pom.xml files to resolve dependencies
 COPY shared-kernel/pom.xml ./shared-kernel/pom.xml
 COPY movie-service/pom.xml ./movie-service/pom.xml
+COPY streaming/pom.xml ./streaming/pom.xml
 COPY gateway/pom.xml ./gateway/pom.xml
 
 # Download dependencies for movie-service and its dependencies

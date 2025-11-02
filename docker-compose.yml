@@ -158,9 +158,9 @@ services:
       DYNAMIC_CONFIG_ENABLED: 'true'
     networks:
       - cinemate-network
-    #endregion
+  #endregion
 
-    #region movie service
+  #region movie service
   movie-service:
     build:
       context: .
