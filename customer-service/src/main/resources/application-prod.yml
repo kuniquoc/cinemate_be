@@ -20,3 +20,13 @@ spring:
         spring.json.trusted.packages: "com.pbl6.events"
 server:
   port: ${CUSTOMER_SERVICE_PORT:8080}
+
+app:
+  auth:
+    access-token-secret: ${ACCESS_TOKEN_SECRET}
+    access-token-expiration-msec: 7200000
+  minio:
+    url: ${MINIO_URL}
+    access-key: ${MINIO_ACCESS_KEY}
+    secret-key: ${MINIO_SECRET_KEY}
+    bucket-name: images
