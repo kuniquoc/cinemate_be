@@ -1,6 +1,5 @@
 package com.pbl6.microservices.customer_service.controller;
 
-import com.pbl6.microservices.customer_service.constants.ApiPath;
 import com.pbl6.microservices.customer_service.constants.FeedbackMessage;
 import com.pbl6.microservices.customer_service.payload.general.ResponseData;
 import com.pbl6.microservices.customer_service.payload.request.FavoriteCreateRequest;
@@ -27,7 +26,15 @@ public class CustomerController {
     private final CustomerService customerService;
     private final FavoriteService favoriteService;
 
-    @PatchMapping(ApiPath.UPDATE_PROFILE)
+    @GetMapping("/profile")
+    public ResponseEntity<ResponseData> getProfile(@CurrentUser UserPrincipal userPrincipal,
+                                                   HttpServletRequest request) {
+        ResponseData responseData = ResponseData.success(customerService.getProfile(userPrincipal.getUserId()),
+                FeedbackMessage.PROFILE_FETCHED, request.getRequestURI(), request.getMethod());
+        return ResponseEntity.ok(responseData);
+    }
+
+    @PatchMapping("/profile")
     public ResponseEntity<ResponseData> updateProfile(@CurrentUser UserPrincipal userPrincipal,
                                                       @Valid @RequestBody UpdateProfileRequest updateProfileRequest,
                                                       HttpServletRequest request) {

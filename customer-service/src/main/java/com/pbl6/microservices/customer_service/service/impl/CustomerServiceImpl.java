@@ -21,6 +21,13 @@ import java.util.UUID;
 public class CustomerServiceImpl implements CustomerService {
     private final CustomerRepository customerRepository;
 
+    @Override
+    public CustomerResponse getProfile(UUID accountId) {
+        Customer customer = customerRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.USER_NOT_FOUND));
+        return CustomerMapper.toResponse(customer);
+    }
+
     @Transactional
     @Override
     public CustomerResponse updateProfile(UUID accountId, UpdateProfileRequest request) {
