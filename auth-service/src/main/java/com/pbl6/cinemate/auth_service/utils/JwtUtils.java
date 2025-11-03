@@ -44,7 +44,7 @@ public class JwtUtils {
         return Jwts.builder().setSubject(UUID.randomUUID().toString())
                 .claim("user_id", claims.get("user_id", String.class))
                 .claim("username", claims.get("username", String.class))
-                .claim("role", claims.get("role", List.class))
+                .claim("role", claims.get("role", String.class))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(new Date().getTime() + appProperties.getAuth().getAccessTokenExpirationMsec()))
                 .signWith(getAccessTokenSecretKey(),
