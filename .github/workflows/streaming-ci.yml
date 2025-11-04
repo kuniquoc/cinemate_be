@@ -2,7 +2,7 @@ name: Streaming CI
 
 on:
   push:
-    branches: ["main", "dev"]
+    branches: ["main"]
     paths:
       - "streaming-signaling/**"
       - "streaming-seeder/**"
@@ -10,7 +10,7 @@ on:
       - "pom.xml"
       - ".github/workflows/streaming-ci.yml"
   pull_request:
-    branches: ["main", "dev"]
+    branches: ["main"]
     paths:
       - "streaming-signaling/**"
       - "streaming-seeder/**"
