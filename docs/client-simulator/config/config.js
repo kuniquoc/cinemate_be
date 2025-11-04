@@ -1,7 +1,7 @@
 module.exports = {
     // Movie Service API Configuration
     api: {
-        baseUrl: 'http://localhost:8080/api/movies', // movie-service runs on port 8080 according to docker-compose
+        baseUrl: 'http://localhost:8080', // movie-service runs on port 8080 according to docker-compose
         timeout: 30000, // 30 seconds
         retries: 3
     },
