@@ -160,6 +160,47 @@ services:
       - cinemate-network
   #endregion
 
+  #region streaming services
+  streaming-signaling:
+    build:
+      context: .
+      dockerfile: ./streaming-signaling/Dockerfile
+    container_name: cinemate-streaming-signaling
+    restart: unless-stopped
+    ports:
+      - "${STREAMING_SIGNALING_PORT:-8083}:8083"
+    environment:
+      SERVER_PORT: ${STREAMING_SIGNALING_PORT:-8083}
+      REDIS_HOST: cinemate-redis
+      REDIS_PORT: ${REDIS_PORT}
+      KAFKA_BOOTSTRAP_SERVERS: cinemate-broker:${CINEMATE_BROKER_PORT}
+      STREAMING_TOPIC_PREFIX: ${STREAMING_TOPIC_PREFIX}
+      KAFKA_CONSUMER_GROUP: ${STREAMING_KAFKA_CONSUMER_GROUP}
+    depends_on:
+      - cinemate-redis
+      - cinemate-broker
+    networks:
+      - cinemate-network
+
+  streaming-seeder:
+    build:
+      context: .
+      dockerfile: ./streaming-seeder/Dockerfile
+    container_name: cinemate-streaming-seeder
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: ${STREAMING_SEEDER_PORT:-8084}
+      REDIS_HOST: cinemate-redis
+      REDIS_PORT: ${REDIS_PORT}
+      SEEDER_CACHE_PATH: /var/cinemate/cache
+    volumes:
+      - ${STREAMING_SEEDER_CACHE_HOST_PATH:-./data/streaming-cache}:/var/cinemate/cache:rw
+    depends_on:
+      - cinemate-redis
+    networks:
+      - cinemate-network
+  #endregion
+
   #region movie service
   movie-service:
     build:

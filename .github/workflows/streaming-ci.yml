@@ -4,13 +4,17 @@ on:
   push:
     branches: ["main", "dev"]
     paths:
-      - "streaming/**"
+      - "streaming-signaling/**"
+      - "streaming-seeder/**"
+      - "shared-kernel/**"
       - "pom.xml"
       - ".github/workflows/streaming-ci.yml"
   pull_request:
     branches: ["main", "dev"]
     paths:
-      - "streaming/**"
+      - "streaming-signaling/**"
+      - "streaming-seeder/**"
+      - "shared-kernel/**"
       - "pom.xml"
 
 jobs:
@@ -28,15 +32,22 @@ jobs:
           java-version: "21"
           cache: "maven"
 
-      - name: Build & test streaming module
-        run: mvn -B -pl streaming -am verify
+      - name: Build & test streaming services
+        run: mvn -B -pl streaming-signaling,streaming-seeder -am verify
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build streaming Docker image
+      - name: Build streaming-signaling Docker image
         run: |
           docker build \
-            --file streaming/Dockerfile \
-            --tag streaming-service:${{ github.sha }} \
+            --file streaming-signaling/Dockerfile \
+            --tag streaming-signaling:${{ github.sha }} \
+            .
+
+      - name: Build streaming-seeder Docker image
+        run: |
+          docker build \
+            --file streaming-seeder/Dockerfile \
+            --tag streaming-seeder:${{ github.sha }} \
             .

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,7 +39,7 @@ public class MovieTranscodeServiceImpl implements MovieTranscodeService {
     }
 
     @Transactional
-    public void transcodeMovie(UUID movieId, Path inputFile) {
+    public void transcodeMovie(@NonNull UUID movieId, Path inputFile) {
         Movie movie = repo.findById(movieId)
                 .orElseThrow(() -> new NotFoundException("Movie not found with id: " + movieId));
 
