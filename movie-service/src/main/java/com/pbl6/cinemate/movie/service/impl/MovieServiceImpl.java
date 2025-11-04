@@ -15,6 +15,7 @@ import com.pbl6.cinemate.movie.util.MovieUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,7 +33,7 @@ public class MovieServiceImpl implements MovieService {
     private final ApplicationEventPublisher eventPublisher;
 
     public MovieServiceImpl(MinioStorageService minio, MovieRepository repo,
-                            ApplicationEventPublisher eventPublisher) {
+            ApplicationEventPublisher eventPublisher) {
         this.minio = minio;
         this.repo = repo;
         this.eventPublisher = eventPublisher;
@@ -44,6 +45,9 @@ public class MovieServiceImpl implements MovieService {
         Movie movie = repo.save(new Movie(req.title(), req.description(), MovieStatus.PENDING));
 
         Path tmp = createTempFile();
+        if (tmp == null) {
+            throw new InternalServerException("Failed to create temporary file for upload");
+        }
         transferFile(file, tmp);
 
         minio.save(tmp.toFile(), movie.getId() + "/original/" + file.getOriginalFilename());
@@ -55,7 +59,7 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public MovieStatusResponse getMovieStatus(UUID movieId) {
+    public MovieStatusResponse getMovieStatus(@NonNull UUID movieId) {
         Movie movie = repo.findById(movieId)
                 .orElseThrow(() -> new NotFoundException("Movie not found with id: " + movieId));
         Map<String, String> qualities = MovieUtils.parseQualitiesJson(movie.getQualitiesJson());
@@ -63,7 +67,7 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public MovieInfoResponse getMovieInfo(UUID movieId) {
+    public MovieInfoResponse getMovieInfo(@NonNull UUID movieId) {
         Movie movie = repo.findById(movieId)
                 .orElseThrow(() -> new NotFoundException("Movie not found with id: " + movieId));
         return MovieUtils.mapToMovieInfoResponse(movie);
@@ -79,13 +83,16 @@ public class MovieServiceImpl implements MovieService {
     @Transactional
     public MovieResponse createMovie(MovieRequest movieRequest) {
         Movie movie = MovieUtils.mapToMovie(movieRequest);
+        if (movie == null) {
+            throw new InternalServerException("Failed to map MovieRequest to Movie entity");
+        }
         Movie savedMovie = repo.save(movie);
         return MovieUtils.mapToMovieResponse(savedMovie);
     }
 
     @Override
     @Transactional
-    public MovieResponse updateMovie(UUID movieId, MovieRequest movieRequest) {
+    public MovieResponse updateMovie(@NonNull UUID movieId, MovieRequest movieRequest) {
         Movie movie = repo.findById(movieId).orElseThrow(() -> new NotFoundException("Movie not found"));
         movie.setTitle(movieRequest.getTitle());
         movie.setDescription(movieRequest.getDescription());
@@ -95,7 +102,7 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     @Transactional
-    public void deleteMovie(UUID movieId) {
+    public void deleteMovie(@NonNull UUID movieId) {
         if (!repo.existsById(movieId)) {
             throw new NotFoundException("Movie not found");
         }
@@ -103,7 +110,8 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public PaginatedResponse<MovieResponse> getMovies(int page, int size, String sortBy, String sortDirection) {
+    public PaginatedResponse<MovieResponse> getMovies(int page, int size, String sortBy,
+            @NonNull String sortDirection) {
         var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
         var moviePage = repo.findAll(pageable);
         List<MovieResponse> movies = moviePage.getContent().stream().map(MovieUtils::mapToMovieResponse).toList();
@@ -118,13 +126,12 @@ public class MovieServiceImpl implements MovieService {
         }
     }
 
-    private void transferFile(MultipartFile file, Path destination) {
+    private void transferFile(MultipartFile file, @NonNull Path destination) {
         try {
             file.transferTo(destination);
         } catch (Exception e) {
             throw new InternalServerException("Failed to transfer uploaded file: " + e.getMessage());
         }
     }
-
 
 }

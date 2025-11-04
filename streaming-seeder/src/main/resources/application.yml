@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: streaming-seeder
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: PT2S
+
+server:
+  port: ${SERVER_PORT:8084}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+streaming:
+  seeder:
+    enabled: ${SEEDER_ENABLED:true}
+    cache-path: ${SEEDER_CACHE_PATH:./cache}
+    redis-ttl-segment-keys: PT90S
+    cache-maintenance-interval: PT30S
+    seeder-cache-window: PT4M
+
+logging:
+  level:
+    root: INFO
+    '[com.pbl6.cinemate.streaming.seeder]': DEBUG
