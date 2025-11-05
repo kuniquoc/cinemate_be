@@ -1,46 +1,45 @@
-# Test Data Directory
+# Thư mục dữ liệu kiểm thử
 
-This directory should contain your test video files for testing the Movie Service API.
+Đặt các video mẫu phục vụ cho việc chạy bộ mô phỏng Movie Service.
 
-## Required Files:
+## Các file nên có
 
-### sample-video.mp4
-- A small video file (< 100MB) for testing direct upload
-- Can be any common video format (MP4, AVI, MOV, MKV, WebM)
-- Example sources:
-  - Record a short video with your phone
-  - Download a sample video from: https://sample-videos.com/
-  - Use ffmpeg to create a test video: `ffmpeg -f lavfi -i testsrc=duration=30:size=640x480:rate=30 sample-video.mp4`
+### `sample-video.mp4`
+- Video nhỏ (< 100MB) dùng cho upload trực tiếp.
+- Có thể dùng bất kỳ định dạng phổ biến: MP4, AVI, MOV, MKV, WebM.
+- Gợi ý nguồn:
+  - Tự quay nhanh bằng điện thoại.
+  - Tải từ https://sample-videos.com/.
+  - Tạo bằng ffmpeg: `ffmpeg -f lavfi -i testsrc=duration=30:size=640x480:rate=30 sample-video.mp4`.
 
-### large-video.mp4 (Optional)
-- A larger video file (> 100MB) for testing chunk upload
-- Useful for testing the chunked upload functionality
-- Can be the same formats as above, just larger
+### `large-video.mp4` (khuyến khích)
+- Video lớn (> 100MB) để kiểm thử upload theo chunk.
+- Có thể dùng chung định dạng với file nhỏ, chỉ cần dung lượng lớn hơn.
 
-## Creating Test Videos with FFmpeg:
-
-If you have FFmpeg installed, you can create test videos:
+## Tạo video mẫu bằng FFmpeg
 
 ```bash
-# Create a 30-second test video (small, ~5MB)
+# Video 30s (~5MB)
 ffmpeg -f lavfi -i testsrc=duration=30:size=640x480:rate=30 sample-video.mp4
 
-# Create a 5-minute test video (larger, ~50MB)
+# Video 5 phút (~50MB)
 ffmpeg -f lavfi -i testsrc=duration=300:size=1280x720:rate=30 large-video.mp4
 
-# Create a very large test video for chunk upload testing (~200MB)
+# Video 10 phút FullHD (~200MB)
 ffmpeg -f lavfi -i testsrc=duration=600:size=1920x1080:rate=30 large-video.mp4
 ```
 
-## File Naming:
-- Keep the exact filenames `sample-video.mp4` and `large-video.mp4` as they are referenced in the configuration
-- Or update the paths in `../config/config.js` if you use different names
+## Quy tắc đặt tên
 
-## Supported Formats:
-- MP4 (recommended)
+- Giữ nguyên tên `sample-video.mp4` và `large-video.mp4` để khớp cấu hình mặc định.
+- Nếu sử dụng tên khác, sửa lại đường dẫn tương ứng trong `../config/config.js`.
+
+## Định dạng hỗ trợ
+
+- MP4 (khuyến nghị)
 - AVI
 - MOV
 - MKV
 - WebM
 
-**Note**: The actual test files are not included in the repository to keep it lightweight. You need to provide your own test videos.
+> Repository không kèm theo video để giảm dung lượng. Hãy tự chuẩn bị dữ liệu phù hợp với nhu cầu test.

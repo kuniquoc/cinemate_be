@@ -7,15 +7,17 @@
         "test:direct": "node scripts/direct-upload.js",
         "test:chunk": "node scripts/chunk-upload.js",
         "test:status": "node scripts/movie-status.js",
-        "test:all": "npm run test:direct && npm run test:chunk"
+        "test:monitor": "node scripts/movie-status.js --monitor",
+        "test:all": "node index.js test:all",
+        "streaming:playback": "node scripts/streaming/viewer.js"
     },
     "dependencies": {
         "axios": "^1.5.0",
         "form-data": "^4.0.0",
         "fs-extra": "^11.1.1",
-        "path": "^0.12.7",
         "chalk": "^4.1.2",
-        "progress": "^2.0.3"
+        "progress": "^2.0.3",
+        "ws": "^8.18.0"
     },
     "keywords": [
         "movie-service",

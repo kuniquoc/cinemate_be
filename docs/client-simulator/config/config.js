@@ -1,18 +1,47 @@
+const path = require('path');
+
+const toPositiveNumber = (value, fallback) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+        return fallback;
+    }
+    return parsed;
+};
+
+const baseUrl = process.env.MOVIE_SERVICE_BASE_URL || 'http://localhost:8080';
+const apiTimeout = toPositiveNumber(process.env.MOVIE_SERVICE_TIMEOUT_MS, 30000);
+const chunkSizeMb = toPositiveNumber(process.env.MOVIE_UPLOAD_CHUNK_MB, 5);
+const maxConcurrentChunks = Math.max(1, Math.floor(toPositiveNumber(process.env.MOVIE_UPLOAD_CONCURRENCY, 3)));
+
+const seederBaseUrlEnv = process.env.STREAMING_SEEDER_BASE_URL;
+const originBaseUrlEnv = process.env.STREAMING_ORIGIN_BASE_URL;
+const seederBaseUrlValue = seederBaseUrlEnv !== undefined ? seederBaseUrlEnv.trim() : 'http://localhost:8084';
+const originBaseUrlValue = originBaseUrlEnv !== undefined ? originBaseUrlEnv.trim() : 'http://localhost:9000/movies';
+const seederBaseUrl = seederBaseUrlValue.length ? seederBaseUrlValue : null;
+const originBaseUrl = originBaseUrlValue.length ? originBaseUrlValue : null;
+const seederSegmentTemplate = (process.env.STREAMING_SEEDER_SEGMENT_TEMPLATE
+    || '/streams/{streamId}/segments/{segmentId}').trim();
+const originSegmentTemplate = (process.env.STREAMING_ORIGIN_SEGMENT_TEMPLATE
+    || '/{movieId}/{quality}/{segmentId}.ts').trim();
+const defaultStreamId = (process.env.STREAMING_DEFAULT_STREAM_ID || '').trim() || null;
+
+const resolveTestData = (fileName) => path.join(__dirname, '..', 'test-data', fileName);
+
 module.exports = {
     // Movie Service API Configuration
     api: {
-        baseUrl: 'http://localhost:8080', // movie-service runs on port 8080 according to docker-compose
-        timeout: 30000, // 30 seconds
+        baseUrl,
+        timeout: apiTimeout,
         retries: 3
     },
 
     // Upload Configuration
     upload: {
         // Chunk size for chunk upload (5MB default)
-        chunkSize: 5 * 1024 * 1024,
+        chunkSize: chunkSizeMb * 1024 * 1024,
 
         // Maximum concurrent chunk uploads
-        maxConcurrentChunks: 3,
+        maxConcurrentChunks,
 
         // Retry configuration for failed chunks
         chunkRetries: 3,
@@ -30,8 +59,8 @@ module.exports = {
 
     // Test Data Configuration
     testData: {
-        sampleVideo: './test-data/sample-video.mp4',
-        largeVideo: './test-data/large-video.mp4',
+        sampleVideo: resolveTestData('sample-video.mp4'),
+        largeVideo: resolveTestData('large-video.mp4'),
 
         // Test movie metadata
         sampleMovie: {
@@ -50,5 +79,58 @@ module.exports = {
         level: 'info', // debug, info, warn, error
         showProgress: true,
         showTimestamps: true
+    },
+
+    // Streaming playback simulator configuration
+    streaming: {
+        defaultStreamId,
+        defaultClientPrefix: 'viewer-',
+        playlist: {
+            // Number of segments to simulate when no manifest is provided
+            defaultSegmentCount: 12,
+            // Index to start generating segment identifiers from
+            startIndex: 1,
+            // Template for generated segment identifiers. {index} will be replaced by a zero-padded number.
+            segmentIdTemplate: 'segment-{index}',
+            // Number of digits to pad the index with when generating identifiers
+            indexPadLength: 4,
+            // Optional path to a manifest (newline separated list of segment ids). Leave null to auto-generate.
+            manifestPath: null
+        },
+        playback: {
+            maxActivePeers: 3,
+            peerConnectTimeoutMs: 5000,
+            segmentRequestWaitMinMs: 120,
+            segmentRequestWaitMaxMs: 200,
+            whoHasQueryTimeoutMs: 150,
+            fallbackHttpTimeoutMs: 700,
+            minBufferPrefetch: 3,
+            criticalBufferThreshold: 1,
+            playbackSegmentDurationMs: 4000
+        },
+        scoring: {
+            alphaSpeed: 0.6,
+            betaLatency: 0.002,
+            gammaReliability: 0.4
+        },
+        signaling: {
+            wsBaseUrl: 'ws://localhost:8083/ws/signaling'
+        },
+        fallback: {
+            seeder: {
+                baseUrl: seederBaseUrl,
+                segmentPathTemplate: seederSegmentTemplate
+            },
+            origin: {
+                baseUrl: originBaseUrl,
+                segmentPathTemplate: originSegmentTemplate
+            },
+            persistCacheToDisk: true,
+            cacheDirectory: './.cache/streaming'
+        },
+        peers: {
+            // Configure known peer endpoints here when running multiple simulators
+            // Example: "edge-a": { baseUrl: "http://localhost:9101" }
+        }
     }
 };

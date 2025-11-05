@@ -1,209 +1,42 @@
-# Movie Service Documentation
+# Tài liệu Cinemate
 
-Thư mục này chứa tài liệu đầy đủ và công cụ test cho Movie Service API.
+Thư mục `docs/` tập hợp hướng dẫn triển khai, vận hành và bộ công cụ kiểm thử cho Cinemate. Tất cả nội dung được tối giản để dễ đọc nhưng vẫn bao quát đầy đủ tính năng cần thiết.
 
-## 📚 Tài liệu
+## 📂 Danh mục nhanh
 
-### [movie-service-api.md](./movie-service-api.md)
-Tài liệu API đầy đủ bao gồm:
-- Tổng quan về service
-- Chi tiết tất cả endpoints
-- Cấu trúc request/response
-- Mã lỗi và xử lý lỗi
-- Best practices cho direct upload và chunk upload
-- Ví dụ cURL cho tất cả endpoints
+| Chủ đề                                                           | Nội dung                                                                | Đối tượng |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------- | --------- |
+| [client-simulator](./client-simulator/README.md)                 | Bộ mô phỏng client kiểm thử Movie Service (Node.js, Postman, test data) | QA, Dev   |
+| [streaming-deployment-guide.md](./streaming-deployment-guide.md) | Quy trình triển khai signaling và seeder                                | DevOps    |
+| [streaming-kafka-setup.md](./streaming-kafka-setup.md)           | Chuẩn bị Kafka topic cho streaming                                      | DevOps    |
+| [agent-service-guide.md](./agent-service-guide.md)               | Playbook tạo service mới trong monorepo                                 | Dev       |
 
-## 🧪 Client Simulator
+## � Quy trình gợi ý
 
-### [client-simulator/](./client-simulator/)
-Bộ công cụ test và simulate client để test các API endpoints:
+1. **Nắm kiến trúc**: đọc nhanh các guide về streaming và agent service để hiểu chuẩn cấu hình.
+2. **Khởi động Movie Service**: chạy `docker-compose up movie-service` hoặc `mvn spring-boot:run` tại module `movie-service`.
+3. **Chuẩn bị bộ mô phỏng**: theo hướng dẫn trong `client-simulator/README.md` để cài Node.js, cấu hình `config.js` và đặt dữ liệu mẫu.
+4. **Thực thi kiểm thử**: dùng `run.bat` (Windows) hoặc `node index.js <command>` để kiểm tra upload trực tiếp, upload theo chunk, giám sát trạng thái.
+5. **Theo dõi kết quả**: ghi lại movieId, thời gian upload và log lỗi (nếu có) cho mỗi phiên test.
 
-#### Nội dung chính:
-- **Node.js scripts** để test từng loại upload
-- **Postman collection** để test qua UI
-- **Configuration** linh hoạt
-- **Test data management**
-- **Automated testing suite**
+## 🧪 Bộ mô phỏng client (Movie Service)
 
-#### Quick Start:
-```bash
-cd client-simulator
-npm install
-# Thêm file video vào test-data/
-run.bat test:all
-```
+- Được tối ưu thành các script độc lập, dễ bảo trì.
+- Cho phép tùy biến endpoint, timeout, kích thước chunk thông qua biến môi trường:
+  - `MOVIE_SERVICE_BASE_URL`, `MOVIE_SERVICE_TIMEOUT_MS`
+  - `MOVIE_UPLOAD_CHUNK_MB`, `MOVIE_UPLOAD_CONCURRENCY`
+- Có thể chạy trực tiếp qua `npm run` hoặc CLI `node index.js test:all`.
+- Postman collection nằm trong `client-simulator/postman/` cho trường hợp cần thao tác thủ công.
 
-## 🎯 Cách sử dụng
+> Chi tiết thiết lập, sơ đồ thư mục và câu lệnh tham khảo xem tại `client-simulator/README.md` và `client-simulator/QUICKSTART.md`.
 
-### 1. Đọc API Documentation
-Bắt đầu với [movie-service-api.md](./movie-service-api.md) để hiểu:
-- Các endpoint có sẵn
-- Cách thức hoạt động của direct upload vs chunk upload
-- Format của request/response
-- Error handling
+## 🧭 Tips chung
 
-### 2. Setup Test Environment
-```bash
-# 1. Clone repo và start movie service
-cd movie-service
-mvn spring-boot:run
-
-# 2. Setup client simulator
-cd ../docs/client-simulator
-npm install
-
-# 3. Thêm test video files
-# Xem hướng dẫn trong test-data/README.md
-```
-
-### 3. Test với Scripts
-```bash
-# Test upload trực tiếp
-run.bat test:direct
-
-# Test chunk upload
-run.bat test:chunk
-
-# Test status endpoints
-run.bat test:status <movie-id>
-
-# Chạy tất cả tests
-run.bat test:all
-```
-
-### 4. Test với Postman
-1. Import collection từ `client-simulator/postman/movie-service.postman_collection.json`
-2. Set environment variable `baseUrl` = `http://localhost:8082`
-3. Test từng endpoint theo thứ tự
-
-## 🔍 Chi tiết các API
-
-### Movie Management APIs
-- **POST /api/movies/upload** - Upload trực tiếp (file nhỏ)
-- **GET /api/movies/{id}/status** - Kiểm tra trạng thái xử lý
-- **GET /api/movies/{id}** - Lấy thông tin chi tiết movie
-
-### Chunk Upload APIs (cho file lớn)
-- **POST /api/movies/chunk-upload/initiate** - Khởi tạo session
-- **POST /api/movies/chunk-upload/{uploadId}/chunks/{chunkNumber}** - Upload chunk
-- **GET /api/movies/chunk-upload/{uploadId}/status** - Kiểm tra tiến độ
-- **POST /api/movies/chunk-upload/{uploadId}/complete** - Hoàn thành upload
-- **DELETE /api/movies/chunk-upload/{uploadId}** - Hủy upload
-
-### Utility APIs
-- **GET /api/movies/chunk-upload/client.js** - JavaScript client code
-
-## 🛠️ Tools và Utilities
-
-### Client Simulator Features:
-- ✅ **Automated testing** - Chạy test tự động cho tất cả endpoints
-- ✅ **Progress tracking** - Hiển thị tiến độ upload với progress bar
-- ✅ **Error handling** - Retry logic và error recovery
-- ✅ **Configurable** - Tùy chỉnh chunk size, timeouts, v.v.
-- ✅ **Cross-platform** - Windows batch script + Node.js
-- ✅ **Postman integration** - Collection để test qua UI
-
-### Supported Features:
-- ✅ Direct file upload
-- ✅ Chunked upload với concurrent chunks
-- ✅ Upload progress monitoring
-- ✅ Error retry và recovery
-- ✅ File validation
-- ✅ MD5 checksum verification
-- ✅ Upload cancellation
-- ✅ Movie status monitoring
-
-## 📋 Requirements
-
-### Server Requirements:
-- Movie Service running trên port 8082
-- PostgreSQL database
-- MinIO storage service (cho file storage)
-- FFmpeg (cho video transcoding)
-
-### Client Requirements:
-- Node.js 18+
-- NPM packages (tự động install)
-- Test video files
-
-## 🎬 Workflow Examples
-
-### Direct Upload Workflow:
-1. Client upload file qua `/api/movies/upload`
-2. Server lưu file và tạo Movie record
-3. Background transcoding bắt đầu
-4. Client poll `/api/movies/{id}/status` để check progress
-5. Khi status = "READY", movie sẵn sàng streaming
-
-### Chunk Upload Workflow:
-1. Client initiate session qua `/api/movies/chunk-upload/initiate`
-2. Client split file thành chunks và upload song song
-3. Client check progress qua status endpoint
-4. Khi tất cả chunks uploaded, client call complete endpoint
-5. Server merge chunks và bắt đầu transcoding
-6. Workflow tiếp tục như direct upload
-
-## 🔧 Configuration
-
-### Server Configuration:
-```yaml
-# application.yml
-spring:
-  servlet:
-    multipart:
-      max-file-size: 1GB
-      max-request-size: 1GB
-
-chunk-upload:
-  max-file-size: 5GB
-  min-chunk-size: 1MB
-  max-chunk-size: 100MB
-```
-
-### Client Configuration:
-```javascript
-// config/config.js
-module.exports = {
-  api: {
-    baseUrl: 'http://localhost:8082',
-    timeout: 30000
-  },
-  upload: {
-    chunkSize: 5 * 1024 * 1024, // 5MB
-    maxConcurrentChunks: 3
-  }
-};
-```
-
-## 📞 Support
-
-Nếu gặp vấn đề:
-1. Check [QUICKSTART.md](./client-simulator/QUICKSTART.md) cho troubleshooting
-2. Xem logs của Movie Service
-3. Chạy với `--verbose` flag để có detailed logs
-4. Check configuration files
-
-## 🚀 Advanced Usage
-
-### Custom Scripts:
-Tạo custom test script bằng cách import utilities:
-```javascript
-const { createApiClient, log } = require('./scripts/utils');
-const testDirectUpload = require('./scripts/direct-upload');
-
-// Your custom test logic
-```
-
-### Integration Testing:
-Sử dụng scripts trong CI/CD pipeline:
-```bash
-npm test  # Chạy automated test suite
-```
-
-### Performance Testing:
-Modify config để test với different chunk sizes và concurrency levels.
+- Ưu tiên chạy script ở chế độ `--verbose` khi cần điều tra lỗi mạng hoặc timeout.
+- Lưu movieId trả về sau upload để thuận tiện kiểm tra trạng thái về sau.
+- Ghi chú thông số chunk (kích thước, số luồng) đã dùng khi thực hiện các phép đo hiệu năng.
 
 ---
 
-**Tạo bởi**: PBL6 Team  
-**Cập nhật**: September 2025
+**Người duy trì**: Nhóm PBL6  
+**Cập nhật lần cuối**: Tháng 11/2025

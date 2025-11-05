@@ -120,13 +120,19 @@ services:
       - cinemate-zookeeper-data:/var/lib/zookeeper/data
     networks:
       - cinemate-network
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "${CINEMATE_ZOOKEEPER_PORT}" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   cinemate-broker:
     image: confluentinc/cp-kafka:7.5.0
     container_name: cinemate-broker
     #    hostname: cinemate-broker
     depends_on:
-      - cinemate-zookeeper
+      cinemate-zookeeper:
+        condition: service_healthy
     ports:
       - "${CINEMATE_BROKER_HOST_PORT}:${CINEMATE_BROKER_HOST_PORT}"
     environment:
