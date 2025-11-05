@@ -18,15 +18,15 @@ async function testMovieStatus(movieId) {
         log.info(`\\n1. Getting movie status for ID: ${movieId}`);
 
         const statusResponse = await api.get(`/api/movies/${movieId}/status`);
+        const statusPayload = statusResponse.data.data;
 
         log.success('Movie status retrieved successfully');
-        // MovieController now uses ResponseData wrapper
-        log.info(`Movie ID: ${statusResponse.data.data.movieId}`);
-        log.info(`Status: ${statusResponse.data.data.status}`);
+        log.info(`Movie ID: ${statusPayload.movieId}`);
+        log.info(`Status: ${statusPayload.status}`);
 
-        if (statusResponse.data.data.qualities && Object.keys(statusResponse.data.data.qualities).length > 0) {
+        if (statusPayload.qualities && Object.keys(statusPayload.qualities).length > 0) {
             log.info('Available qualities:');
-            Object.entries(statusResponse.data.data.qualities).forEach(([quality, url]) => {
+            Object.entries(statusPayload.qualities).forEach(([quality, url]) => {
                 log.info(`  ${quality}: ${url}`);
             });
         } else {
@@ -37,16 +37,17 @@ async function testMovieStatus(movieId) {
         log.info(`\\n2. Getting detailed movie info for ID: ${movieId}`);
 
         const infoResponse = await api.get(`/api/movies/${movieId}`);
+        const infoPayload = infoResponse.data.data;
 
         log.success('Movie info retrieved successfully');
-        log.info(`Movie ID: ${infoResponse.data.data.movieId}`);
-        log.info(`Title: ${infoResponse.data.data.title}`);
-        log.info(`Description: ${infoResponse.data.data.description}`);
-        log.info(`Status: ${infoResponse.data.data.status}`);
+        log.info(`Movie ID: ${infoPayload.movieId}`);
+        log.info(`Title: ${infoPayload.title}`);
+        log.info(`Description: ${infoPayload.description}`);
+        log.info(`Status: ${infoPayload.status}`);
 
-        if (infoResponse.data.data.qualities && Object.keys(infoResponse.data.data.qualities).length > 0) {
+        if (infoPayload.qualities && Object.keys(infoPayload.qualities).length > 0) {
             log.info('Available qualities:');
-            Object.entries(infoResponse.data.data.qualities).forEach(([quality, url]) => {
+            Object.entries(infoPayload.qualities).forEach(([quality, url]) => {
                 log.info(`  ${quality}: ${url}`);
             });
         } else {
@@ -55,15 +56,15 @@ async function testMovieStatus(movieId) {
 
         // Status interpretation
         log.info('\\n📊 Status Interpretation:');
-        interpretStatus(infoResponse.data.data.status);
+        interpretStatus(infoPayload.status);
 
         log.success('\\n✨ Movie status test completed successfully!');
 
         return {
-            movieId: infoResponse.data.data.movieId,
-            title: infoResponse.data.data.title,
-            status: infoResponse.data.data.status,
-            qualitiesCount: infoResponse.data.data.qualities ? Object.keys(infoResponse.data.data.qualities).length : 0
+            movieId: infoPayload.movieId,
+            title: infoPayload.title,
+            status: infoPayload.status,
+            qualitiesCount: infoPayload.qualities ? Object.keys(infoPayload.qualities).length : 0
         };
 
     } catch (error) {
@@ -111,7 +112,8 @@ async function monitorMovieStatus(movieId, maxAttempts = 30, intervalSeconds = 1
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
             const response = await api.get(`/api/movies/${movieId}/status`);
-            const status = response.data.status;
+            const payload = response.data.data;
+            const status = payload.status;
 
             log.info(`[${attempt}/${maxAttempts}] Current status: ${status}`);
 
@@ -120,15 +122,16 @@ async function monitorMovieStatus(movieId, maxAttempts = 30, intervalSeconds = 1
 
                 // Get final movie info
                 const infoResponse = await api.get(`/api/movies/${movieId}`);
+                const infoPayload = infoResponse.data.data;
 
-                if (infoResponse.data.qualities) {
+                if (infoPayload.qualities) {
                     log.info('Available qualities:');
-                    Object.keys(infoResponse.data.qualities).forEach(quality => {
+                    Object.keys(infoPayload.qualities).forEach(quality => {
                         log.info(`  ✓ ${quality}`);
                     });
                 }
 
-                return infoResponse.data;
+                return infoPayload;
             } else if (status === 'FAILED') {
                 log.error('❌ Movie processing failed');
                 throw new Error('Movie processing failed');
@@ -159,30 +162,31 @@ async function monitorMovieStatus(movieId, maxAttempts = 30, intervalSeconds = 1
 
 // Run the test if called directly
 if (require.main === module) {
-    const movieId = process.argv[2];
-    const shouldMonitor = process.argv.includes('--monitor');
+    (async () => {
+        const argv = process.argv.slice(2);
+        const shouldMonitor = argv.includes('--monitor');
+        const movieId = argv.find((token) => !token.startsWith('--'));
 
-    if (shouldMonitor && movieId) {
-        monitorMovieStatus(movieId)
-            .then(() => {
+        if (!movieId) {
+            log.error('Movie ID is required');
+            log.info('Usage: node movie-status.js <movieId> [--monitor]');
+            process.exit(1);
+        }
+
+        try {
+            if (shouldMonitor) {
+                await monitorMovieStatus(movieId);
                 log.success('Monitoring completed!');
-                process.exit(0);
-            })
-            .catch(() => {
-                log.error('Monitoring failed!');
-                process.exit(1);
-            });
-    } else {
-        testMovieStatus(movieId)
-            .then(() => {
+            } else {
+                await testMovieStatus(movieId);
                 log.success('Test completed successfully!');
-                process.exit(0);
-            })
-            .catch(() => {
-                log.error('Test failed!');
-                process.exit(1);
-            });
-    }
+            }
+            process.exit(0);
+        } catch (error) {
+            log.error(shouldMonitor ? 'Monitoring failed!' : 'Test failed!');
+            process.exit(1);
+        }
+    })();
 }
 
 module.exports = { testMovieStatus, monitorMovieStatus };

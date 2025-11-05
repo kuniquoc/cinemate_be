@@ -92,6 +92,13 @@ public class SeederService {
                 .toList();
     }
 
+    public void registerFetchedSegment(CachedSegment segment) {
+        if (segment == null) {
+            return;
+        }
+        syncCacheToRedis(List.of(segment));
+    }
+
     public void purgeExpiredSegments(Collection<CachedSegment> expiredSegments) {
         expiredSegments.forEach(segment -> {
             Path path = segment.path();

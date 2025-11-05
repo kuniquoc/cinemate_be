@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 
 const fs = require('fs-extra');
-const path = require('path');
 const config = require('./config/config');
-const { log } = require('./scripts/utils');
+const { log, formatFileSize, formatDuration } = require('./scripts/utils');
 const testDirectUpload = require('./scripts/direct-upload');
 const testChunkUpload = require('./scripts/chunk-upload');
 const { testMovieStatus, monitorMovieStatus } = require('./scripts/movie-status');
@@ -84,43 +83,13 @@ async function checkSetup() {
     return true;
 }
 
-async function testServiceHealth() {
-    log.info('🔍 Checking Movie Service health...');
-
-    try {
-        const { createApiClient } = require('./scripts/utils');
-        const api = createApiClient();
-
-        // Try a simple request to check if service is running
-        await api.get('/api/movies/chunk-upload/client.js');
-        log.success('Movie Service is running and accessible');
-        return true;
-    } catch (error) {
-        log.error('Movie Service is not accessible');
-        log.error(`Please make sure the service is running on ${config.api.baseUrl}`);
-
-        if (error.code === 'ECONNREFUSED') {
-            log.info('Connection refused - is the service started?');
-        } else if (error.code === 'ENOTFOUND') {
-            log.info('Host not found - check the baseUrl in config');
-        }
-
-        return false;
-    }
-}
-
 async function runTests() {
     const setupOk = await checkSetup();
     if (!setupOk) {
         process.exit(1);
     }
 
-    const serviceOk = await testServiceHealth();
-    if (!serviceOk) {
-        process.exit(1);
-    }
-
-    log.info('\\n🚀 Starting Movie Service API Tests');
+    log.info('\n🚀 Starting Movie Service API Tests');
     log.info('====================================');
 
     const results = {
@@ -132,44 +101,44 @@ async function runTests() {
     try {
         // Test direct upload
         if (await fs.pathExists(config.testData.sampleVideo)) {
-            log.info('\\n🎯 Running Direct Upload Test...');
+            log.info(`\n🎯 Running Direct Upload Test...`);
             results.direct = await testDirectUpload();
-            log.success('Direct upload test completed successfully\\n');
+            log.success(`Direct upload test completed successfully\n`);
         } else {
-            log.warn('Skipping direct upload test - no sample video file\\n');
+            log.warn('Skipping direct upload test - no sample video file\n');
         }
 
         // Test chunk upload
         log.info('🎯 Running Chunk Upload Test...');
         results.chunk = await testChunkUpload();
-        log.success('Chunk upload test completed successfully\\n');
+        log.success('Chunk upload test completed successfully\n');
 
         // Summary
         const totalTime = Date.now() - results.startTime;
 
-        log.info('\\n📊 Test Summary');
+        log.info(`\n📊 Test Summary`);
         log.info('================');
 
         if (results.direct) {
             log.info(`✅ Direct Upload: ${results.direct.movieId}`);
-            log.info(`   File size: ${require('./scripts/utils').formatFileSize(results.direct.fileSize)}`);
-            log.info(`   Upload time: ${require('./scripts/utils').formatDuration(results.direct.uploadTime)}`);
+            log.info(`   File size: ${formatFileSize(results.direct.fileSize)}`);
+            log.info(`   Upload time: ${formatDuration(results.direct.uploadTime)}`);
         }
 
         if (results.chunk) {
             log.info(`✅ Chunk Upload: ${results.chunk.movieId}`);
-            log.info(`   File size: ${require('./scripts/utils').formatFileSize(results.chunk.fileSize)}`);
+            log.info(`   File size: ${formatFileSize(results.chunk.fileSize)}`);
             log.info(`   Total chunks: ${results.chunk.totalChunks}`);
-            log.info(`   Upload time: ${require('./scripts/utils').formatDuration(results.chunk.uploadTime)}`);
+            log.info(`   Upload time: ${formatDuration(results.chunk.uploadTime)}`);
         }
 
-        log.info(`\\n⏱️  Total test time: ${require('./scripts/utils').formatDuration(totalTime)}`);
-        log.success('\\n🎉 All tests completed successfully!');
+        log.info(`\n⏱️  Total test time: ${formatDuration(totalTime)}`);
+        log.success(`\n🎉 All tests completed successfully!`);
 
         return results;
 
     } catch (error) {
-        log.error('\\n❌ Tests failed!');
+        log.error(`\n❌ Tests failed!`);
         throw error;
     }
 }
@@ -191,13 +160,11 @@ async function main() {
         switch (command) {
             case 'test:direct':
                 await checkSetup();
-                await testServiceHealth();
                 await testDirectUpload();
                 break;
 
             case 'test:chunk':
                 await checkSetup();
-                await testServiceHealth();
                 await testChunkUpload();
                 break;
 
@@ -208,7 +175,6 @@ async function main() {
                     log.info('Usage: node index.js test:status <movieId>');
                     process.exit(1);
                 }
-                await testServiceHealth();
                 await testMovieStatus(movieId);
                 break;
             }
@@ -220,7 +186,6 @@ async function main() {
                     log.info('Usage: node index.js test:monitor <movieId>');
                     process.exit(1);
                 }
-                await testServiceHealth();
                 await monitorMovieStatus(monitorMovieId);
                 break;
             }

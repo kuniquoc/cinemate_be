@@ -1,7 +1,19 @@
-const { testApiConnection } = require('./api-test');
 const testDirectUpload = require('./direct-upload');
 const testChunkUpload = require('./chunk-upload');
-const { log } = require('./utils');
+const { createApiClient, log, formatFileSize, formatDuration } = require('./utils');
+
+async function testApiConnection() {
+    const api = createApiClient();
+    try {
+        await api.get('/api/movies/chunk-upload/client.js');
+        log.success('API reachable');
+        return true;
+    } catch (error) {
+        log.error('Cannot reach Movie Service API');
+        log.error(error.message);
+        return false;
+    }
+}
 
 async function runAllTests() {
     const startTime = Date.now();
@@ -48,22 +60,22 @@ async function runAllTests() {
 
         if (directUploadResult) {
             log.success(`✅ Direct Upload: Movie ID ${directUploadResult.movieId}`);
-            log.info(`   File size: ${(directUploadResult.fileSize / (1024 * 1024)).toFixed(2)} MB`);
-            log.info(`   Upload time: ${(directUploadResult.uploadTime / 1000).toFixed(2)}s`);
+            log.info(`   File size: ${formatFileSize(directUploadResult.fileSize)}`);
+            log.info(`   Upload time: ${formatDuration(directUploadResult.uploadTime)}`);
         } else {
             log.error('❌ Direct Upload: Failed');
         }
 
         if (chunkUploadResult) {
             log.success(`✅ Chunk Upload: Movie ID ${chunkUploadResult.movieId}`);
-            log.info(`   File size: ${(chunkUploadResult.fileSize / (1024 * 1024)).toFixed(2)} MB`);
+            log.info(`   File size: ${formatFileSize(chunkUploadResult.fileSize)}`);
             log.info(`   Total chunks: ${chunkUploadResult.totalChunks}`);
-            log.info(`   Upload time: ${(chunkUploadResult.uploadTime / 1000).toFixed(2)}s`);
+            log.info(`   Upload time: ${formatDuration(chunkUploadResult.uploadTime)}`);
         } else {
             log.error('❌ Chunk Upload: Failed');
         }
 
-        log.info(`\nTotal test time: ${(totalTime / 1000).toFixed(2)}s`);
+        log.info(`\nTotal test time: ${formatDuration(totalTime)}`);
 
         if (directUploadResult || chunkUploadResult) {
             log.success('\n✨ Test suite completed with some successes!');
