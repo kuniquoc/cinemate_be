@@ -11,18 +11,22 @@ COPY movie-service/pom.xml ./movie-service/pom.xml
 COPY streaming-signaling/pom.xml ./streaming-signaling/pom.xml
 COPY streaming-seeder/pom.xml ./streaming-seeder/pom.xml
 COPY gateway/pom.xml ./gateway/pom.xml
+COPY customer-service/pom.xml ./customer-service/pom.xml
+COPY auth-service/pom.xml ./auth-service/pom.xml
 
-# Download dependencies for movie-service and its dependencies
-RUN mvn -f pom.xml -pl movie-service -am -B -DskipTests dependency:go-offline
+# Download dependencies for customer-service and its dependencies
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -f pom.xml -pl customer-service -am -B -DskipTests dependency:go-offline
 
 # Copy shared-kernel source (if exists)
 COPY shared-kernel/src ./shared-kernel/src
 
-# Copy movie-service source
-COPY movie-service/src ./movie-service/src
+# Copy customer-service source
+COPY customer-service/src ./customer-service/src
 
-# Build movie-service with all dependencies
-RUN mvn -f pom.xml -pl movie-service -am -B -DskipTests package
+# Build customer-service with all dependencies
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -f pom.xml -pl customer-service -am -B -DskipTests package
 
 
 # ----------------------------------------------------
@@ -38,16 +42,16 @@ RUN apk update \
 WORKDIR /app
 
 # Copy the final JAR from the build stage
-COPY --from=build /app/movie-service/target/*.jar app.jar
+COPY --from=build /app/customer-service/target/*.jar app.jar
 
 RUN chown spring:spring app.jar
 USER spring
 
-EXPOSE 8080
+EXPOSE 8585
 
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8080/actuator/health || exit 1
+    CMD curl -f http://localhost:8585/actuator/health || exit 1
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
 CMD ["$JAVA_OPTS"]
