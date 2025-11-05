@@ -27,8 +27,21 @@ streaming:
     redis-ttl-segment-keys: PT90S
     cache-maintenance-interval: PT30S
     seeder-cache-window: PT4M
+    origin:
+      enabled: ${SEEDER_ORIGIN_ENABLED:true}
+      bucket: ${SEEDER_ORIGIN_BUCKET:}
+      object-prefix: ${SEEDER_ORIGIN_PREFIX:movies}
+      segment-extensions:
+        - ts
+        - m4s
 
 logging:
   level:
     root: INFO
     '[com.pbl6.cinemate.streaming.seeder]': DEBUG
+
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://minio:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  bucket: ${MINIO_BUCKET:movies}

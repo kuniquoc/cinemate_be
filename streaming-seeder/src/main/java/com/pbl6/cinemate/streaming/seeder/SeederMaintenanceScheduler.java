@@ -27,6 +27,9 @@ public class SeederMaintenanceScheduler {
             return;
         }
         List<CachedSegment> segments = seederService.scanCache();
+        if (!segments.isEmpty()) {
+            seederService.syncCacheToRedis(segments);
+        }
         List<CachedSegment> expiredSegments = seederService.findExpiredSegments(segments);
         if (!expiredSegments.isEmpty()) {
             seederService.purgeExpiredSegments(expiredSegments);
