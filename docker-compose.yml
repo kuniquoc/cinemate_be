@@ -1,7 +1,7 @@
 services:
   gateway:
     build:
-      context: .
+      context: ./src
       dockerfile: ./gateway/Dockerfile
     container_name: cinemate-gateway
     restart: unless-stopped
@@ -14,9 +14,6 @@ services:
       CUSTOMER_SERVICE_URL: http://customer-service:8080
       FRONTEND_URL: ${WEB_URL}
       ADMIN_URL: ${ADMIN_URL:-https://admin.cinemate.com}
-    depends_on:
-      - movie-service
-      - auth-service
     networks:
       - cinemate-network
 
@@ -49,8 +46,8 @@ services:
   #region auth service
   auth-service:
     build:
-      context: ./auth-service
-      dockerfile: Dockerfile
+      context: ./src
+      dockerfile: ./auth-service/Dockerfile
     container_name: cinemate-auth-service
     restart: unless-stopped
     ports:
@@ -169,7 +166,7 @@ services:
   #region streaming services
   streaming-signaling:
     build:
-      context: .
+      context: ./src
       dockerfile: ./streaming-signaling/Dockerfile
     container_name: cinemate-streaming-signaling
     restart: unless-stopped
@@ -190,7 +187,7 @@ services:
 
   streaming-seeder:
     build:
-      context: .
+      context: ./src
       dockerfile: ./streaming-seeder/Dockerfile
     container_name: cinemate-streaming-seeder
     restart: unless-stopped
@@ -210,7 +207,7 @@ services:
   #region movie service
   movie-service:
     build:
-      context: .
+      context: ./src
       dockerfile: ./movie-service/Dockerfile
     container_name: cinemate-movie-service
     env_file:
@@ -244,8 +241,8 @@ services:
   #region customer service
   customer-service:
     build:
-      context: ./customer-service
-      dockerfile: Dockerfile
+      context: ./src
+      dockerfile: ./customer-service/Dockerfile
     container_name: customer-service
     restart: unless-stopped
     ports:

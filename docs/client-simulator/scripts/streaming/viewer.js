@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const chalk = require('chalk');
 
 const config = require('../../config/config');
-const { log, delay } = require('../utils');
+const { log, delay, createApiClient, handleApiError } = require('../utils');
 const SignalingClient = require('./signaling-client');
 const PlaybackBuffer = require('./playback-buffer');
 const { scorePeers } = require('./peer-selector');
@@ -50,7 +50,7 @@ function parseArgs(argv) {
     return args;
 }
 
-async function loadPlaylist(args, playlistCfg) {
+async function loadPlaylist(args, playlistCfg, streamDescriptor, streamingCfg) {
     if (args.manifest) {
         return readManifest(args.manifest);
     }
@@ -63,6 +63,10 @@ async function loadPlaylist(args, playlistCfg) {
         } catch (error) {
             log.warn(`Failed to read manifest at ${playlistCfg.manifestPath}: ${error.message}`);
         }
+    }
+    const manifestSegments = await loadSegmentsFromMovieInfo(streamDescriptor, streamingCfg);
+    if (manifestSegments.length > 0) {
+        return manifestSegments;
     }
     const total = Number(args.segments ?? playlistCfg.defaultSegmentCount);
     const start = Number(args.start ?? playlistCfg.startIndex);
@@ -85,6 +89,133 @@ async function readManifest(filePath) {
 function formatSegmentId(index, playlistCfg) {
     const padded = String(index).padStart(playlistCfg.indexPadLength ?? 4, '0');
     return playlistCfg.segmentIdTemplate.replace('{index}', padded);
+}
+
+async function loadSegmentsFromMovieInfo(streamDescriptor, streamingCfg) {
+    if (!streamDescriptor?.movieId || !streamDescriptor?.quality) {
+        return [];
+    }
+    let manifestUrl = null;
+    let qualityKey = null;
+    try {
+        const resolved = await resolveQualityManifest(streamDescriptor, streamingCfg);
+        qualityKey = resolved.qualityKey;
+        manifestUrl = resolved.manifestUrl;
+        if (!manifestUrl) {
+            return [];
+        }
+        const response = await axios.get(manifestUrl, {
+            responseType: 'text',
+            timeout: streamingCfg.playback?.fallbackHttpTimeoutMs ?? 5000
+        });
+        const segments = parseManifestSegments(response.data);
+        if (segments.length > 0) {
+            log.info(`Đã tải manifest chất lượng ${qualityKey} với ${segments.length} segment từ ${manifestUrl}`);
+        }
+        return segments;
+    } catch (error) {
+        if (error.response) {
+            log.warn(`Không thể tải manifest ${manifestUrl ?? ''} (HTTP ${error.response.status})`);
+        } else if (error.request) {
+            log.warn(`Không thể kết nối tới ${manifestUrl ?? 'manifest'}: ${error.message}`);
+        } else {
+            log.warn(`Không thể tải manifest: ${error.message}`);
+        }
+        return [];
+    }
+}
+
+async function resolveQualityManifest(streamDescriptor, streamingCfg) {
+    const apiClient = createApiClient();
+    try {
+        const response = await apiClient.get(`/api/movies/${streamDescriptor.movieId}`);
+        const payload = response?.data?.data;
+        const qualities = payload?.qualities;
+        if (!qualities || typeof qualities !== 'object') {
+            log.warn(`Movie ${streamDescriptor.movieId} không có thông tin quality trong API.`);
+            return { qualityKey: null, manifestUrl: null };
+        }
+        const qualityEntry = pickQualityEntry(qualities, streamDescriptor.quality);
+        if (!qualityEntry) {
+            log.warn(`Không tìm thấy quality "${streamDescriptor.quality}" trong phản hồi API.`);
+            return { qualityKey: null, manifestUrl: null };
+        }
+        const manifestUrl = resolveManifestUrl(qualityEntry.url, streamingCfg);
+        if (!manifestUrl) {
+            log.warn(`Không xây dựng được URL manifest cho quality ${qualityEntry.key}.`);
+            return { qualityKey: null, manifestUrl: null };
+        }
+        return { qualityKey: qualityEntry.key, manifestUrl };
+    } catch (error) {
+        handleApiError(error, 'Gọi API movie info');
+        return { qualityKey: null, manifestUrl: null };
+    }
+}
+
+function pickQualityEntry(qualities, desiredQuality) {
+    if (!qualities) {
+        return null;
+    }
+    if (qualities[desiredQuality]) {
+        return { key: desiredQuality, url: qualities[desiredQuality] };
+    }
+    const lowerDesired = String(desiredQuality).toLowerCase();
+    const matchedKey = Object.keys(qualities).find((key) => key.toLowerCase() === lowerDesired);
+    if (matchedKey) {
+        return { key: matchedKey, url: qualities[matchedKey] };
+    }
+    return null;
+}
+
+function resolveManifestUrl(rawUrl, streamingCfg) {
+    if (!rawUrl) {
+        return null;
+    }
+    if (/^https?:\/\//i.test(rawUrl)) {
+        return rawUrl;
+    }
+    const originBase = streamingCfg?.fallback?.origin?.baseUrl;
+    if (!originBase) {
+        return rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`;
+    }
+    const baseClean = originBase.replace(/\/+$/g, '');
+    const pathClean = rawUrl.replace(/^\/+/, '');
+    const baseSegments = baseClean.split('/');
+    const pathSegments = pathClean.split('/');
+    const baseLast = baseSegments[baseSegments.length - 1];
+    if (pathSegments.length > 0 && baseLast === pathSegments[0]) {
+        pathSegments.shift();
+    }
+    return `${baseClean}/${pathSegments.join('/')}`;
+}
+
+function parseManifestSegments(manifestContent) {
+    if (!manifestContent) {
+        return [];
+    }
+    const seen = new Set();
+    const result = [];
+    const lines = manifestContent.split(/\r?\n/);
+    for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line || line.startsWith('#')) {
+            continue;
+        }
+        const withoutQuery = line.split('?')[0];
+        const parts = withoutQuery.split('/');
+        const filename = parts.pop();
+        if (!filename) {
+            continue;
+        }
+        const dotIndex = filename.indexOf('.');
+        const segmentId = dotIndex > 0 ? filename.substring(0, dotIndex) : filename;
+        if (!segmentId || seen.has(segmentId)) {
+            continue;
+        }
+        seen.add(segmentId);
+        result.push(segmentId);
+    }
+    return result;
 }
 
 function randomBetween(min, max) {
@@ -342,7 +473,7 @@ async function fetchSegment(segmentId, ctx, options = {}) {
         log.warn('streamId "%s" không theo định dạng <movieId>_<quality>. Seeder vẫn hoạt động, nhưng fallback Origin sẽ bị tắt.', streamDescriptor.streamId);
     }
     const clientId = args.client || `${streamingCfg.defaultClientPrefix}${crypto.randomUUID()}`;
-    const playlist = await loadPlaylist(args, streamingCfg.playlist);
+    const playlist = await loadPlaylist(args, streamingCfg.playlist, streamDescriptor, streamingCfg);
 
     if (!playlist.length) {
         log.error('Playlist is empty. Provide --segments or a manifest file.');
