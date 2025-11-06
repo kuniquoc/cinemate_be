@@ -10,9 +10,9 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: prod
       MOVIE_SERVICE_URL: http://movie-service:8080
-      AUTH_SERVICE_URL: http://auth-service:8080
+      AUTH_SERVICE_URL: http://auth-service:8585
       CUSTOMER_SERVICE_URL: http://customer-service:8080
-      FRONTEND_URL: ${WEB_URL}
+      FRONTEND_URL: ${WEB_URL:-localhost:3000}
       ADMIN_URL: ${ADMIN_URL:-https://admin.cinemate.com}
     networks:
       - cinemate-network
@@ -117,19 +117,13 @@ services:
       - cinemate-zookeeper-data:/var/lib/zookeeper/data
     networks:
       - cinemate-network
-    healthcheck:
-      test: [ "CMD", "nc", "-z", "localhost", "${CINEMATE_ZOOKEEPER_PORT}" ]
-      interval: 5s
-      timeout: 3s
-      retries: 10
 
   cinemate-broker:
     image: confluentinc/cp-kafka:7.5.0
     container_name: cinemate-broker
     #    hostname: cinemate-broker
     depends_on:
-      cinemate-zookeeper:
-        condition: service_healthy
+      - cinemate-zookeeper
     ports:
       - "${CINEMATE_BROKER_HOST_PORT}:${CINEMATE_BROKER_HOST_PORT}"
     environment:

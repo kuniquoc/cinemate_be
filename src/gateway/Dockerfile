@@ -44,13 +44,18 @@ WORKDIR /app
 # Copy the final JAR from the build stage
 COPY --from=build /app/gateway/target/*.jar app.jar
 
-RUN chown spring:spring app.jar
+RUN chown spring:spring app.jar \
+    && mkdir -p /tmp/logs \
+    && chown -R spring:spring /tmp/logs
+
 USER spring
 
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8080/actuator/health || exit 1
+
+ENV LOGGING_FILE_PATH=/tmp/logs
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
 CMD ["$JAVA_OPTS"]

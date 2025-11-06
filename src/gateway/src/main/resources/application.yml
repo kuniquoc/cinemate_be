@@ -6,49 +6,51 @@ spring:
     name: api-gateway
   cloud:
     gateway:
-      routes:
-        # Movie Service Routes
-        - id: movie-service
-          uri: http://localhost:8081
-          predicates:
-            - Path=/api/movies/**
-            
-        # Movie File Upload Routes
-        - id: movie-upload
-          uri: http://localhost:8081
-          predicates:
-            - Path=/api/upload/**
+        server:
+          webflux:
+            routes:
+              # Movie Service Routes
+              - id: movie-service
+                uri: http://localhost:8081
+                predicates:
+                  - Path=/api/movies/**
+                  
+              # Movie File Upload Routes
+              - id: movie-upload
+                uri: http://localhost:8081
+                predicates:
+                  - Path=/api/upload/**
 
-        # Auth Service Routes  
-        - id: auth-service
-          uri: http://localhost:8082
-          predicates:
-            - Path=/api/auth/**
+              # Auth Service Routes  
+              - id: auth-service
+                uri: http://localhost:8082
+                predicates:
+                  - Path=/api/auth/**
 
-        # Customer Service Routes
-        - id: customer-service
-          uri: http://localhost:8083
-          predicates:
-            - Path=/api/customers/**
+              # Customer Service Routes
+              - id: customer-service
+                uri: http://localhost:8083
+                predicates:
+                  - Path=/api/customers/**
 
-      # Global CORS configuration
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowedOrigins: 
-              - "http://localhost:3000"
-              - "http://localhost:4200"
-              - "http://localhost:5173"
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - PATCH
-              - OPTIONS
-            allowedHeaders: "*"
-            allowCredentials: true
-            maxAge: 3600
+            # Global CORS configuration
+            globalcors:
+              cors-configurations:
+                '[/**]':
+                  allowedOrigins:
+                    - "http://localhost:3000"
+                    - "http://localhost:4200"
+                    - "http://localhost:5173"
+                  allowedMethods:
+                    - GET
+                    - POST
+                    - PUT
+                    - DELETE
+                    - PATCH
+                    - OPTIONS
+                  allowedHeaders: "*"
+                  allowCredentials: true
+                  maxAge: 3600
 
 # Management endpoints for health checks
 management:

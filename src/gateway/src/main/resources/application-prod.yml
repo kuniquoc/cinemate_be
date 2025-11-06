@@ -6,49 +6,57 @@ spring:
     name: api-gateway
   cloud:
     gateway:
-      routes:
-        # Movie Service Routes (Production)
-        - id: movie-service-prod
-          uri: ${MOVIE_SERVICE_URL:http://movie-service:8080}
-          predicates:
-            - Path=/api/movies/**
+      server:
+        webflux:
+          routes:
+            # Movie Service Routes (Production)
+            - id: movie-service-prod
+              uri: ${MOVIE_SERVICE_URL:http://movie-service:8080}
+              predicates:
+                - Path=/api/movies/**
             
-        # Movie File Upload Routes (Production)
-        - id: movie-upload-prod
-          uri: ${MOVIE_SERVICE_URL:http://movie-service:8080}
-          predicates:
-            - Path=/api/upload/**
+            # Movie File Upload Routes (Production)
+            - id: movie-upload-prod
+              uri: ${MOVIE_SERVICE_URL:http://movie-service:8080}
+              predicates:
+                - Path=/api/upload/**
 
+            # Auth Service Routes (Production)
+            - id: auth-service-prod
+              uri: ${AUTH_SERVICE_URL:http://auth-service:8080}
+              predicates:
+                - Path=/api/v1/auth/**
 
-        # Auth Service Routes (Production)
-        - id: auth-service-prod
-          uri: ${AUTH_SERVICE_URL:http://auth-service:8080}
-          predicates:
-            - Path=/api/auth/**
+            # Customer Service Routes (Production)
+            - id: customer-service-prod
+              uri: ${CUSTOMER_SERVICE_URL:http://customer-service:8080}
+              predicates:
+                - Path=/api/customers/**
 
-        # Customer Service Routes (Production)
-        - id: customer-service-prod
-          uri: ${CUSTOMER_SERVICE_URL:http://customer-service:8080}
-          predicates:
-            - Path=/api/customers/**
+          # ✅ Global CORS configuration (chuẩn mới)
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins:
+                  - "http://localhost:3000"
+                  - "http://localhost:4200"
+                  - "http://localhost:5173"
+                  - "http://127.0.0.1:3000"
+                  - "http://127.0.0.1:4200"
+                  - "http://127.0.0.1:5173"
+                  - "${FRONTEND_URL:https://cinemate.com}"
+                  - "${ADMIN_URL:https://admin.cinemate.com}"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - PATCH
+                  - OPTIONS
+                allowedHeaders: "*"
+                allowCredentials: true
+                maxAge: 3600
 
-      # Global CORS configuration for production
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowedOrigins: 
-              - "${FRONTEND_URL:https://cinemate.com}"
-              - "${ADMIN_URL:https://admin.cinemate.com}"
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - PATCH
-              - OPTIONS
-            allowedHeaders: "*"
-            allowCredentials: true
-            maxAge: 3600
 
 # Management endpoints for production
 management:
@@ -66,5 +74,6 @@ logging:
     '[org.springframework.cloud.gateway]': INFO
     '[reactor.netty]': WARN
     '[root]': INFO
-  file:
-    name: logs/gateway.log
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
