@@ -54,10 +54,11 @@ public class MovieTranscodeServiceImpl implements MovieTranscodeService {
 
             ffmpeg.transcode(inputFile, movieId, variants);
             Path baseFolder = Paths.get("/tmp/movies", String.valueOf(movieId));
-            String prefix = "movies/" + movieId + "/";
-            minio.uploadFolder(baseFolder.toFile(), prefix);
+            String basePath = String.join("/", "movies", "hls", movieId.toString());
+            String uploadPrefix = basePath + "/";
+            minio.uploadFolder(baseFolder.toFile(), uploadPrefix);
 
-            Map<String, String> qualities = createQualitiesMap(variants, prefix);
+            Map<String, String> qualities = createQualitiesMap(variants, basePath);
             movie.setQualitiesJson(serializeQualities(qualities));
             movie.setStatus(MovieStatus.READY);
             repo.save(movie);
@@ -70,12 +71,12 @@ public class MovieTranscodeServiceImpl implements MovieTranscodeService {
         }
     }
 
-    private Map<String, String> createQualitiesMap(List<FFmpegService.Variant> variants, String prefix) {
+    private Map<String, String> createQualitiesMap(List<FFmpegService.Variant> variants, String basePath) {
         Map<String, String> qualities = new LinkedHashMap<>();
         for (FFmpegService.Variant v : variants) {
-            qualities.put(v.name(), prefix + v.name() + "/index.m3u8");
+            qualities.put(v.name(), String.join("/", basePath, v.name(), "index.m3u8"));
         }
-        qualities.put("master", prefix + "master.m3u8");
+        qualities.put("master", String.join("/", basePath, "master.m3u8"));
         return qualities;
     }
 

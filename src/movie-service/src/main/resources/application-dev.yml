@@ -40,4 +40,5 @@ minio:
   endpoint: ${MINIO_URL:http://localhost:9000}
   access-key: ${MINIO_ACCESS_KEY:minioadmin}
   secret-key: ${MINIO_SECRET_KEY:minioadmin}
-  bucket-name: ${MINIO_BUCKET_NAME:movies}
+  movie-bucket: ${MINIO_MOVIE_BUCKET:${MINIO_BUCKET_NAME:movies}}
+  image-bucket: ${MINIO_IMAGE_BUCKET:${MINIO_BUCKET_NAME:images}}

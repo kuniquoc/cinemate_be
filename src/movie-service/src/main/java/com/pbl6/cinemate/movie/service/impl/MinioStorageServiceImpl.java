@@ -5,7 +5,9 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import jakarta.annotation.PostConstruct;
 
@@ -38,45 +40,59 @@ public class MinioStorageServiceImpl implements MinioStorageService {
     private static final String CHUNK_PREFIX = "/chunk_";
 
     private final MinioClient minioClient;
-    private final String bucket;
+    private final String movieBucket;
+    private final String imageBucket;
     private final String endpoint;
 
     public MinioStorageServiceImpl(MinioClient minioClient,
-            @Value("${minio.bucket}") String bucket,
+            @Value("${minio.movie-bucket}") String movieBucket,
+            @Value("${minio.image-bucket}") String imageBucket,
             @Value("${minio.endpoint}") String endpoint) {
         this.minioClient = minioClient;
-        this.bucket = bucket;
+        this.movieBucket = movieBucket;
+        this.imageBucket = imageBucket;
         this.endpoint = endpoint;
     }
 
     @PostConstruct
-    public void initializeBucket() {
+    public void initializeBuckets() {
         try {
-            boolean bucketExists = minioClient.bucketExists(BucketExistsArgs.builder()
-                    .bucket(bucket)
-                    .build());
-
-            if (!bucketExists) {
-                minioClient.makeBucket(MakeBucketArgs.builder()
-                        .bucket(bucket)
-                        .build());
-                log.info("Created MinIO bucket: {}", bucket);
-            } else {
-                log.info("MinIO bucket already exists: {}", bucket);
+            Set<String> buckets = new LinkedHashSet<>();
+            if (movieBucket != null && !movieBucket.isBlank()) {
+                buckets.add(movieBucket);
+            }
+            if (imageBucket != null && !imageBucket.isBlank()) {
+                buckets.add(imageBucket);
             }
 
-            // Set bucket policy for public read access
-            setBucketPublicPolicy();
-
+            for (String currentBucket : buckets) {
+                ensureBucketExists(currentBucket);
+                setBucketPublicPolicy(currentBucket);
+            }
         } catch (Exception e) {
-            throw new InternalServerException("Failed to initialize MinIO bucket: " + e.getMessage());
+            throw new InternalServerException("Failed to initialize MinIO buckets: " + e.getMessage());
+        }
+    }
+
+    private void ensureBucketExists(String bucketName) throws Exception {
+        boolean bucketExists = minioClient.bucketExists(BucketExistsArgs.builder()
+                .bucket(bucketName)
+                .build());
+
+        if (!bucketExists) {
+            minioClient.makeBucket(MakeBucketArgs.builder()
+                    .bucket(bucketName)
+                    .build());
+            log.info("Created MinIO bucket: {}", bucketName);
+        } else {
+            log.info("MinIO bucket already exists: {}", bucketName);
         }
     }
 
     /**
      * Set bucket policy to allow public read access
      */
-    private void setBucketPublicPolicy() {
+    private void setBucketPublicPolicy(String bucketName) {
         try {
             String policy = """
                     {
@@ -90,14 +106,14 @@ public class MinioStorageServiceImpl implements MinioStorageService {
                             }
                         ]
                     }
-                    """.formatted(bucket);
+                    """.formatted(bucketName);
 
             minioClient.setBucketPolicy(SetBucketPolicyArgs.builder()
-                    .bucket(bucket)
+                    .bucket(bucketName)
                     .config(policy)
                     .build());
 
-            log.info("Set public read policy for MinIO bucket: {}", bucket);
+            log.info("Set public read policy for MinIO bucket: {}", bucketName);
         } catch (Exception e) {
             log.warn("Failed to set bucket policy (this might be expected in some MinIO configurations): {}",
                     e.getMessage());
@@ -112,8 +128,9 @@ public class MinioStorageServiceImpl implements MinioStorageService {
                 contentType = determineContentTypeFromExtension(file.getName());
             }
 
+            String resolvedBucket = resolveBucketForObject(objectPath);
             minioClient.putObject(PutObjectArgs.builder()
-                    .bucket(bucket)
+                    .bucket(resolvedBucket)
                     .object(objectPath)
                     .stream(fis, file.length(), -1)
                     .contentType(contentType)
@@ -153,8 +170,9 @@ public class MinioStorageServiceImpl implements MinioStorageService {
     public String saveChunk(InputStream inputStream, long size, String uploadId, Integer chunkNumber) {
         String objectPath = CHUNKS_PREFIX + uploadId + CHUNK_PREFIX + chunkNumber;
         try {
+            String resolvedBucket = resolveBucketForObject(objectPath);
             minioClient.putObject(PutObjectArgs.builder()
-                    .bucket(bucket)
+                    .bucket(resolvedBucket)
                     .object(objectPath)
                     .stream(inputStream, size, -1)
                     .contentType(DEFAULT_CONTENT_TYPE)
@@ -176,14 +194,15 @@ public class MinioStorageServiceImpl implements MinioStorageService {
             for (int i = 0; i < totalChunks; i++) {
                 String chunkPath = CHUNKS_PREFIX + uploadId + CHUNK_PREFIX + i;
                 sources.add(ComposeSource.builder()
-                        .bucket(bucket)
+                        .bucket(resolveBucketForObject(chunkPath))
                         .object(chunkPath)
                         .build());
             }
 
+            String resolvedBucket = resolveBucketForObject(finalObjectPath);
             // Compose chunks into final object
             minioClient.composeObject(ComposeObjectArgs.builder()
-                    .bucket(bucket)
+                    .bucket(resolvedBucket)
                     .object(finalObjectPath)
                     .sources(sources)
                     .build());
@@ -200,11 +219,12 @@ public class MinioStorageServiceImpl implements MinioStorageService {
     public void cleanupChunks(String uploadId) {
         try {
             String prefix = CHUNKS_PREFIX + uploadId + "/";
+            String resolvedBucket = resolveBucketForObject(prefix);
 
             // List all chunk objects
             Iterable<Result<Item>> results = minioClient.listObjects(
                     ListObjectsArgs.builder()
-                            .bucket(bucket)
+                            .bucket(resolvedBucket)
                             .prefix(prefix)
                             .build());
 
@@ -212,7 +232,7 @@ public class MinioStorageServiceImpl implements MinioStorageService {
             for (Result<Item> result : results) {
                 Item item = result.get();
                 minioClient.removeObject(RemoveObjectArgs.builder()
-                        .bucket(bucket)
+                        .bucket(resolvedBucket)
                         .object(item.objectName())
                         .build());
             }
@@ -228,7 +248,7 @@ public class MinioStorageServiceImpl implements MinioStorageService {
         try {
             String objectPath = CHUNKS_PREFIX + uploadId + CHUNK_PREFIX + chunkNumber;
             minioClient.statObject(io.minio.StatObjectArgs.builder()
-                    .bucket(bucket)
+                    .bucket(resolveBucketForObject(objectPath))
                     .object(objectPath)
                     .build());
             return true;
@@ -244,10 +264,11 @@ public class MinioStorageServiceImpl implements MinioStorageService {
         try {
             String prefix = CHUNKS_PREFIX + uploadId + "/";
             List<Integer> existingChunks = new ArrayList<>();
+            String resolvedBucket = resolveBucketForObject(prefix);
 
             Iterable<Result<Item>> results = minioClient.listObjects(
                     ListObjectsArgs.builder()
-                            .bucket(bucket)
+                            .bucket(resolvedBucket)
                             .prefix(prefix)
                             .build());
 
@@ -275,8 +296,9 @@ public class MinioStorageServiceImpl implements MinioStorageService {
      */
     public InputStream getObject(String objectPath) {
         try {
+            String resolvedBucket = resolveBucketForObject(objectPath);
             return minioClient.getObject(GetObjectArgs.builder()
-                    .bucket(bucket)
+                    .bucket(resolvedBucket)
                     .object(objectPath)
                     .build());
         } catch (Exception e) {
@@ -346,7 +368,11 @@ public class MinioStorageServiceImpl implements MinioStorageService {
      * Get public URL for an object in the bucket
      */
     public String getPublicUrl(String objectPath) {
-        return endpoint + "/" + bucket + "/" + objectPath;
+        if (objectPath == null || objectPath.isBlank()) {
+            return endpoint + "/" + movieBucket + "/";
+        }
+        String normalized = objectPath.startsWith("/") ? objectPath.substring(1) : objectPath;
+        return endpoint + "/" + resolveBucketForObject(normalized) + "/" + normalized;
     }
 
     /**
@@ -362,5 +388,16 @@ public class MinioStorageServiceImpl implements MinioStorageService {
             // Skip invalid chunk names
             return null;
         }
+    }
+
+    private String resolveBucketForObject(String objectPath) {
+        if (objectPath == null || objectPath.isBlank()) {
+            return movieBucket;
+        }
+        String normalized = objectPath.startsWith("/") ? objectPath.substring(1) : objectPath;
+        if (normalized.startsWith("images/")) {
+            return (imageBucket == null || imageBucket.isBlank()) ? movieBucket : imageBucket;
+        }
+        return movieBucket;
     }
 }
