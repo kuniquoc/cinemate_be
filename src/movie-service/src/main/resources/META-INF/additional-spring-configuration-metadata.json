@@ -64,6 +64,11 @@
       "name": "chunk-upload.min-chunk-size",
       "type": "java.lang.String",
       "description": "A description for 'chunk-upload.min-chunk-size'"
+    },
+    {
+      "name": "minio.public-host",
+      "type": "java.lang.String",
+      "description": "A description for 'minio.public-host'"
     }
   ]
 }

@@ -12,6 +12,7 @@ import com.pbl6.cinemate.movie.repository.MovieRepository;
 import com.pbl6.cinemate.movie.service.MinioStorageService;
 import com.pbl6.cinemate.movie.service.MovieService;
 import com.pbl6.cinemate.movie.util.MovieUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -32,6 +33,9 @@ public class MovieServiceImpl implements MovieService {
     private final MovieRepository repo;
     private final ApplicationEventPublisher eventPublisher;
 
+    @Value("${minio.movie-bucket:}")
+    private String movieBucket;
+
     public MovieServiceImpl(MinioStorageService minio, MovieRepository repo,
             ApplicationEventPublisher eventPublisher) {
         this.minio = minio;
@@ -50,9 +54,9 @@ public class MovieServiceImpl implements MovieService {
         }
         transferFile(file, tmp);
 
-        String objectPath = String.join("/", "movies", "original", movie.getId().toString(),
+        String objectPath = String.join("/", "original", movie.getId().toString(),
                 file.getOriginalFilename());
-        minio.save(tmp.toFile(), objectPath);
+        minio.save(tmp.toFile(), movieBucket, objectPath);
 
         // Publish event to start transcoding after transaction commits
         eventPublisher.publishEvent(new MovieCreatedEvent(this, movie.getId(), tmp));

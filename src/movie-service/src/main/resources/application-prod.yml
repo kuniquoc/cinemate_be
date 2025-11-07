@@ -39,3 +39,4 @@ minio:
   movie-bucket: ${MINIO_MOVIE_BUCKET:${MINIO_BUCKET_NAME:movies}}
   image-bucket: ${MINIO_IMAGE_BUCKET:${MINIO_BUCKET_NAME:images}}
   endpoint: ${MINIO_URL}
+  public-host: ${MINIO_PUBLIC_HOST:http://localhost:9000}
