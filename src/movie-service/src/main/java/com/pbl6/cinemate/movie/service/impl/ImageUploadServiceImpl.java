@@ -6,9 +6,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -32,8 +32,8 @@ public class ImageUploadServiceImpl implements ImageUploadService {
 
     private final MinioStorageService minioStorageService;
 
-    @Value("${storage.image-prefix:images}")
-    private String imagePrefix;
+    @Value("${minio.image-bucket:}")
+    private String imageBucket;
 
     @Override
     public ImageUploadResponse upload(MultipartFile file) {
@@ -46,7 +46,7 @@ public class ImageUploadServiceImpl implements ImageUploadService {
         try {
             File tempPhysicalFile = Objects.requireNonNull(tempFile.toFile(), "Temporary file conversion failed");
             file.transferTo(tempPhysicalFile);
-            String url = minioStorageService.save(tempPhysicalFile, objectPath);
+            String url = minioStorageService.save(tempPhysicalFile, imageBucket, objectPath);
             return new ImageUploadResponse(url);
         } catch (BadRequestException e) {
             throw e;
@@ -89,15 +89,7 @@ public class ImageUploadServiceImpl implements ImageUploadService {
     private String buildObjectPath(String extension) {
         String dateSegment = LocalDate.now().format(DATE_FOLDER_FORMAT);
         String uniqueName = UUID.randomUUID().toString();
-        String normalizedPrefix = normalizePrefix(imagePrefix);
-        return normalizedPrefix + "/" + dateSegment + "/" + uniqueName + "." + extension;
-    }
-
-    private String normalizePrefix(String prefix) {
-        String sanitized = (prefix == null || prefix.isBlank()) ? "images" : prefix;
-        sanitized = sanitized.replaceAll("^/+", "");
-        sanitized = sanitized.replaceAll("/+$", "");
-        return sanitized.isEmpty() ? "images" : sanitized;
+        return dateSegment + "/" + uniqueName + "." + extension;
     }
 
     private Path createTempFile(String extension) {

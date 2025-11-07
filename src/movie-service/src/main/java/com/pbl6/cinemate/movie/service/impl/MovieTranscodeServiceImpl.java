@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +30,9 @@ public class MovieTranscodeServiceImpl implements MovieTranscodeService {
     private final MinioStorageService minio;
     private final MovieRepository repo;
     private final ObjectMapper mapper;
+
+    @Value("${minio.movie-bucket:}")
+    private String movieBucket;
 
     public MovieTranscodeServiceImpl(FFmpegService ffmpeg, MinioStorageService minio,
             MovieRepository repo, ObjectMapper mapper) {
@@ -54,9 +58,9 @@ public class MovieTranscodeServiceImpl implements MovieTranscodeService {
 
             ffmpeg.transcode(inputFile, movieId, variants);
             Path baseFolder = Paths.get("/tmp/movies", String.valueOf(movieId));
-            String basePath = String.join("/", "movies", "hls", movieId.toString());
+            String basePath = String.join("/", "hls", movieId.toString());
             String uploadPrefix = basePath + "/";
-            minio.uploadFolder(baseFolder.toFile(), uploadPrefix);
+            minio.uploadFolder(baseFolder.toFile(), movieBucket, uploadPrefix);
 
             Map<String, String> qualities = createQualitiesMap(variants, basePath);
             movie.setQualitiesJson(serializeQualities(qualities));

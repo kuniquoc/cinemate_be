@@ -67,6 +67,9 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
     @Value("${chunk-upload.max-chunk-size:104857600}") // 100MB default
     private Integer maxChunkSize;
 
+    @Value("${minio.movie-bucket:}")
+    private String movieBucket;
+
     @Transactional
     public ChunkUploadInitResponse initiateUpload(ChunkUploadInitRequest request) {
         validateUploadRequest(request);
@@ -117,7 +120,8 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
             }
 
             // Save chunk directly to MinIO
-            minioStorageService.saveChunk(chunkFile.getInputStream(), chunkFile.getSize(), uploadId, chunkNumber);
+            minioStorageService.saveChunk(chunkFile.getInputStream(), chunkFile.getSize(), movieBucket, uploadId,
+                    chunkNumber);
 
             // Update chunk upload record
             updateChunkUploadProgress(chunkUpload, chunkNumber);
@@ -185,9 +189,9 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
                     MovieStatus.PENDING));
 
             // Compose chunks directly in MinIO (server-side)
-            String finalObjectPath = String.join("/", "movies", "original", movie.getId().toString(),
+            String finalObjectPath = String.join("/", "original", movie.getId().toString(),
                     chunkUpload.getFilename());
-            minioStorageService.composeChunks(uploadId, finalObjectPath, chunkUpload.getTotalChunks());
+            minioStorageService.composeChunks(movieBucket, uploadId, finalObjectPath, chunkUpload.getTotalChunks());
 
             // Create temporary file for transcoding
             Path tempFile = createTempFileFromMinIO(finalObjectPath, chunkUpload.getFilename());
@@ -254,7 +258,7 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
         }
 
         // Check if chunk already uploaded in MinIO
-        if (minioStorageService.chunkExists(chunkUpload.getUploadId(), chunkNumber)) {
+        if (minioStorageService.chunkExists(movieBucket, chunkUpload.getUploadId(), chunkNumber)) {
             throw new BadRequestException("Chunk already uploaded: " + chunkNumber);
         }
     }
@@ -292,7 +296,7 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
 
     private List<Integer> calculateMissingChunks(ChunkUpload chunkUpload) {
         // Get existing chunks from MinIO for more accurate status
-        List<Integer> existingChunks = minioStorageService.getExistingChunks(chunkUpload.getUploadId());
+        List<Integer> existingChunks = minioStorageService.getExistingChunks(movieBucket, chunkUpload.getUploadId());
         List<Integer> missingChunks = new ArrayList<>();
 
         for (int i = 0; i < chunkUpload.getTotalChunks(); i++) {
@@ -364,7 +368,7 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
             Path tempFile = Paths.get(tmpBaseDir, "temp_" + System.currentTimeMillis() + "_" + filename);
 
             // Download from MinIO to temporary file
-            try (InputStream inputStream = minioStorageService.getObject(objectPath);
+            try (InputStream inputStream = minioStorageService.getObject(movieBucket, objectPath);
                     FileOutputStream outputStream = new FileOutputStream(tempFile.toFile())) {
                 inputStream.transferTo(outputStream);
             }
@@ -390,7 +394,7 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
             chunkUploadRepository.save(chunkUpload);
 
             // Clean up chunks from MinIO
-            minioStorageService.cleanupChunks(uploadId);
+            minioStorageService.cleanupChunks(movieBucket, uploadId);
 
             // Clean up local temporary files
             cleanupUploadFilesSync(uploadId);
@@ -406,7 +410,7 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
     public void cleanupChunksAsync(String uploadId) {
         try {
             // Clean up chunks from MinIO
-            minioStorageService.cleanupChunks(uploadId);
+            minioStorageService.cleanupChunks(movieBucket, uploadId);
 
             // Clean up any local temporary files
             cleanupUploadFilesSync(uploadId);
