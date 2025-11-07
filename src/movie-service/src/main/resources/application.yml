@@ -55,6 +55,7 @@ minio:
   movie-bucket: movies
   image-bucket: images
   region: us-east-1
+  public-host: http://localhost:9000
 
 ffmpeg:
   tmp-dir: /tmp/movies
