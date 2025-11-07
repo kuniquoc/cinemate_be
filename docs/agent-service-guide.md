@@ -98,7 +98,7 @@ Security tips:
 Common variables:
 - `SERVER_PORT` (default 8080)
 - `POSTGRES_URL`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
-- `MINIO_URL`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET_NAME`
+- `MINIO_URL`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_MOVIE_BUCKET`, `MINIO_IMAGE_BUCKET`
 - `JAVA_OPTS` for JVM tuning inside the container
 
 `application-dev.yml` can pin localhost endpoints (local MinIO, local Postgres) and enable `management.endpoint.health.show-details: always` for debugging.

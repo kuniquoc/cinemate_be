@@ -36,5 +36,6 @@ management:
 minio:
   access-key: ${MINIO_ACCESS_KEY}
   secret-key: ${MINIO_SECRET_KEY}
-  bucket-name: ${MINIO_BUCKET_NAME}
+  movie-bucket: ${MINIO_MOVIE_BUCKET:${MINIO_BUCKET_NAME:movies}}
+  image-bucket: ${MINIO_IMAGE_BUCKET:${MINIO_BUCKET_NAME:images}}
   endpoint: ${MINIO_URL}

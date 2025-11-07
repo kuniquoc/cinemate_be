@@ -13,17 +13,17 @@ spring:
             - id: movie-service-prod
               uri: ${MOVIE_SERVICE_URL:http://movie-service:8080}
               predicates:
-                - Path=/api/movies/**
+                - Path=/api/movies/**,/api/actors/**,/api/categories/**
             
             # Movie File Upload Routes (Production)
             - id: movie-upload-prod
               uri: ${MOVIE_SERVICE_URL:http://movie-service:8080}
               predicates:
-                - Path=/api/upload/**
+                - Path=/api/upload-image/**
 
             # Auth Service Routes (Production)
             - id: auth-service-prod
-              uri: ${AUTH_SERVICE_URL:http://auth-service:8080}
+              uri: ${AUTH_SERVICE_URL:http://auth-service:8585}
               predicates:
                 - Path=/api/v1/auth/**
 
@@ -33,7 +33,18 @@ spring:
               predicates:
                 - Path=/api/customers/**
 
-          # ✅ Global CORS configuration (chuẩn mới)
+            # Streaming Signaling Routes (WebSocket)
+            - id: streaming-signaling-prod
+              uri: ${STREAMING_SIGNALING_URL:ws://streaming-signaling:8083}
+              predicates:
+                - Path=/ws/signaling/**
+
+            # Streaming Seeder Routes (Segment delivery)
+            - id: streaming-seeder-prod
+              uri: ${STREAMING_SEEDER_URL:http://streaming-seeder:8084}
+              predicates:
+                - Path=/streams/**
+
           globalcors:
             cors-configurations:
               '[/**]':

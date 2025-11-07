@@ -50,7 +50,9 @@ public class MovieServiceImpl implements MovieService {
         }
         transferFile(file, tmp);
 
-        minio.save(tmp.toFile(), movie.getId() + "/original/" + file.getOriginalFilename());
+        String objectPath = String.join("/", "movies", "original", movie.getId().toString(),
+                file.getOriginalFilename());
+        minio.save(tmp.toFile(), objectPath);
 
         // Publish event to start transcoding after transaction commits
         eventPublisher.publishEvent(new MovieCreatedEvent(this, movie.getId(), tmp));

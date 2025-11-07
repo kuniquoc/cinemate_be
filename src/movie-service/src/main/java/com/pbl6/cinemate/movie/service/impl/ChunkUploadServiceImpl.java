@@ -47,6 +47,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class ChunkUploadServiceImpl implements ChunkUploadService {
+    private static final String UPLOAD_SESSION_NOT_FOUND = "Upload session not found: ";
 
     private final ChunkUploadRepository chunkUploadRepository;
     private final MovieRepository movieRepository;
@@ -102,7 +103,7 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
     public ChunkUploadResponse uploadChunk(String uploadId, Integer chunkNumber,
             MultipartFile chunkFile, ChunkUploadRequest request) {
         ChunkUpload chunkUpload = chunkUploadRepository.findByUploadId(uploadId)
-                .orElseThrow(() -> new NotFoundException("Upload session not found: " + uploadId));
+                .orElseThrow(() -> new NotFoundException(UPLOAD_SESSION_NOT_FOUND + uploadId));
 
         validateChunkUpload(chunkUpload, chunkNumber, chunkFile);
 
@@ -140,7 +141,7 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
     @Transactional(readOnly = true)
     public ChunkUploadStatusResponse getUploadStatus(String uploadId) {
         ChunkUpload chunkUpload = chunkUploadRepository.findByUploadId(uploadId)
-                .orElseThrow(() -> new NotFoundException("Upload session not found: " + uploadId));
+                .orElseThrow(() -> new NotFoundException(UPLOAD_SESSION_NOT_FOUND + uploadId));
 
         List<Integer> missingChunks = calculateMissingChunks(chunkUpload);
 
@@ -162,7 +163,7 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
     @Transactional
     public MovieUploadResponse completeUpload(String uploadId) {
         ChunkUpload chunkUpload = chunkUploadRepository.findByUploadId(uploadId)
-                .orElseThrow(() -> new NotFoundException("Upload session not found: " + uploadId));
+                .orElseThrow(() -> new NotFoundException(UPLOAD_SESSION_NOT_FOUND + uploadId));
 
         if (chunkUpload.getStatus() != ChunkUploadStatus.IN_PROGRESS) {
             throw new BadRequestException("Upload is not in progress");
@@ -184,7 +185,8 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
                     MovieStatus.PENDING));
 
             // Compose chunks directly in MinIO (server-side)
-            String finalObjectPath = movie.getId() + "/original/" + chunkUpload.getFilename();
+            String finalObjectPath = String.join("/", "movies", "original", movie.getId().toString(),
+                    chunkUpload.getFilename());
             minioStorageService.composeChunks(uploadId, finalObjectPath, chunkUpload.getTotalChunks());
 
             // Create temporary file for transcoding
@@ -376,7 +378,7 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
     @Transactional
     public void cancelUpload(String uploadId) {
         ChunkUpload chunkUpload = chunkUploadRepository.findByUploadId(uploadId)
-                .orElseThrow(() -> new NotFoundException("Upload session not found: " + uploadId));
+                .orElseThrow(() -> new NotFoundException(UPLOAD_SESSION_NOT_FOUND + uploadId));
 
         if (chunkUpload.getStatus() == ChunkUploadStatus.COMPLETED) {
             throw new BadRequestException("Cannot cancel completed upload");
