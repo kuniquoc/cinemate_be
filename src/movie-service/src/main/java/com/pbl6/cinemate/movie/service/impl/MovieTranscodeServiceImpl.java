@@ -62,7 +62,7 @@ public class MovieTranscodeServiceImpl implements MovieTranscodeService {
             String uploadPrefix = basePath + "/";
             minio.uploadFolder(baseFolder.toFile(), movieBucket, uploadPrefix);
 
-            Map<String, String> qualities = createQualitiesMap(variants, basePath);
+            Map<String, String> qualities = createQualitiesMap(variants, "movies/" + basePath);
             movie.setQualitiesJson(serializeQualities(qualities));
             movie.setStatus(MovieStatus.READY);
             repo.save(movie);

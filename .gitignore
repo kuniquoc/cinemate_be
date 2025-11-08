@@ -48,3 +48,7 @@ auth-redis-data/
 large-video.mp4
 sample-video.mp4
 
+data/
+.cache/
+
+node_modules/

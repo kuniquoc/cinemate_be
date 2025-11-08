@@ -16,7 +16,7 @@ spring:
       timeout: PT2S
 
 server:
-  port: ${SERVER_PORT:8083}
+  port: ${SERVER_PORT:8080}
 
 management:
   endpoints:

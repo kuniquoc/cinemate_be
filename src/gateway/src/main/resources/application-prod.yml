@@ -35,13 +35,13 @@ spring:
 
             # Streaming Signaling Routes (WebSocket)
             - id: streaming-signaling-prod
-              uri: ${STREAMING_SIGNALING_URL:ws://streaming-signaling:8083}
+              uri: ${STREAMING_SIGNALING_URL:ws://streaming-signaling:8080}
               predicates:
                 - Path=/ws/signaling/**
 
             # Streaming Seeder Routes (Segment delivery)
             - id: streaming-seeder-prod
-              uri: ${STREAMING_SEEDER_URL:http://streaming-seeder:8084}
+              uri: ${STREAMING_SEEDER_URL:http://streaming-seeder:8080}
               predicates:
                 - Path=/streams/**
 
