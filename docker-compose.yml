@@ -165,9 +165,9 @@ services:
     container_name: cinemate-streaming-signaling
     restart: unless-stopped
     ports:
-      - "${STREAMING_SIGNALING_PORT:-8083}:8083"
+      - "8083:8080"
     environment:
-      SERVER_PORT: ${STREAMING_SIGNALING_PORT:-8083}
+      SERVER_PORT: 8080
       REDIS_HOST: cinemate-redis
       REDIS_PORT: ${REDIS_PORT}
       KAFKA_BOOTSTRAP_SERVERS: cinemate-broker:${CINEMATE_BROKER_PORT}
@@ -185,11 +185,16 @@ services:
       dockerfile: ./streaming-seeder/Dockerfile
     container_name: cinemate-streaming-seeder
     restart: unless-stopped
+    ports:
+      - "8084:8080"
     environment:
-      SERVER_PORT: ${STREAMING_SEEDER_PORT:-8084}
+      SERVER_PORT: 8080
       REDIS_HOST: cinemate-redis
       REDIS_PORT: ${REDIS_PORT}
       SEEDER_CACHE_PATH: /var/cinemate/cache
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_ENDPOINT: http://minio:9000
     volumes:
       - ${STREAMING_SEEDER_CACHE_HOST_PATH:-./data/streaming-cache}:/var/cinemate/cache:rw
     depends_on:

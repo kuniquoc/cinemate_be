@@ -41,8 +41,9 @@ public class SegmentController {
 
     @GetMapping("/{segmentId}")
     public ResponseEntity<Resource> getSegment(
-            @PathVariable String streamId,
-            @PathVariable String segmentId) throws IOException {
+            @PathVariable("streamId") String streamId,
+            @PathVariable("segmentId") String segmentId) throws IOException {
+
         if (!isSafeIdentifier(streamId) || !isSafeIdentifier(segmentId)) {
             return ResponseEntity.badRequest().build();
         }

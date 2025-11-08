@@ -9,7 +9,7 @@ spring:
       timeout: PT2S
 
 server:
-  port: ${SERVER_PORT:8084}
+  port: ${SERVER_PORT:8080}
 
 management:
   endpoints:
@@ -30,7 +30,7 @@ streaming:
     origin:
       enabled: ${SEEDER_ORIGIN_ENABLED:true}
       bucket: ${SEEDER_ORIGIN_BUCKET:}
-      object-prefix: ${SEEDER_ORIGIN_PREFIX:movies}
+      object-prefix: ${SEEDER_ORIGIN_PREFIX:hls}
       segment-extensions:
         - ts
         - m4s
