@@ -11,6 +11,7 @@ import com.pbl6.cinemate.movie.event.MovieCreatedEvent;
 import com.pbl6.cinemate.movie.exception.InternalServerException;
 import com.pbl6.cinemate.movie.exception.NotFoundException;
 import com.pbl6.cinemate.movie.repository.CategoryRepository;
+import com.pbl6.cinemate.movie.repository.MovieActorRepository;
 import com.pbl6.cinemate.movie.repository.MovieCategoryRepository;
 import com.pbl6.cinemate.movie.repository.MovieRepository;
 import com.pbl6.cinemate.movie.service.MinioStorageService;
@@ -37,6 +38,7 @@ public class MovieServiceImpl implements MovieService {
     private final MovieRepository repo;
     private final CategoryRepository categoryRepository;
     private final MovieCategoryRepository movieCategoryRepository;
+    private final MovieActorRepository movieActorRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Value("${minio.movie-bucket:}")
@@ -44,11 +46,12 @@ public class MovieServiceImpl implements MovieService {
 
     public MovieServiceImpl(MinioStorageService minio, MovieRepository repo,
             CategoryRepository categoryRepository, MovieCategoryRepository movieCategoryRepository,
-            ApplicationEventPublisher eventPublisher) {
+            MovieActorRepository movieActorRepository, ApplicationEventPublisher eventPublisher) {
         this.minio = minio;
         this.repo = repo;
         this.categoryRepository = categoryRepository;
         this.movieCategoryRepository = movieCategoryRepository;
+        this.movieActorRepository = movieActorRepository;
         this.eventPublisher = eventPublisher;
     }
 
@@ -85,7 +88,31 @@ public class MovieServiceImpl implements MovieService {
     public MovieInfoResponse getMovieInfo(@NonNull UUID movieId) {
         Movie movie = repo.findById(movieId)
                 .orElseThrow(() -> new NotFoundException("Movie not found with id: " + movieId));
-        return MovieUtils.mapToMovieInfoResponse(movie);
+        
+        // Fetch actors for the movie (only id and fullname)
+        List<ActorResponse> actors = movieActorRepository.findByMovieIdWithActor(movieId)
+                .stream()
+                .map(movieActor -> ActorResponse.builder()
+                        .id(movieActor.getActor().getId())
+                        .fullname(movieActor.getActor().getFullname())
+                        .build())
+                .toList();
+        
+        // Fetch categories for the movie (only id and name)
+        List<CategoryResponse> categories = movieCategoryRepository.findByMovieId(movieId)
+                .stream()
+                .map(movieCategory -> {
+                    return categoryRepository.findById(movieCategory.getCategoryId())
+                            .map(category -> CategoryResponse.builder()
+                                    .id(category.getId())
+                                    .name(category.getName())
+                                    .build())
+                            .orElse(null);
+                })
+                .filter(category -> category != null)
+                .toList();
+        
+        return MovieUtils.mapToMovieInfoResponse(movie, actors, categories);
     }
 
     @Override

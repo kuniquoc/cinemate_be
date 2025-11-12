@@ -3,11 +3,14 @@ package com.pbl6.cinemate.movie.util;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pbl6.cinemate.movie.dto.request.MovieRequest;
+import com.pbl6.cinemate.movie.dto.response.ActorResponse;
+import com.pbl6.cinemate.movie.dto.response.CategoryResponse;
 import com.pbl6.cinemate.movie.dto.response.MovieInfoResponse;
 import com.pbl6.cinemate.movie.dto.response.MovieResponse;
 import com.pbl6.cinemate.movie.entity.Movie;
 import com.pbl6.cinemate.movie.exception.InternalServerException;
 
+import java.util.List;
 import java.util.Map;
 
 public final class MovieUtils {
@@ -40,7 +43,8 @@ public final class MovieUtils {
         }
     }
 
-    public static MovieInfoResponse mapToMovieInfoResponse(Movie movie) {
+    public static MovieInfoResponse mapToMovieInfoResponse(Movie movie, List<ActorResponse> actors,
+            List<CategoryResponse> categories) {
         Map<String, String> qualities = parseQualitiesJson(movie.getQualitiesJson());
         return new MovieInfoResponse(
                 movie.getId(),
@@ -54,7 +58,10 @@ public final class MovieUtils {
                 movie.getTrailerUrl(),
                 movie.getAge(),
                 movie.getYear(),
-                movie.getCountry()
+                movie.getCountry(),
+                movie.getIsVip(),
+                actors,
+                categories
         );
     }
 
