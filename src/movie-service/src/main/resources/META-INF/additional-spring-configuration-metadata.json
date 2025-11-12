@@ -41,6 +41,11 @@
       "description": "Bucket used to store uploaded movie images"
     },
     {
+      "name": "minio.video-bucket",
+      "type": "java.lang.String",
+      "description": "Bucket used to store uploaded video files"
+    },
+    {
       "name": "ffmpeg.executable",
       "type": "java.lang.String",
       "description": "A description for 'ffmpeg.executable'"

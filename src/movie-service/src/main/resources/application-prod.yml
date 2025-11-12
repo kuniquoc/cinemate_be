@@ -38,5 +38,6 @@ minio:
   secret-key: ${MINIO_SECRET_KEY}
   movie-bucket: ${MINIO_MOVIE_BUCKET:${MINIO_BUCKET_NAME:movies}}
   image-bucket: ${MINIO_IMAGE_BUCKET:${MINIO_BUCKET_NAME:images}}
+  video-bucket: ${MINIO_VIDEO_BUCKET:${MINIO_BUCKET_NAME:videos}}
   endpoint: ${MINIO_URL}
   public-host: ${MINIO_PUBLIC_HOST:http://localhost:9000}
