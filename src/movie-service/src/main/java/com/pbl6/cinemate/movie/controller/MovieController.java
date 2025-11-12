@@ -305,4 +305,23 @@ public class MovieController {
                                 httpServletRequest.getRequestURI(),
                                 httpServletRequest.getMethod()));
         }
+
+        @Operation(summary = "Search movies by keyword", description = "Search movies by keyword across title, description, country, actors, and categories with pagination and sorting")
+        @GetMapping("/search")
+        public ResponseEntity<ResponseData> searchMovies(
+                        @Parameter(description = "Search keyword") @RequestParam @NonNull String keyword,
+                        @RequestParam(defaultValue = "1") int page,
+                        @RequestParam(defaultValue = "10") int size,
+                        @RequestParam(defaultValue = "title") String sortBy,
+                        @RequestParam(defaultValue = "asc") @NonNull String sortDirection,
+                        HttpServletRequest httpServletRequest) {
+
+                PaginatedResponse<MovieResponse> data = movieService.searchMovies(keyword, page - 1, size, sortBy, sortDirection);
+
+                return ResponseEntity.ok(ResponseData.successWithMeta(
+                                data,
+                                "Movies search results retrieved successfully",
+                                httpServletRequest.getRequestURI(),
+                                httpServletRequest.getMethod()));
+        }
 }
