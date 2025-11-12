@@ -1,5 +1,7 @@
 package com.pbl6.cinemate.movie.dto.request;
 
+import java.util.UUID;
+
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -13,9 +15,7 @@ public record ChunkUploadInitRequest(
 
         @NotNull(message = "Chunk size is required") @Min(value = 1024, message = "Chunk size must be at least 1KB") Integer chunkSize,
 
-        @NotBlank(message = "Movie title is required") String movieTitle,
-
-        String movieDescription) {
+        @NotNull(message = "Movie ID is required") UUID movieId) {
     public Integer getTotalChunks() {
         return (int) Math.ceil((double) totalSize / chunkSize);
     }

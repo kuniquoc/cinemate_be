@@ -12,7 +12,6 @@ import com.pbl6.cinemate.movie.dto.response.MovieUploadResponse;
 import com.pbl6.cinemate.movie.entity.ChunkUpload;
 import com.pbl6.cinemate.movie.entity.Movie;
 import com.pbl6.cinemate.movie.enums.ChunkUploadStatus;
-import com.pbl6.cinemate.movie.enums.MovieStatus;
 import com.pbl6.cinemate.movie.exception.BadRequestException;
 import com.pbl6.cinemate.movie.exception.InternalServerException;
 import com.pbl6.cinemate.movie.exception.NotFoundException;
@@ -48,6 +47,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ChunkUploadServiceImpl implements ChunkUploadService {
     private static final String UPLOAD_SESSION_NOT_FOUND = "Upload session not found: ";
+    private static final String MOVIE_NOT_FOUND = "Movie not found: ";
 
     private final ChunkUploadRepository chunkUploadRepository;
     private final MovieRepository movieRepository;
@@ -74,6 +74,10 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
     public ChunkUploadInitResponse initiateUpload(ChunkUploadInitRequest request) {
         validateUploadRequest(request);
 
+        // Verify movie exists
+        movieRepository.findById(request.movieId())
+                .orElseThrow(() -> new NotFoundException(MOVIE_NOT_FOUND + request.movieId()));
+
         String uploadId = generateUploadId();
         ChunkUpload chunkUpload = new ChunkUpload(
                 uploadId,
@@ -82,13 +86,13 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
                 request.totalSize(),
                 request.getTotalChunks(),
                 request.chunkSize(),
-                request.movieTitle(),
-                request.movieDescription());
+                request.movieId());
 
         chunkUpload = chunkUploadRepository.save(chunkUpload);
         createUploadDirectory(uploadId);
 
-        log.info("Initiated chunk upload with ID: {} for file: {}", uploadId, request.filename());
+        log.info("Initiated chunk upload with ID: {} for file: {} and movie: {}",
+                uploadId, request.filename(), request.movieId());
 
         return new ChunkUploadInitResponse(
                 chunkUpload.getUploadId(),
@@ -98,8 +102,7 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
                 chunkUpload.getChunkSize(),
                 chunkUpload.getStatus().name(),
                 chunkUpload.getExpiresAt(),
-                chunkUpload.getMovieTitle(),
-                chunkUpload.getMovieDescription());
+                chunkUpload.getMovieId());
     }
 
     @Transactional
@@ -160,8 +163,7 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
                 chunkUpload.getCreatedAt(),
                 chunkUpload.getUpdatedAt(),
                 chunkUpload.getExpiresAt(),
-                chunkUpload.getMovieTitle(),
-                chunkUpload.getMovieDescription());
+                chunkUpload.getMovieId());
     }
 
     @Transactional
@@ -182,11 +184,9 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
             chunkUpload.setStatus(ChunkUploadStatus.MERGING);
             chunkUploadRepository.save(chunkUpload);
 
-            // Create movie record
-            Movie movie = movieRepository.save(new Movie(
-                    chunkUpload.getMovieTitle(),
-                    chunkUpload.getMovieDescription(),
-                    MovieStatus.PENDING));
+            // Get existing movie record
+            Movie movie = movieRepository.findById(chunkUpload.getMovieId())
+                    .orElseThrow(() -> new NotFoundException(MOVIE_NOT_FOUND + chunkUpload.getMovieId()));
 
             // Compose chunks directly in MinIO (server-side)
             String finalObjectPath = String.join("/", "original", movie.getId().toString(),
@@ -207,7 +207,7 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
             // Note: In production, this should be done via a separate scheduled task
             cleanupUploadFilesSync(uploadId);
 
-            log.info("Successfully completed chunk upload {} and created movie {}",
+            log.info("Successfully completed chunk upload {} and processed movie {}",
                     uploadId, movie.getId());
 
             return new MovieUploadResponse(movie.getId(), movie.getStatus().name());

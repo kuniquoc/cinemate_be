@@ -60,9 +60,9 @@ public class ChunkUpload {
 
     private Instant expiresAt;
 
-    // Movie info to create after upload completes
-    private String movieTitle;
-    private String movieDescription;
+    // Reference to the movie being uploaded
+    @Column(nullable = false)
+    private UUID movieId;
 
     @PrePersist
     public void prePersist() {
@@ -80,7 +80,7 @@ public class ChunkUpload {
     }
 
     public ChunkUpload(String uploadId, String filename, String mimeType, Long totalSize,
-            Integer totalChunks, Integer chunkSize, String movieTitle, String movieDescription) {
+            Integer totalChunks, Integer chunkSize, UUID movieId) {
         this.uploadId = uploadId;
         this.filename = filename;
         this.mimeType = mimeType;
@@ -90,7 +90,6 @@ public class ChunkUpload {
         this.uploadedChunks = 0;
         this.status = ChunkUploadStatus.INITIATED;
         this.uploadedChunksList = "[]";
-        this.movieTitle = movieTitle;
-        this.movieDescription = movieDescription;
+        this.movieId = movieId;
     }
 }

@@ -9,6 +9,11 @@ const { log, delay, createApiClient, handleApiError } = require('../utils');
 const SignalingClient = require('./signaling-client');
 const PlaybackBuffer = require('./playback-buffer');
 const { scorePeers } = require('./peer-selector');
+// moved WebRTC details into separate modules
+const WebRtcConnectionManager = require('./webrtc/connection-manager');
+const {
+    DEFAULT_CHUNK_SIZE
+} = require('./webrtc/chunk-protocol');
 
 const segmentCache = new Map();
 const DEFAULT_SEEDER_TEMPLATE = '/streams/{streamId}/segments/{segmentId}';
@@ -252,6 +257,7 @@ function computeSpeedMbps(bytes, latencyMs) {
     const megabytes = bytes / (1024 * 1024);
     return megabytes / seconds;
 }
+
 
 async function ensureCacheDirectory(fallbackCfg, streamId) {
     if (!fallbackCfg.persistCacheToDisk) {
@@ -506,6 +512,44 @@ async function main() {
         logger: log
     });
 
+    // Initialize WebRTC Connection Manager
+    const webrtcManager = new WebRtcConnectionManager({
+        clientId,
+        streamId,
+        signaling,
+        stunServers: streamingCfg.webrtc?.stunServers,
+        logger: log,
+        chunkSize: DEFAULT_CHUNK_SIZE
+    });
+
+    // When a complete segment is received via DC, cache + enqueue
+    webrtcManager.on('segment', ({ from, segmentId, data }) => {
+        const rec = {
+            streamId,
+            segmentId,
+            data,
+            sizeBytes: data.length,
+            latencyMs: 0,
+            speedMbps: 0,
+            source: 'peer-dc',
+            provider: from,
+            originUrl: 'webrtc-datachannel',
+            receivedAt: Date.now()
+        };
+        cacheSegmentLocally(ctx, rec).catch(() => undefined);
+        enqueueSegment(rec);
+        log.info(`Received complete segment ${segmentId} via WebRTC from ${from}`);
+    });
+
+    // When we receive a request from peer, try to send cached segment in chunks
+    webrtcManager.on('request', ({ from, segmentId, channel }) => {
+        const cached = getCachedSegment(ctx, segmentId);
+        if (cached && channel?.readyState === 'open') {
+            webrtcManager.sendSegment(channel, segmentId, cached.data);
+            log.debug(`Pushed segment ${segmentId} to ${from} via WebRTC`);
+        }
+    });
+
     let shuttingDown = false;
     const gracefulShutdown = async () => {
         if (shuttingDown) {
@@ -592,6 +636,8 @@ async function main() {
             enqueueSegment(cached);
             return cached;
         }
+        // Try requesting via WebRTC manager first
+        webrtcManager.requestSegment(segmentId);
         if (fetchQueue.has(segmentId)) {
             return fetchQueue.get(segmentId);
         }
