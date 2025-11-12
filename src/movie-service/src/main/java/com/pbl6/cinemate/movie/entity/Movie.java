@@ -43,6 +43,9 @@ public class Movie {
     private Integer age;
     private Integer year;
     private String country;
+    
+    @Column(name = "is_vip", nullable = false)
+    private Boolean isVip;
 
     public Movie(String title, String description, MovieStatus status) {
         this.title = title;
@@ -58,6 +61,9 @@ public class Movie {
         this.createdAt = now;
         this.updatedAt = now;
         this.status = MovieStatus.PENDING;
+        if (this.isVip == null) {
+            this.isVip = false;
+        }
     }
 
     @PreUpdate

@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
@@ -30,4 +31,7 @@ public class MovieRequest {
     private Integer year;
     @NotBlank(message = "country is required")
     private String country;
+    @NotNull(message = "Category is required")
+    private UUID categoryId;
+    private Boolean isVip; // Optional field, defaults to false if not provided
 }

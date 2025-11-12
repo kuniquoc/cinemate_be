@@ -114,9 +114,13 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public List<MovieResponse> getMoviesByCategory(UUID categoryId) {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new NotFoundException("Category not found with id: " + categoryId));
+        
         List<MovieCategory> movieCategories = movieCategoryRepository.findByCategoryId(categoryId);
         List<UUID> movieIds = movieCategories.stream().map(MovieCategory::getMovieId).toList();
-        return movieRepository.findAllById(movieIds).stream().map(MovieUtils::mapToMovieResponse)
+        return movieRepository.findAllById(movieIds).stream()
+                .map(movie -> MovieUtils.mapToMovieResponse(movie, category.getName()))
                 .collect(Collectors.toList());
     }
 

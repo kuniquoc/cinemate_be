@@ -3,11 +3,15 @@ package com.pbl6.cinemate.movie.service.impl;
 import com.pbl6.cinemate.movie.dto.request.MovieRequest;
 import com.pbl6.cinemate.movie.dto.request.MovieUploadRequest;
 import com.pbl6.cinemate.movie.dto.response.*;
+import com.pbl6.cinemate.movie.entity.Category;
 import com.pbl6.cinemate.movie.entity.Movie;
+import com.pbl6.cinemate.movie.entity.MovieCategory;
 import com.pbl6.cinemate.movie.enums.MovieStatus;
 import com.pbl6.cinemate.movie.event.MovieCreatedEvent;
 import com.pbl6.cinemate.movie.exception.InternalServerException;
 import com.pbl6.cinemate.movie.exception.NotFoundException;
+import com.pbl6.cinemate.movie.repository.CategoryRepository;
+import com.pbl6.cinemate.movie.repository.MovieCategoryRepository;
 import com.pbl6.cinemate.movie.repository.MovieRepository;
 import com.pbl6.cinemate.movie.service.MinioStorageService;
 import com.pbl6.cinemate.movie.service.MovieService;
@@ -31,15 +35,20 @@ import java.util.UUID;
 public class MovieServiceImpl implements MovieService {
     private final MinioStorageService minio;
     private final MovieRepository repo;
+    private final CategoryRepository categoryRepository;
+    private final MovieCategoryRepository movieCategoryRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Value("${minio.movie-bucket:}")
     private String movieBucket;
 
     public MovieServiceImpl(MinioStorageService minio, MovieRepository repo,
+            CategoryRepository categoryRepository, MovieCategoryRepository movieCategoryRepository,
             ApplicationEventPublisher eventPublisher) {
         this.minio = minio;
         this.repo = repo;
+        this.categoryRepository = categoryRepository;
+        this.movieCategoryRepository = movieCategoryRepository;
         this.eventPublisher = eventPublisher;
     }
 
@@ -82,28 +91,72 @@ public class MovieServiceImpl implements MovieService {
     @Override
     public List<MovieResponse> getAllMovies() {
         List<Movie> movies = repo.findAll();
-        return movies.stream().map(MovieUtils::mapToMovieResponse).toList();
+        return movies.stream().map(movie -> {
+            String categoryName = getCategoryNameForMovie(movie.getId());
+            return MovieUtils.mapToMovieResponse(movie, categoryName);
+        }).toList();
     }
 
     @Override
     @Transactional
     public MovieResponse createMovie(MovieRequest movieRequest) {
+        // Validate that the category exists
+        Category category = categoryRepository.findById(movieRequest.getCategoryId())
+                .orElseThrow(() -> new NotFoundException("Category not found with id: " + movieRequest.getCategoryId()));
+
+        // Create and save the movie
         Movie movie = MovieUtils.mapToMovie(movieRequest);
         if (movie == null) {
             throw new InternalServerException("Failed to map MovieRequest to Movie entity");
         }
         Movie savedMovie = repo.save(movie);
-        return MovieUtils.mapToMovieResponse(savedMovie);
+
+        // Create the movie-category relationship
+        MovieCategory movieCategory = MovieCategory.builder()
+                .movieId(savedMovie.getId())
+                .categoryId(category.getId())
+                .build();
+        movieCategoryRepository.save(movieCategory);
+
+        return MovieUtils.mapToMovieResponse(savedMovie, category.getName());
     }
 
     @Override
     @Transactional
     public MovieResponse updateMovie(@NonNull UUID movieId, MovieRequest movieRequest) {
-        Movie movie = repo.findById(movieId).orElseThrow(() -> new NotFoundException("Movie not found"));
+        Movie movie = repo.findById(movieId)
+                .orElseThrow(() -> new NotFoundException("Movie not found with id: " + movieId));
+
+        // Validate that the category exists
+        Category category = categoryRepository.findById(movieRequest.getCategoryId())
+                .orElseThrow(() -> new NotFoundException("Category not found with id: " + movieRequest.getCategoryId()));
+
+        // Update movie fields
         movie.setTitle(movieRequest.getTitle());
         movie.setDescription(movieRequest.getDescription());
+        movie.setHorizontalPoster(movieRequest.getHorizontalPoster());
+        movie.setVerticalPoster(movieRequest.getVerticalPoster());
+        movie.setReleaseDate(movieRequest.getReleaseDate());
+        movie.setTrailerUrl(movieRequest.getTrailerUrl());
+        movie.setAge(movieRequest.getAge());
+        movie.setYear(movieRequest.getYear());
+        movie.setCountry(movieRequest.getCountry());
+        movie.setIsVip(movieRequest.getIsVip() != null ? movieRequest.getIsVip() : false);
+
         Movie updatedMovie = repo.save(movie);
-        return MovieUtils.mapToMovieResponse(updatedMovie);
+
+        // Update movie-category relationship
+        // Delete existing category associations for this movie
+        movieCategoryRepository.deleteByMovieId(movieId);
+        
+        // Create new movie-category relationship
+        MovieCategory movieCategory = MovieCategory.builder()
+                .movieId(updatedMovie.getId())
+                .categoryId(category.getId())
+                .build();
+        movieCategoryRepository.save(movieCategory);
+
+        return MovieUtils.mapToMovieResponse(updatedMovie, category.getName());
     }
 
     @Override
@@ -120,7 +173,10 @@ public class MovieServiceImpl implements MovieService {
             @NonNull String sortDirection) {
         var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
         var moviePage = repo.findAll(pageable);
-        List<MovieResponse> movies = moviePage.getContent().stream().map(MovieUtils::mapToMovieResponse).toList();
+        List<MovieResponse> movies = moviePage.getContent().stream().map(movie -> {
+            String categoryName = getCategoryNameForMovie(movie.getId());
+            return MovieUtils.mapToMovieResponse(movie, categoryName);
+        }).toList();
         return new PaginatedResponse<>(movies, moviePage.getNumber(), moviePage.getSize(), moviePage.getTotalPages());
     }
 
@@ -138,6 +194,17 @@ public class MovieServiceImpl implements MovieService {
         } catch (Exception e) {
             throw new InternalServerException("Failed to transfer uploaded file: " + e.getMessage());
         }
+    }
+
+    private String getCategoryNameForMovie(UUID movieId) {
+        List<MovieCategory> movieCategories = movieCategoryRepository.findByMovieId(movieId);
+        if (movieCategories.isEmpty()) {
+            return null;
+        }
+        UUID categoryId = movieCategories.get(0).getCategoryId();
+        return categoryRepository.findById(categoryId)
+                .map(Category::getName)
+                .orElse(null);
     }
 
 }

@@ -11,9 +11,19 @@ import com.pbl6.cinemate.movie.exception.InternalServerException;
 import java.util.Map;
 
 public final class MovieUtils {
-    public static MovieResponse mapToMovieResponse(Movie movie) {
-        return new MovieResponse(movie.getId(), movie.getTitle(), movie.getDescription(),
-                movie.getHorizontalPoster(), movie.getVerticalPoster());
+    public static MovieResponse mapToMovieResponse(Movie movie, String categoryName) {
+        return new MovieResponse(
+                movie.getId(),
+                movie.getTitle(),
+                movie.getDescription(),
+                movie.getHorizontalPoster(),
+                movie.getVerticalPoster(),
+                categoryName,
+                movie.getIsVip(),
+                movie.getAge(),
+                movie.getYear(),
+                movie.getTrailerUrl()
+        );
     }
 
     public static Map<String, String> parseQualitiesJson(String qualitiesJson) {
@@ -59,6 +69,7 @@ public final class MovieUtils {
                 .title(movieRequest.getTitle())
                 .trailerUrl(movieRequest.getTrailerUrl())
                 .year(movieRequest.getYear())
+                .isVip(movieRequest.getIsVip() != null ? movieRequest.getIsVip() : false)
                 .build();
     }
 
