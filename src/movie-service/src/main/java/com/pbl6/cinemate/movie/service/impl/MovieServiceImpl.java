@@ -207,6 +207,18 @@ public class MovieServiceImpl implements MovieService {
         return new PaginatedResponse<>(movies, moviePage.getNumber(), moviePage.getSize(), moviePage.getTotalPages());
     }
 
+    @Override
+    public PaginatedResponse<MovieResponse> searchMovies(@NonNull String keyword, int page, int size, String sortBy,
+            @NonNull String sortDirection) {
+        var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
+        var moviePage = repo.searchMoviesByKeyword(keyword, pageable);
+        List<MovieResponse> movies = moviePage.getContent().stream().map(movie -> {
+            String categoryName = getCategoryNameForMovie(movie.getId());
+            return MovieUtils.mapToMovieResponse(movie, categoryName);
+        }).toList();
+        return new PaginatedResponse<>(movies, moviePage.getNumber(), moviePage.getSize(), moviePage.getTotalPages());
+    }
+
     private Path createTempFile() {
         try {
             return Files.createTempFile("movie-", ".mp4");
