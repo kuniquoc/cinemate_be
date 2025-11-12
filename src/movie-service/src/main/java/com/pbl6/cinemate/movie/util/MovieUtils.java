@@ -14,14 +14,14 @@ import java.util.List;
 import java.util.Map;
 
 public final class MovieUtils {
-    public static MovieResponse mapToMovieResponse(Movie movie, String categoryName) {
+    public static MovieResponse mapToMovieResponse(Movie movie, List<CategoryResponse> categories) {
         return new MovieResponse(
                 movie.getId(),
                 movie.getTitle(),
                 movie.getDescription(),
                 movie.getHorizontalPoster(),
                 movie.getVerticalPoster(),
-                categoryName,
+                categories,
                 movie.getIsVip(),
                 movie.getAge(),
                 movie.getYear(),

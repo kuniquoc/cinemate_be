@@ -1,5 +1,6 @@
 package com.pbl6.cinemate.movie.dto.response;
 
+import java.util.List;
 import java.util.UUID;
 
 public record MovieResponse(
@@ -8,7 +9,7 @@ public record MovieResponse(
         String description,
         String horizontalPoster,
         String verticalPoster,
-        String categoryName,
+        List<CategoryResponse> categories,
         Boolean isVip,
         Integer age,
         Integer year,

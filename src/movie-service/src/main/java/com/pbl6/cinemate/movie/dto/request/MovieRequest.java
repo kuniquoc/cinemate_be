@@ -1,12 +1,14 @@
 package com.pbl6.cinemate.movie.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -31,7 +33,7 @@ public class MovieRequest {
     private Integer year;
     @NotBlank(message = "country is required")
     private String country;
-    @NotNull(message = "Category is required")
-    private UUID categoryId;
+    @NotEmpty(message = "At least one category is required")
+    private List<UUID> categoryIds;
     private Boolean isVip; // Optional field, defaults to false if not provided
 }
