@@ -4,6 +4,7 @@ import com.pbl6.cinemate.movie.dto.request.CategoryRequest;
 import com.pbl6.cinemate.movie.dto.response.CategoryResponse;
 import com.pbl6.cinemate.movie.dto.response.MovieResponse;
 import com.pbl6.cinemate.movie.entity.Category;
+import com.pbl6.cinemate.movie.entity.Movie;
 import com.pbl6.cinemate.movie.entity.MovieCategory;
 import com.pbl6.cinemate.movie.exception.NotFoundException;
 import com.pbl6.cinemate.movie.repository.CategoryRepository;
@@ -116,13 +117,40 @@ public class CategoryServiceImpl implements CategoryService {
     public List<MovieResponse> getMoviesByCategory(UUID categoryId) {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new NotFoundException("Category not found with id: " + categoryId));
-        
+
         List<MovieCategory> movieCategories = movieCategoryRepository.findByCategoryId(categoryId);
-        List<UUID> movieIds = movieCategories.stream().map(MovieCategory::getMovieId).toList();
-        return movieRepository.findAllById(movieIds).stream()
-                .map(movie -> MovieUtils.mapToMovieResponse(movie, category.getName()))
-                .collect(Collectors.toList());
+        if (movieCategories.isEmpty()) {
+            return List.of();
+        }
+
+        List<UUID> movieIds = movieCategories.stream()
+                .map(MovieCategory::getMovieId)
+                .toList();
+
+        List<Movie> movies = movieRepository.findAllById(movieIds);
+
+        return movies.stream().map(movie -> {
+            List<MovieCategory> relatedMovieCategories = movieCategoryRepository.findByMovieId(movie.getId());
+            List<UUID> relatedCategoryIds = relatedMovieCategories.stream()
+                    .map(MovieCategory::getCategoryId)
+                    .toList();
+
+            // Lấy thông tin category từ repository
+            List<Category> relatedCategories = categoryRepository.findAllByIdIn(relatedCategoryIds);
+
+            // Map sang CategoryResponse
+            List<CategoryResponse> categoryResponses = relatedCategories.stream()
+                    .map(cat -> CategoryResponse.builder()
+                            .id(cat.getId())
+                            .name(cat.getName())
+                            .build())
+                    .toList();
+
+            // Map sang MovieResponse (giờ nên hỗ trợ list category)
+            return MovieUtils.mapToMovieResponse(movie, categoryResponses);
+        }).collect(Collectors.toList());
     }
+
 
     private CategoryResponse mapToResponse(Category category) {
         return CategoryResponse.builder()
