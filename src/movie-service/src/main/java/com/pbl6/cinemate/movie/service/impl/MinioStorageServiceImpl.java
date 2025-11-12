@@ -43,13 +43,16 @@ public class MinioStorageServiceImpl implements MinioStorageService {
     private final MinioClient minioClient;
     private final String movieBucket;
     private final String imageBucket;
+    private final String videoBucket;
 
     public MinioStorageServiceImpl(MinioClient minioClient,
             @Value("${minio.movie-bucket}") String movieBucket,
-            @Value("${minio.image-bucket}") String imageBucket) {
+            @Value("${minio.image-bucket}") String imageBucket,
+            @Value("${minio.video-bucket}") String videoBucket) {
         this.minioClient = minioClient;
         this.movieBucket = movieBucket;
         this.imageBucket = imageBucket;
+        this.videoBucket = videoBucket;
     }
 
     @PostConstruct
@@ -61,6 +64,9 @@ public class MinioStorageServiceImpl implements MinioStorageService {
             }
             if (imageBucket != null && !imageBucket.isBlank()) {
                 buckets.add(imageBucket);
+            }
+            if (videoBucket != null && !videoBucket.isBlank()) {
+                buckets.add(videoBucket);
             }
 
             for (String currentBucket : buckets) {

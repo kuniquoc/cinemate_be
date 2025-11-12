@@ -114,6 +114,13 @@ module.exports = {
         signaling: {
             wsBaseUrl: 'ws://localhost:8083/ws/signaling'
         },
+        webrtc: {
+            enabled: true,
+            stunServers: [
+                'stun:stun.l.google.com:19302',
+                'stun:global.stun.twilio.com:3478'
+            ]
+        },
         fallback: {
             seeder: {
                 baseUrl: seederBaseUrl,

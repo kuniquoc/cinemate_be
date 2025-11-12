@@ -125,6 +125,12 @@ class SignalingClient extends EventEmitter {
             case 'peer_list':
                 this.emit('peer_list', message);
                 break;
+            // WebRTC signaling passthrough
+            case 'RTC_OFFER':
+            case 'RTC_ANSWER':
+            case 'ICE_CANDIDATE':
+                this.emit(type, message);
+                break;
             case 'ERROR':
             case 'error':
                 this.log.error(`Signaling error: ${message.message || 'unknown error'}`);
@@ -163,6 +169,27 @@ class SignalingClient extends EventEmitter {
             this.socket.close();
         }
         this.connected = false;
+    }
+
+    // --- WebRTC signaling helpers ---
+    send(message) {
+        if (!this.connected || !this.socket) {
+            throw new Error('Signaling connection is not ready');
+        }
+        const payload = JSON.stringify(message);
+        this.socket.send(payload);
+    }
+
+    sendRtcOffer(to, sdp) {
+        this.send({ type: 'RTC_OFFER', from: this.clientId, to, streamId: this.streamId, sdp });
+    }
+
+    sendRtcAnswer(to, sdp) {
+        this.send({ type: 'RTC_ANSWER', from: this.clientId, to, streamId: this.streamId, sdp });
+    }
+
+    sendIceCandidate(to, candidate) {
+        this.send({ type: 'ICE_CANDIDATE', from: this.clientId, to, streamId: this.streamId, candidate });
     }
 }
 

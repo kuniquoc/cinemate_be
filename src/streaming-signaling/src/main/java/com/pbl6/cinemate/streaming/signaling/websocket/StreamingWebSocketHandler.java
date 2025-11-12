@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -24,6 +26,7 @@ public class StreamingWebSocketHandler extends TextWebSocketHandler {
     private static final Logger log = LoggerFactory.getLogger(StreamingWebSocketHandler.class);
     private final SignalingService signalingService;
     private final ObjectMapper objectMapper;
+    private final ConcurrentMap<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
 
     public StreamingWebSocketHandler(SignalingService signalingService, ObjectMapper objectMapper) {
         this.signalingService = signalingService;
@@ -35,6 +38,7 @@ public class StreamingWebSocketHandler extends TextWebSocketHandler {
         String clientId = attribute(session, SignalingHandshakeInterceptor.ATTR_CLIENT_ID);
         String streamId = attribute(session, SignalingHandshakeInterceptor.ATTR_STREAM_ID);
         PeerListMessage peerListMessage = signalingService.registerClient(clientId, streamId);
+        sessions.put(clientId, session);
         send(session, peerListMessage);
     }
 
@@ -56,6 +60,7 @@ public class StreamingWebSocketHandler extends TextWebSocketHandler {
         switch (type) {
             case "WHO_HAS" -> handleWhoHas(session, payload);
             case "REPORT_SEGMENT" -> handleReportSegment(session, payload);
+            case "RTC_OFFER", "RTC_ANSWER", "ICE_CANDIDATE" -> handleRtcRelay(session, payload);
             default -> send(session, new ErrorMessage("Unsupported message type: " + type));
         }
         log.debug("Handled {} message from client {}", type, clientId);
@@ -66,6 +71,7 @@ public class StreamingWebSocketHandler extends TextWebSocketHandler {
         String clientId = attribute(session, SignalingHandshakeInterceptor.ATTR_CLIENT_ID);
         String streamId = attribute(session, SignalingHandshakeInterceptor.ATTR_STREAM_ID);
         signalingService.handleDisconnect(clientId, streamId);
+        sessions.remove(clientId);
     }
 
     private void handleWhoHas(WebSocketSession session, JsonNode payload) throws IOException {
@@ -117,6 +123,24 @@ public class StreamingWebSocketHandler extends TextWebSocketHandler {
         ReportSegmentAckMessage ack = signalingService.handleReportSegment(clientId, streamId, segmentId, source, speed,
                 latency);
         send(session, ack);
+    }
+
+    private void handleRtcRelay(WebSocketSession session, JsonNode payload) throws IOException {
+        String from = attribute(session, SignalingHandshakeInterceptor.ATTR_CLIENT_ID);
+        String to = payload.path("to").textValue();
+        if (to == null || to.isBlank()) {
+            send(session, new ErrorMessage("RTC message requires 'to'"));
+            return;
+        }
+        WebSocketSession target = sessions.get(to);
+        if (target == null || !target.isOpen()) {
+            send(session, new ErrorMessage("Target peer is not connected: " + to));
+            return;
+        }
+        // Forward as-is, enforcing 'from'
+        ((com.fasterxml.jackson.databind.node.ObjectNode) payload).put("from", from);
+        String json = objectMapper.writeValueAsString(payload);
+        target.sendMessage(new TextMessage(Objects.requireNonNull(json, "Serialized payload must not be null")));
     }
 
     private <T> void send(WebSocketSession session, T payload) throws IOException {
