@@ -68,7 +68,7 @@ client-simulator/
 
 - Sử dụng `npm run streaming:playback -- --stream=<id>` để mô phỏng viewer.
 - Tham số hữu ích: `--stream=<movieId>_<quality>`, `--manifest=<path>`, `--client=<id>`.
-- Viewer mặc định tự gọi Movie Service để lấy URL manifest và tải `index.m3u8` từ origin; chỉ cần cung cấp manifest thủ công khi kiểm thử ngoại tuyến. Origin trong cấu hình chỉ phục vụ mục đích tải manifest.
+- Viewer mặc định tự gọi Movie Service để lấy URL manifest và tải `playlist.m3u8` từ origin; chỉ cần cung cấp manifest thủ công khi kiểm thử ngoại tuyến. Origin trong cấu hình chỉ phục vụ mục đích tải manifest.
 - Các tham số liên quan tới buffer, retry, fallback HTTP nằm trong `config.streaming`.
 
 ### Lấy `streamId` ở đâu?

@@ -1,17 +1,13 @@
 package com.pbl6.cinemate.movie.util;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pbl6.cinemate.movie.dto.request.MovieRequest;
 import com.pbl6.cinemate.movie.dto.response.ActorResponse;
 import com.pbl6.cinemate.movie.dto.response.CategoryResponse;
 import com.pbl6.cinemate.movie.dto.response.MovieInfoResponse;
 import com.pbl6.cinemate.movie.dto.response.MovieResponse;
 import com.pbl6.cinemate.movie.entity.Movie;
-import com.pbl6.cinemate.movie.exception.InternalServerException;
 
 import java.util.List;
-import java.util.Map;
 
 public final class MovieUtils {
     public static MovieResponse mapToMovieResponse(Movie movie, List<CategoryResponse> categories) {
@@ -25,27 +21,12 @@ public final class MovieUtils {
                 movie.getIsVip(),
                 movie.getAge(),
                 movie.getYear(),
-                movie.getTrailerUrl()
-        );
-    }
-
-    public static Map<String, String> parseQualitiesJson(String qualitiesJson) {
-        ObjectMapper mapper = new ObjectMapper();
-
-        if (qualitiesJson == null) {
-            return Map.of();
-        }
-        try {
-            return mapper.readValue(qualitiesJson, new TypeReference<>() {
-            });
-        } catch (Exception e) {
-            throw new InternalServerException("Failed to parse movie qualities JSON: " + e.getMessage());
-        }
+                movie.getTrailerUrl());
     }
 
     public static MovieInfoResponse mapToMovieInfoResponse(Movie movie, List<ActorResponse> actors,
             List<CategoryResponse> categories) {
-        Map<String, String> qualities = parseQualitiesJson(movie.getQualitiesJson());
+        List<String> qualities = movie.getQualities() != null ? movie.getQualities() : List.of();
         return new MovieInfoResponse(
                 movie.getId(),
                 movie.getTitle(),
@@ -61,8 +42,7 @@ public final class MovieUtils {
                 movie.getCountry(),
                 movie.getIsVip(),
                 actors,
-                categories
-        );
+                categories);
     }
 
     public static Movie mapToMovie(MovieRequest movieRequest) {
@@ -76,7 +56,7 @@ public final class MovieUtils {
                 .title(movieRequest.getTitle())
                 .trailerUrl(movieRequest.getTrailerUrl())
                 .year(movieRequest.getYear())
-                .isVip(movieRequest.getIsVip() != null ? movieRequest.getIsVip() : false)
+                .isVip(Boolean.TRUE.equals(movieRequest.getIsVip()))
                 .build();
     }
 

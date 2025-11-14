@@ -5,6 +5,6 @@ import java.util.Set;
 public record PeerListMessage(String type, String streamId, Set<String> peers) {
 
     public PeerListMessage(String streamId, Set<String> peers) {
-        this("peer_list", streamId, peers);
+        this("peerList", streamId, peers);
     }
 }

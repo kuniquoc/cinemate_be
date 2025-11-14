@@ -43,13 +43,15 @@ spring:
             - id: streaming-seeder-prod
               uri: ${STREAMING_SEEDER_URL:http://streaming-seeder:8080}
               predicates:
-                - Path=/streams/**
+                - Path=/api/streams/**
 
           globalcors:
             cors-configurations:
               '[/**]':
                 allowedOrigins:
                   - "http://localhost:3000"
+                  - "http://localhost:3001"
+                  - "http://localhost:3002"
                   - "http://localhost:4200"
                   - "http://localhost:5173"
                   - "http://127.0.0.1:3000"

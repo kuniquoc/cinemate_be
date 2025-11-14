@@ -34,14 +34,14 @@ public class SeederMaintenanceScheduler {
         if (!expiredSegments.isEmpty()) {
             seederService.purgeExpiredSegments(expiredSegments);
         }
-        Set<String> activeStreams = segments.stream().map(CachedSegment::streamId).collect(Collectors.toSet());
-        if (!activeStreams.isEmpty()) {
-            seederService.refreshTtlForStreams(activeStreams);
+        Set<String> activeMovies = segments.stream().map(CachedSegment::movieId).collect(Collectors.toSet());
+        if (!activeMovies.isEmpty()) {
+            seederService.refreshTtlForMovies(activeMovies);
         }
         log.debug(
-                "Seeder maintenance tick complete (segments={}, expired={}, streams={})",
+                "Seeder maintenance tick complete (segments={}, expired={}, movies={})",
                 segments.size(),
                 expiredSegments.size(),
-                activeStreams.size());
+                activeMovies.size());
     }
 }

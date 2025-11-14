@@ -295,7 +295,8 @@ async function cacheSegmentLocally(ctx, record) {
         });
         if (ctx.fallbackCfg.persistCacheToDisk) {
             const directory = path.resolve(ctx.fallbackCfg.cacheDirectory, ctx.streamId);
-            const filename = `${record.segmentId}.bin`;
+            // SegmentId already includes the extension (e.g., "seg_0005.m4s")
+            const filename = record.segmentId;
             const filePath = path.join(directory, filename);
             await fs.ensureDir(directory);
             await fs.writeFile(filePath, record.data);
@@ -403,7 +404,7 @@ async function fetchSegment(segmentId, ctx, options = {}) {
                 log.warn(`No peers currently advertise segment ${segmentId}.`);
             }
         } catch (error) {
-            log.warn(`WHO_HAS failed for segment ${segmentId}: ${error.message}`);
+            log.warn(`whoHas failed for segment ${segmentId}: ${error.message}`);
         }
     } else {
         const reasonNote = reason ? ` (reason: ${reason})` : '';

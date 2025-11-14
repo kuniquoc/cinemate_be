@@ -61,7 +61,7 @@ class SignalingClient extends EventEmitter {
             return this.pendingWhoHas.get(segmentId).promise;
         }
         const payload = {
-            type: 'WHO_HAS',
+            type: 'whoHas',
             streamId: this.streamId,
             segmentId
         };
@@ -88,7 +88,7 @@ class SignalingClient extends EventEmitter {
             return;
         }
         const payload = {
-            type: 'REPORT_SEGMENT',
+            type: 'reportSegment',
             streamId: this.streamId,
             segmentId,
             source,
@@ -116,22 +116,21 @@ class SignalingClient extends EventEmitter {
             return;
         }
         switch (type) {
-            case 'WHO_HAS_REPLY':
+            case 'whoHasReply':
                 this.handleWhoHasReply(message);
                 break;
-            case 'REPORT_ACK':
+            case 'reportAck':
                 this.emit('report_ack', message);
                 break;
-            case 'peer_list':
+            case 'peerList':
                 this.emit('peer_list', message);
                 break;
             // WebRTC signaling passthrough
-            case 'RTC_OFFER':
-            case 'RTC_ANSWER':
-            case 'ICE_CANDIDATE':
+            case 'rtcOffer':
+            case 'rtcAnswer':
+            case 'iceCandidate':
                 this.emit(type, message);
                 break;
-            case 'ERROR':
             case 'error':
                 this.log.error(`Signaling error: ${message.message || 'unknown error'}`);
                 break;
@@ -143,12 +142,12 @@ class SignalingClient extends EventEmitter {
     handleWhoHasReply(message) {
         const segmentId = message.segmentId;
         if (!segmentId) {
-            this.log.warn('WHO_HAS_REPLY missing segmentId');
+            this.log.warn('whoHasReply missing segmentId');
             return;
         }
         const pending = this.pendingWhoHas.get(segmentId);
         if (!pending) {
-            this.log.debug(`No pending WHO_HAS for segment ${segmentId}`);
+            this.log.debug(`No pending whoHas for segment ${segmentId}`);
             return;
         }
         clearTimeout(pending.timer);
@@ -181,15 +180,15 @@ class SignalingClient extends EventEmitter {
     }
 
     sendRtcOffer(to, sdp) {
-        this.send({ type: 'RTC_OFFER', from: this.clientId, to, streamId: this.streamId, sdp });
+        this.send({ type: 'rtcOffer', from: this.clientId, to, streamId: this.streamId, sdp });
     }
 
     sendRtcAnswer(to, sdp) {
-        this.send({ type: 'RTC_ANSWER', from: this.clientId, to, streamId: this.streamId, sdp });
+        this.send({ type: 'rtcAnswer', from: this.clientId, to, streamId: this.streamId, sdp });
     }
 
     sendIceCandidate(to, candidate) {
-        this.send({ type: 'ICE_CANDIDATE', from: this.clientId, to, streamId: this.streamId, candidate });
+        this.send({ type: 'iceCandidate', from: this.clientId, to, streamId: this.streamId, candidate });
     }
 }
 

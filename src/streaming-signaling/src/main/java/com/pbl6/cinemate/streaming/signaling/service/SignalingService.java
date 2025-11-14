@@ -32,19 +32,28 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
+/**
+ * Signaling service for P2P streaming with fMP4/DASH ABR support.
+ * 
+ * For ABR multi-quality streaming:
+ * - streamId = movieId (consistent across quality switches)
+ * - Peers are tracked per movie, not per quality
+ * - Segment requests include qualityId to find peers with specific quality
+ * segments
+ */
 @Service
 public class SignalingService {
 
     private static final Logger log = LoggerFactory.getLogger(SignalingService.class);
     private static final String CLIENT_ID_REQUIRED = "clientId must not be null";
-    private static final String STREAM_ID_REQUIRED = "streamId must not be null";
+    private static final String MOVIE_ID_REQUIRED = "movieId must not be null";
     private static final String SEGMENT_ID_REQUIRED = "segmentId must not be null";
     private static final String SOURCE_REQUIRED = "source must not be null";
     private static final String SEGMENT_TTL_REQUIRED = "Segment TTL must not be null";
     private static final String LAST_SEEN_TTL_REQUIRED = "Peer last seen TTL must not be null";
     private static final String KEY_COMMANDS_REQUIRED = "Redis key commands must not be null";
     private static final String SCAN_CURSOR_REQUIRED = "Redis scan cursor must not be null";
-    private static final String PEER_KEY_NULL = "Peer key is null for streamId: {}";
+    private static final String PEER_KEY_NULL_FOR_MOVIE = "Peer key is null for movieId: {}";
     private final StringRedisTemplate redisTemplate;
     private final RedisConnectionFactory connectionFactory;
     private final SignalingProperties properties;
@@ -68,41 +77,55 @@ public class SignalingService {
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
     }
 
-    public PeerListMessage registerClient(@NonNull String clientId, @NonNull String streamId) {
+    /**
+     * Registers a client for a movie stream (movieId = streamId for ABR).
+     * Returns list of peers watching the same movie (across all qualities).
+     */
+    public PeerListMessage registerClient(@NonNull String clientId, @NonNull String movieId) {
         String sanitizedClientId = Objects.requireNonNull(clientId, CLIENT_ID_REQUIRED);
-        String sanitizedStreamId = Objects.requireNonNull(streamId, STREAM_ID_REQUIRED);
-        log.info("Client {} connected for stream {}", sanitizedClientId, sanitizedStreamId);
-        activeClients.put(sanitizedClientId, sanitizedStreamId);
-        eventSubscriber.ensureSubscribed(sanitizedStreamId);
+        String sanitizedMovieId = Objects.requireNonNull(movieId, MOVIE_ID_REQUIRED);
+        log.info("Client {} connected for movie {}", sanitizedClientId, sanitizedMovieId);
+        activeClients.put(sanitizedClientId, sanitizedMovieId);
+        eventSubscriber.ensureSubscribed(sanitizedMovieId);
         touchLastSeen(sanitizedClientId);
-        String peerKey = StreamingRedisKeys.streamPeersKey(sanitizedStreamId);
+
+        String peerKey = StreamingRedisKeys.moviePeersKey(sanitizedMovieId);
         if (peerKey == null) {
-            log.warn(PEER_KEY_NULL, sanitizedStreamId);
-            return new PeerListMessage(sanitizedStreamId, Collections.emptySet());
+            log.warn(PEER_KEY_NULL_FOR_MOVIE, sanitizedMovieId);
+            return new PeerListMessage(sanitizedMovieId, Collections.emptySet());
         }
+
         Set<String> peers = Optional
                 .ofNullable(redisTemplate.opsForSet().members(peerKey))
                 .orElseGet(Collections::emptySet);
-        return new PeerListMessage(sanitizedStreamId, peers);
+        return new PeerListMessage(sanitizedMovieId, peers);
     }
 
-    public WhoHasReplyMessage handleWhoHas(@NonNull String streamId, @NonNull String segmentId) {
-        String sanitizedStreamId = Objects.requireNonNull(streamId, STREAM_ID_REQUIRED);
+    /**
+     * Finds peers with a specific segment (with quality information).
+     * 
+     * @param movieId   the movie identifier
+     * @param qualityId the quality variant (can be null for master playlist)
+     * @param segmentId the segment identifier
+     */
+    public WhoHasReplyMessage handleWhoHas(@NonNull String movieId, String qualityId, @NonNull String segmentId) {
+        String sanitizedMovieId = Objects.requireNonNull(movieId, MOVIE_ID_REQUIRED);
         String sanitizedSegmentId = Objects.requireNonNull(segmentId, SEGMENT_ID_REQUIRED);
-        String segmentKey = StreamingRedisKeys.segmentOwnersKey(sanitizedStreamId, sanitizedSegmentId);
+
+        String segmentKey = StreamingRedisKeys.segmentOwnersKey(sanitizedMovieId, qualityId, sanitizedSegmentId);
         if (segmentKey == null) {
-            log.warn(
-                    "Segment key is null for streamId: {} segmentId: {}",
-                    sanitizedStreamId,
-                    sanitizedSegmentId);
+            log.warn("Segment key is null for movieId: {} qualityId: {} segmentId: {}",
+                    sanitizedMovieId, qualityId, sanitizedSegmentId);
             return new WhoHasReplyMessage(sanitizedSegmentId, List.of());
         }
+
         Set<String> peerIds = Optional
                 .ofNullable(redisTemplate.opsForSet().members(segmentKey))
                 .orElseGet(Collections::emptySet);
 
         if (peerIds.isEmpty()) {
-            log.debug("No peers found for stream {} segment {}", sanitizedStreamId, sanitizedSegmentId);
+            log.debug("No peers found for movie {} quality {} segment {}",
+                    sanitizedMovieId, qualityId, sanitizedSegmentId);
             return new WhoHasReplyMessage(sanitizedSegmentId, List.of());
         }
 
@@ -115,39 +138,48 @@ public class SignalingService {
             PeerMetrics metrics = mapMetrics(metricsData);
             peerInfos.add(new PeerInfo(peerId, metrics));
         }
-        log.debug("Found {} peers for stream {} segment {}", peerInfos.size(), sanitizedStreamId, sanitizedSegmentId);
+        log.debug("Found {} peers for movie {} quality {} segment {}",
+                peerInfos.size(), sanitizedMovieId, qualityId, sanitizedSegmentId);
         return new WhoHasReplyMessage(sanitizedSegmentId, peerInfos);
     }
 
+    /**
+     * Reports that a client has successfully obtained a segment.
+     * 
+     * @param clientId  the client identifier
+     * @param movieId   the movie identifier
+     * @param qualityId the quality variant
+     * @param segmentId the segment identifier
+     */
     public ReportSegmentAckMessage handleReportSegment(
             @NonNull String clientId,
-            @NonNull String streamId,
+            @NonNull String movieId,
+            String qualityId,
             @NonNull String segmentId,
             @NonNull String source,
             double speed,
             long latency) {
         String sanitizedClientId = Objects.requireNonNull(clientId, CLIENT_ID_REQUIRED);
-        String sanitizedStreamId = Objects.requireNonNull(streamId, STREAM_ID_REQUIRED);
+        String sanitizedMovieId = Objects.requireNonNull(movieId, MOVIE_ID_REQUIRED);
         String sanitizedSegmentId = Objects.requireNonNull(segmentId, SEGMENT_ID_REQUIRED);
         String sanitizedSource = Objects.requireNonNull(source, SOURCE_REQUIRED);
 
-        String segmentKey = StreamingRedisKeys.segmentOwnersKey(sanitizedStreamId, sanitizedSegmentId);
+        String segmentKey = StreamingRedisKeys.segmentOwnersKey(sanitizedMovieId, qualityId, sanitizedSegmentId);
         if (segmentKey == null) {
-            log.warn(
-                    "Segment key is null for streamId: {} segmentId: {}",
-                    sanitizedStreamId,
-                    sanitizedSegmentId);
+            log.warn("Segment key is null for movieId: {} qualityId: {} segmentId: {}",
+                    sanitizedMovieId, qualityId, sanitizedSegmentId);
             return new ReportSegmentAckMessage(sanitizedSegmentId);
         }
+
         Duration ttl = Objects.requireNonNull(
                 properties.getSignaling().getRedisTtlSegmentKeys(),
                 SEGMENT_TTL_REQUIRED);
         redisTemplate.opsForSet().add(segmentKey, sanitizedClientId);
         redisTemplate.expire(segmentKey, ttl);
 
-        String peerKey = StreamingRedisKeys.streamPeersKey(sanitizedStreamId);
+        String peerKey = StreamingRedisKeys.moviePeersKey(sanitizedMovieId);
         if (peerKey == null) {
-            log.warn(PEER_KEY_NULL, sanitizedStreamId);
+            log.warn(PEER_KEY_NULL_FOR_MOVIE, sanitizedMovieId);
             return new ReportSegmentAckMessage(sanitizedSegmentId);
         }
         redisTemplate.opsForSet().add(peerKey, sanitizedClientId);
@@ -170,38 +202,35 @@ public class SignalingService {
         redisTemplate.opsForHash().put(metricsKey, "successRate", Objects.requireNonNull(successRateValue));
         redisTemplate.opsForHash().put(metricsKey, "lastActive", Objects.requireNonNull(lastActiveValue));
 
-        log.info(
-                "[Metrics] {} now has {} (stream={}, latency={}ms, speed={}MB/s)",
-                sanitizedClientId,
-                sanitizedSegmentId,
-                sanitizedStreamId,
-                latency,
-                speed);
+        log.info("[Metrics] {} now has {} (movie={}, quality={}, latency={}ms, speed={}MB/s)",
+                sanitizedClientId, sanitizedSegmentId, sanitizedMovieId, qualityId, latency, speed);
         return new ReportSegmentAckMessage(sanitizedSegmentId);
     }
 
-    public void handleDisconnect(@NonNull String clientId, @NonNull String streamId) {
+    public void handleDisconnect(@NonNull String clientId, @NonNull String movieId) {
         String sanitizedClientId = Objects.requireNonNull(clientId, CLIENT_ID_REQUIRED);
-        String sanitizedStreamId = Objects.requireNonNull(streamId, STREAM_ID_REQUIRED);
-        log.info("Client {} disconnected from {}", sanitizedClientId, sanitizedStreamId);
+        String sanitizedMovieId = Objects.requireNonNull(movieId, MOVIE_ID_REQUIRED);
+        log.info("Client {} disconnected from movie {}", sanitizedClientId, sanitizedMovieId);
         activeClients.remove(sanitizedClientId);
-        removeClientFromSegments(sanitizedClientId, sanitizedStreamId);
-        String peerKey = StreamingRedisKeys.streamPeersKey(sanitizedStreamId);
+        removeClientFromSegments(sanitizedClientId, sanitizedMovieId);
+
+        String peerKey = StreamingRedisKeys.moviePeersKey(sanitizedMovieId);
         if (peerKey == null) {
-            log.warn(PEER_KEY_NULL, sanitizedStreamId);
+            log.warn(PEER_KEY_NULL_FOR_MOVIE, sanitizedMovieId);
             return;
         }
         redisTemplate.opsForSet().remove(peerKey, sanitizedClientId);
     }
 
-    private void removeClientFromSegments(@NonNull String clientId, @NonNull String streamId) {
+    private void removeClientFromSegments(@NonNull String clientId, @NonNull String movieId) {
         String sanitizedClientId = Objects.requireNonNull(clientId, CLIENT_ID_REQUIRED);
-        String sanitizedStreamId = Objects.requireNonNull(streamId, STREAM_ID_REQUIRED);
-        String pattern = StreamingRedisKeys.segmentOwnersKey(sanitizedStreamId, "*");
-        if (pattern == null) {
-            log.warn("Segment owners key pattern is null for streamId: {}", sanitizedStreamId);
-            return;
-        }
+        String sanitizedMovieId = Objects.requireNonNull(movieId, MOVIE_ID_REQUIRED);
+
+        // Pattern to match all segments for this movie across all qualities
+        // movie:{movieId}:quality:*:segment:*:owners or
+        // movie:{movieId}:segment:*:owners
+        String pattern = "movie:" + sanitizedMovieId + ":*:segment:*:owners";
+
         ScanOptions scanOptions = ScanOptions.scanOptions().match(pattern).count(128).build();
         try (RedisConnection connection = connectionFactory.getConnection();
                 Cursor<byte[]> cursor = Objects.requireNonNull(
@@ -217,7 +246,7 @@ public class SignalingService {
                 redisTemplate.opsForSet().remove(key, sanitizedClientId);
             }
         } catch (DataAccessResourceFailureException ex) {
-            log.warn("Failed to scan Redis keys for stream {}: {}", sanitizedStreamId, ex.getMessage());
+            log.warn("Failed to scan Redis keys for movie {}: {}", sanitizedMovieId, ex.getMessage());
         }
     }
 

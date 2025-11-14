@@ -339,6 +339,7 @@ public class MinioStorageServiceImpl implements MinioStorageService {
             // HLS streaming formats
             case "m3u8" -> "application/vnd.apple.mpegurl";
             case "ts" -> "video/mp2t";
+            case "m4s" -> "video/iso.segment";
 
             // DASH streaming formats
             case "mpd" -> "application/dash+xml";
