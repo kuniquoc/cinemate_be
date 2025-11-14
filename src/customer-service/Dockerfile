@@ -34,7 +34,7 @@ RUN --mount=type=cache,target=/root/.m2 \
 FROM eclipse-temurin:21-jre-alpine AS runtime
 
 RUN apk update \
-    && apk add --no-cache curl ffmpeg \
+    && apk add --no-cache curl \
     && addgroup -S spring \
     && adduser -S spring -G spring \
     && rm -rf /var/cache/apk/*
