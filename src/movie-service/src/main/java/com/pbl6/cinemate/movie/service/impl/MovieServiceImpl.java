@@ -117,7 +117,7 @@ public class MovieServiceImpl implements MovieService {
                 .toList();
 
         // Fetch categories for the movie
-        List<CategoryResponse> categories = movieCategoryRepository.findByMovieId(movieId)
+        List<CategoryResponse> categories = movieCategoryRepository.findByMovieIdWithCategory(movieId)
                 .stream()
                 .map(movieCategory -> CategoryResponse.builder()
                         .id(movieCategory.getCategory().getId())
@@ -151,24 +151,24 @@ public class MovieServiceImpl implements MovieService {
             throw new NotFoundException("Some category IDs were not found");
         }
 
-        // Validate and fetch actors
+        // Validate and fetch actors (optional)
         List<UUID> actorIds = movieRequest.getActorIds();
-        if (actorIds == null || actorIds.isEmpty()) {
-            throw new BadRequestException("At least one actor ID must be provided");
-        }
-        List<Actor> actors = actorRepository.findAllById(actorIds);
-        if (actors.size() != actorIds.size()) {
-            throw new NotFoundException("Some actor IDs were not found");
+        List<Actor> actors = List.of();
+        if (actorIds != null && !actorIds.isEmpty()) {
+            actors = actorRepository.findAllById(actorIds);
+            if (actors.size() != actorIds.size()) {
+                throw new NotFoundException("Some actor IDs were not found");
+            }
         }
 
-        // Validate and fetch directors
+        // Validate and fetch directors (optional)
         List<UUID> directorIds = movieRequest.getDirectorIds();
-        if (directorIds == null || directorIds.isEmpty()) {
-            throw new BadRequestException("At least one director ID must be provided");
-        }
-        List<Director> directors = directorRepository.findAllById(directorIds);
-        if (directors.size() != directorIds.size()) {
-            throw new NotFoundException("Some director IDs were not found");
+        List<Director> directors = List.of();
+        if (directorIds != null && !directorIds.isEmpty()) {
+            directors = directorRepository.findAllById(directorIds);
+            if (directors.size() != directorIds.size()) {
+                throw new NotFoundException("Some director IDs were not found");
+            }
         }
 
         // Create and save movie
@@ -237,24 +237,24 @@ public class MovieServiceImpl implements MovieService {
             throw new NotFoundException("Some category IDs were not found");
         }
 
-        // Validate and fetch actors
+        // Validate and fetch actors (optional)
         List<UUID> actorIds = movieRequest.getActorIds();
-        if (actorIds == null || actorIds.isEmpty()) {
-            throw new BadRequestException("At least one actor ID must be provided");
-        }
-        List<Actor> actors = actorRepository.findAllById(actorIds);
-        if (actors.size() != actorIds.size()) {
-            throw new NotFoundException("Some actor IDs were not found");
+        List<Actor> actors = List.of();
+        if (actorIds != null && !actorIds.isEmpty()) {
+            actors = actorRepository.findAllById(actorIds);
+            if (actors.size() != actorIds.size()) {
+                throw new NotFoundException("Some actor IDs were not found");
+            }
         }
 
-        // Validate and fetch directors
+        // Validate and fetch directors (optional)
         List<UUID> directorIds = movieRequest.getDirectorIds();
-        if (directorIds == null || directorIds.isEmpty()) {
-            throw new BadRequestException("At least one director ID must be provided");
-        }
-        List<Director> directors = directorRepository.findAllById(directorIds);
-        if (directors.size() != directorIds.size()) {
-            throw new NotFoundException("Some director IDs were not found");
+        List<Director> directors = List.of();
+        if (directorIds != null && !directorIds.isEmpty()) {
+            directors = directorRepository.findAllById(directorIds);
+            if (directors.size() != directorIds.size()) {
+                throw new NotFoundException("Some director IDs were not found");
+            }
         }
 
         // Update movie fields
@@ -371,7 +371,7 @@ public class MovieServiceImpl implements MovieService {
     }
 
     private List<CategoryResponse> getCategoriesForMovie(UUID movieId) {
-        return movieCategoryRepository.findByMovieId(movieId)
+        return movieCategoryRepository.findByMovieIdWithCategory(movieId)
                 .stream()
                 .map(mc -> CategoryResponse.builder()
                         .id(mc.getCategory().getId())

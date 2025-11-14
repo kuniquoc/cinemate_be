@@ -35,9 +35,7 @@ public class MovieRequest {
     private String country;
     @NotEmpty(message = "At least one category is required")
     private List<UUID> categoryIds;
-    @NotEmpty(message = "At least one actor is required")
-    private List<UUID> actorIds;
-    @NotEmpty(message = "At least one director is required")
-    private List<UUID> directorIds;
+    private List<UUID> actorIds; // Optional
+    private List<UUID> directorIds; // Optional
     private Boolean isVip; // Optional field, defaults to false if not provided
 }

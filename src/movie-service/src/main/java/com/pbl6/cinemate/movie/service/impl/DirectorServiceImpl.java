@@ -75,6 +75,18 @@ public class DirectorServiceImpl implements DirectorService {
         return mapToDirectorResponse(updatedDirector);
     }
 
+    @Override
+    public void deleteDirector(UUID id) {
+        Director director = directorRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Director not found with id: " + id));
+
+        if (director.getDeletedAt() != null) {
+            throw new NotFoundException("Director not found with id: " + id);
+        }
+
+        directorRepository.delete(director);
+    }
+
     private DirectorResponse mapToDirectorResponse(Director director) {
         return new DirectorResponse(
                 director.getId(),

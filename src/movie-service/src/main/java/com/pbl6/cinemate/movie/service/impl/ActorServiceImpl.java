@@ -26,11 +26,10 @@ public class ActorServiceImpl implements ActorService {
     @Override
     public ActorResponse createActor(ActorCreationRequest request) {
         Actor actor = new Actor(
-            request.fullname(),
-            request.biography(),
-            request.avatar(),
-            request.dateOfBirth()
-        );
+                request.fullname(),
+                request.biography(),
+                request.avatar(),
+                request.dateOfBirth());
 
         Actor savedActor = actorRepository.save(actor);
 
@@ -40,15 +39,15 @@ public class ActorServiceImpl implements ActorService {
     @Override
     public List<ActorResponse> getAllActors() {
         return actorRepository.findAll().stream()
-            .filter(actor -> actor.getDeletedAt() == null)
-            .map(this::mapToActorResponse)
-            .collect(Collectors.toList());
+                .filter(actor -> actor.getDeletedAt() == null)
+                .map(this::mapToActorResponse)
+                .collect(Collectors.toList());
     }
 
     @Override
     public ActorResponse getActorById(UUID id) {
         Actor actor = actorRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("Actor not found with id: " + id));
+                .orElseThrow(() -> new NotFoundException("Actor not found with id: " + id));
 
         if (actor.getDeletedAt() != null) {
             throw new NotFoundException("Actor not found with id: " + id);
@@ -60,7 +59,7 @@ public class ActorServiceImpl implements ActorService {
     @Override
     public ActorResponse updateActor(UUID id, ActorUpdateRequest request) {
         Actor actor = actorRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("Actor not found with id: " + id));
+                .orElseThrow(() -> new NotFoundException("Actor not found with id: " + id));
 
         if (actor.getDeletedAt() != null) {
             throw new NotFoundException("Actor not found with id: " + id);
@@ -76,15 +75,26 @@ public class ActorServiceImpl implements ActorService {
         return mapToActorResponse(updatedActor);
     }
 
+    @Override
+    public void deleteActor(UUID id) {
+        Actor actor = actorRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Actor not found with id: " + id));
+
+        if (actor.getDeletedAt() != null) {
+            throw new NotFoundException("Actor not found with id: " + id);
+        }
+
+        actorRepository.delete(actor);
+    }
+
     private ActorResponse mapToActorResponse(Actor actor) {
         return new ActorResponse(
-            actor.getId(),
-            actor.getFullname(),
-            actor.getBiography(),
-            actor.getAvatar(),
-            actor.getDateOfBirth(),
-            actor.getCreatedAt(),
-            actor.getUpdatedAt()
-        );
+                actor.getId(),
+                actor.getFullname(),
+                actor.getBiography(),
+                actor.getAvatar(),
+                actor.getDateOfBirth(),
+                actor.getCreatedAt(),
+                actor.getUpdatedAt());
     }
 }

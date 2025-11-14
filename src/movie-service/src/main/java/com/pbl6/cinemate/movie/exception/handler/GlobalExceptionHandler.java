@@ -63,21 +63,24 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ResponseData> handleValidationException(MethodArgumentNotValidException ex, HttpServletRequest request) {
+    public ResponseEntity<ResponseData> handleValidationException(MethodArgumentNotValidException ex,
+            HttpServletRequest request) {
         log.error("Validation error: {}", ex.getMessage());
 
         List<ErrorResponse> errors = new ArrayList<>();
         ex.getBindingResult().getFieldErrors().forEach(fieldError -> {
-            ErrorResponse errorResponse = new ErrorResponse("VALIDATION_ERROR", fieldError.getDefaultMessage(), fieldError.getField());
+            ErrorResponse errorResponse = new ErrorResponse("VALIDATION_ERROR", fieldError.getDefaultMessage(),
+                    fieldError.getField());
             errors.add(errorResponse);
         });
 
         ResponseData responseData = ResponseData.valError(errors, request.getRequestURI(), request.getMethod());
-        return new ResponseEntity<>(responseData, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(responseData, HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ResponseData> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex, HttpServletRequest request) {
+    public ResponseEntity<ResponseData> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex,
+            HttpServletRequest request) {
         log.error("JSON parsing error: {}", ex.getMessage());
 
         String message = "Invalid request format";

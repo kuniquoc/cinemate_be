@@ -87,4 +87,19 @@ public class ActorController {
                 httpServletRequest.getRequestURI(),
                 httpServletRequest.getMethod()));
     }
+
+    @Operation(summary = "Delete actor", description = "Delete an actor by their ID")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ResponseData> deleteActor(
+            @Parameter(description = "Actor ID") @PathVariable UUID id,
+            HttpServletRequest httpServletRequest) {
+
+        actorService.deleteActor(id);
+
+        return ResponseEntity.ok(ResponseData.success(
+                null,
+                "Actor deleted successfully",
+                httpServletRequest.getRequestURI(),
+                httpServletRequest.getMethod()));
+    }
 }

@@ -15,4 +15,6 @@ public interface DirectorService {
     DirectorResponse getDirectorById(UUID id);
 
     DirectorResponse updateDirector(UUID id, DirectorUpdateRequest request);
+
+    void deleteDirector(UUID id);
 }

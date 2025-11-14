@@ -15,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -36,10 +35,11 @@ public class ReviewServiceImpl implements ReviewService {
 
         // Validate movie exists
         Movie movie = movieRepository.findById(movieId)
-            .orElseThrow(() -> new NotFoundException("Movie not found with ID: " + movieId));
+                .orElseThrow(() -> new NotFoundException("Movie not found with ID: " + movieId));
 
         // Check if customer already reviewed this movie
-        Optional<Review> existingReview = reviewRepository.findByMovieIdAndCustomerIdAndDeletedAtIsNull(movieId, customerId);
+        Optional<Review> existingReview = reviewRepository.findByMovieIdAndCustomerIdAndDeletedAtIsNull(movieId,
+                customerId);
         if (existingReview.isPresent()) {
             throw new BadRequestException("Customer has already reviewed this movie");
         }
@@ -47,7 +47,7 @@ public class ReviewServiceImpl implements ReviewService {
         // TODO: validate customer id exists in customer service
 
         Review review = new Review(movie, customerId, request.content(), request.stars(),
-                                 request.userName(), request.userAvatar());
+                request.userName(), request.userAvatar());
         Review savedReview = reviewRepository.save(review);
 
         return mapToReviewResponse(savedReview);
@@ -61,8 +61,8 @@ public class ReviewServiceImpl implements ReviewService {
         List<Review> reviews = reviewRepository.findAllActiveReviews();
 
         return reviews.stream()
-            .map(this::mapToReviewResponse)
-            .collect(Collectors.toList());
+                .map(this::mapToReviewResponse)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -78,8 +78,8 @@ public class ReviewServiceImpl implements ReviewService {
         List<Review> reviews = reviewRepository.findByMovieIdAndDeletedAtIsNull(movieId);
 
         return reviews.stream()
-            .map(this::mapToReviewResponse)
-            .collect(Collectors.toList());
+                .map(this::mapToReviewResponse)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -90,8 +90,8 @@ public class ReviewServiceImpl implements ReviewService {
         List<Review> reviews = reviewRepository.findByCustomerIdAndDeletedAtIsNull(customerId);
 
         return reviews.stream()
-            .map(this::mapToReviewResponse)
-            .collect(Collectors.toList());
+                .map(this::mapToReviewResponse)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -100,7 +100,7 @@ public class ReviewServiceImpl implements ReviewService {
         log.info("Getting review by ID: {}", reviewId);
 
         Review review = reviewRepository.findByIdAndDeletedAtIsNull(reviewId)
-            .orElseThrow(() -> new NotFoundException("Review not found with ID: " + reviewId));
+                .orElseThrow(() -> new NotFoundException("Review not found with ID: " + reviewId));
 
         return mapToReviewResponse(review);
     }
@@ -111,7 +111,7 @@ public class ReviewServiceImpl implements ReviewService {
         log.info("Updating review ID: {} by customer ID: {}", reviewId, customerId);
 
         Review review = reviewRepository.findByIdAndDeletedAtIsNull(reviewId)
-            .orElseThrow(() -> new NotFoundException("Review not found with ID: " + reviewId));
+                .orElseThrow(() -> new NotFoundException("Review not found with ID: " + reviewId));
 
         // Check if the review belongs to the customer
         if (!review.getCustomerId().equals(customerId)) {
@@ -136,7 +136,7 @@ public class ReviewServiceImpl implements ReviewService {
         log.info("Deleting review ID: {} by customer ID: {}", reviewId, customerId);
 
         Review review = reviewRepository.findById(reviewId)
-            .orElseThrow(() -> new NotFoundException("Review not found with ID: " + reviewId));
+                .orElseThrow(() -> new NotFoundException("Review not found with ID: " + reviewId));
 
         // Check if the review belongs to the customer
         if (!review.getCustomerId().equals(customerId)) {
@@ -174,15 +174,15 @@ public class ReviewServiceImpl implements ReviewService {
 
     private ReviewResponse mapToReviewResponse(Review review) {
         return ReviewResponse.builder()
-            .id(review.getId())
-            .movieId(review.getMovie().getId())
-            .customerId(review.getCustomerId())
-            .content(review.getContent())
-            .stars(review.getStars())
-            .userName(review.getUserName())
-            .userAvatar(review.getUserAvatar())
-            .createdAt(review.getCreatedAt())
-            .updatedAt(review.getUpdatedAt())
-            .build();
+                .id(review.getId())
+                .movieId(review.getMovie().getId())
+                .customerId(review.getCustomerId())
+                .content(review.getContent())
+                .stars(review.getStars())
+                .userName(review.getUserName())
+                .userAvatar(review.getUserAvatar())
+                .createdAt(review.getCreatedAt())
+                .updatedAt(review.getUpdatedAt())
+                .build();
     }
 }
