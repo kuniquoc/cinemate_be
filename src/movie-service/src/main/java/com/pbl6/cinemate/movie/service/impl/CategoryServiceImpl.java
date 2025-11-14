@@ -90,6 +90,10 @@ public class CategoryServiceImpl implements CategoryService {
                 if (!categoryRepository.existsById(id)) {
                         throw new NotFoundException("Category not found with id: " + id);
                 }
+                // Delete all movie-category relationships first
+                movieCategoryRepository.deleteByCategoryId(id);
+                movieCategoryRepository.flush();
+                // Then delete the category
                 categoryRepository.deleteById(id);
         }
 

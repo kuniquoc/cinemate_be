@@ -59,9 +59,9 @@ public class MovieDirectorService {
         Movie movie = movieRepository.findById(movieId)
                 .orElseThrow(() -> new NotFoundException("Movie not found with id: " + movieId));
 
-        // Delete existing directors
-        List<MovieDirector> existingMovieDirectors = movieDirectorRepository.findByMovieId(movieId);
-        movieDirectorRepository.deleteAll(existingMovieDirectors);
+        // Delete existing directors and flush to prevent duplicates
+        movieDirectorRepository.deleteByMovieId(movieId);
+        movieDirectorRepository.flush();
 
         // Add new directors
         List<Director> directors = directorRepository.findAllById(request.directorIds());

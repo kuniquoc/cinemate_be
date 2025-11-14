@@ -2,9 +2,9 @@ package com.pbl6.cinemate.movie.service.impl;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.pbl6.cinemate.movie.dto.request.ActorCreationRequest;
 import com.pbl6.cinemate.movie.dto.request.ActorUpdateRequest;
@@ -12,15 +12,18 @@ import com.pbl6.cinemate.movie.dto.response.ActorResponse;
 import com.pbl6.cinemate.movie.entity.Actor;
 import com.pbl6.cinemate.movie.exception.NotFoundException;
 import com.pbl6.cinemate.movie.repository.ActorRepository;
+import com.pbl6.cinemate.movie.repository.MovieActorRepository;
 import com.pbl6.cinemate.movie.service.ActorService;
 
 @Service
 public class ActorServiceImpl implements ActorService {
 
     private final ActorRepository actorRepository;
+    private final MovieActorRepository movieActorRepository;
 
-    public ActorServiceImpl(ActorRepository actorRepository) {
+    public ActorServiceImpl(ActorRepository actorRepository, MovieActorRepository movieActorRepository) {
         this.actorRepository = actorRepository;
+        this.movieActorRepository = movieActorRepository;
     }
 
     @Override
@@ -41,7 +44,7 @@ public class ActorServiceImpl implements ActorService {
         return actorRepository.findAll().stream()
                 .filter(actor -> actor.getDeletedAt() == null)
                 .map(this::mapToActorResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -76,15 +79,16 @@ public class ActorServiceImpl implements ActorService {
     }
 
     @Override
+    @Transactional
     public void deleteActor(UUID id) {
-        Actor actor = actorRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Actor not found with id: " + id));
-
-        if (actor.getDeletedAt() != null) {
+        if (!actorRepository.existsById(id)) {
             throw new NotFoundException("Actor not found with id: " + id);
         }
-
-        actorRepository.delete(actor);
+        // Delete all movie-actor relationships first
+        movieActorRepository.deleteByActorId(id);
+        movieActorRepository.flush();
+        // Then delete the actor
+        actorRepository.deleteById(id);
     }
 
     private ActorResponse mapToActorResponse(Actor actor) {

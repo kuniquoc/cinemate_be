@@ -41,7 +41,7 @@ public class Actor {
     private Instant deletedAt;
 
     @Builder.Default
-    @OneToMany(mappedBy = "actor", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "actor", fetch = FetchType.LAZY)
     private Set<MovieActor> movieActors = new HashSet<>();
 
     public Actor(String fullname, String biography, String avatar, LocalDate dateOfBirth) {

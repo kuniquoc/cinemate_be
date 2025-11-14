@@ -271,22 +271,25 @@ public class MovieServiceImpl implements MovieService {
 
         Movie updatedMovie = repo.save(movie);
 
-        // Update categories
+        // Update categories - delete existing and flush before adding new ones
         movieCategoryRepository.deleteByMovieId(movieId);
+        movieCategoryRepository.flush();
         List<MovieCategory> movieCategories = categories.stream()
                 .map(category -> new MovieCategory(updatedMovie, category))
                 .toList();
         movieCategoryRepository.saveAll(movieCategories);
 
-        // Update actors
-        movieActorRepository.deleteAll(movieActorRepository.findByMovieId(movieId));
+        // Update actors - delete existing and flush before adding new ones
+        movieActorRepository.deleteByMovieId(movieId);
+        movieActorRepository.flush();
         List<MovieActor> movieActors = actors.stream()
                 .map(actor -> new MovieActor(updatedMovie, actor))
                 .toList();
         movieActorRepository.saveAll(movieActors);
 
-        // Update directors
-        movieDirectorRepository.deleteAll(movieDirectorRepository.findByMovieId(movieId));
+        // Update directors - delete existing and flush before adding new ones
+        movieDirectorRepository.deleteByMovieId(movieId);
+        movieDirectorRepository.flush();
         List<MovieDirector> movieDirectors = directors.stream()
                 .map(director -> new MovieDirector(updatedMovie, director))
                 .toList();
@@ -323,6 +326,13 @@ public class MovieServiceImpl implements MovieService {
         if (!repo.existsById(movieId)) {
             throw new NotFoundException("Movie not found");
         }
+
+        // Delete all relationships first to avoid ConcurrentModificationException
+        movieCategoryRepository.deleteByMovieId(movieId);
+        movieActorRepository.deleteByMovieId(movieId);
+        movieDirectorRepository.deleteByMovieId(movieId);
+
+        // Then delete the movie
         repo.deleteById(movieId);
     }
 
