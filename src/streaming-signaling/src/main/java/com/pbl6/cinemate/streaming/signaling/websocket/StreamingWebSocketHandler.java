@@ -36,8 +36,8 @@ public class StreamingWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) throws Exception {
         String clientId = attribute(session, SignalingHandshakeInterceptor.ATTR_CLIENT_ID);
-        String streamId = attribute(session, SignalingHandshakeInterceptor.ATTR_STREAM_ID);
-        PeerListMessage peerListMessage = signalingService.registerClient(clientId, streamId);
+        String movieId = attribute(session, SignalingHandshakeInterceptor.ATTR_MOVIE_ID);
+        PeerListMessage peerListMessage = signalingService.registerClient(clientId, movieId);
         sessions.put(clientId, session);
         send(session, peerListMessage);
     }
@@ -58,9 +58,9 @@ public class StreamingWebSocketHandler extends TextWebSocketHandler {
         }
 
         switch (type) {
-            case "WHO_HAS" -> handleWhoHas(session, payload);
-            case "REPORT_SEGMENT" -> handleReportSegment(session, payload);
-            case "RTC_OFFER", "RTC_ANSWER", "ICE_CANDIDATE" -> handleRtcRelay(session, payload);
+            case "whoHas" -> handleWhoHas(session, payload);
+            case "reportSegment" -> handleReportSegment(session, payload);
+            case "rtcOffer", "rtcAnswer", "iceCandidate" -> handleRtcRelay(session, payload);
             default -> send(session, new ErrorMessage("Unsupported message type: " + type));
         }
         log.debug("Handled {} message from client {}", type, clientId);
@@ -69,59 +69,71 @@ public class StreamingWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(@NonNull WebSocketSession session, @NonNull CloseStatus status) {
         String clientId = attribute(session, SignalingHandshakeInterceptor.ATTR_CLIENT_ID);
-        String streamId = attribute(session, SignalingHandshakeInterceptor.ATTR_STREAM_ID);
-        signalingService.handleDisconnect(clientId, streamId);
+        String movieId = attribute(session, SignalingHandshakeInterceptor.ATTR_MOVIE_ID);
+        signalingService.handleDisconnect(clientId, movieId);
         sessions.remove(clientId);
     }
 
     private void handleWhoHas(WebSocketSession session, JsonNode payload) throws IOException {
-        String streamIdRaw = payload.path("streamId").textValue();
+        String movieIdRaw = payload.path("movieId").textValue();
+        String qualityIdRaw = payload.path("qualityId").textValue();
         String segmentIdRaw = payload.path("segmentId").textValue();
-        if (streamIdRaw == null || segmentIdRaw == null) {
-            send(session, new ErrorMessage("WHO_HAS requires streamId and segmentId"));
+        if (movieIdRaw == null || qualityIdRaw == null || segmentIdRaw == null) {
+            send(session, new ErrorMessage("whoHas requires movieId, qualityId and segmentId"));
             return;
         }
-        String streamId = streamIdRaw.trim();
+        String movieId = movieIdRaw.trim();
+        String qualityId = qualityIdRaw.trim();
         String segmentId = segmentIdRaw.trim();
-        if (streamId.isEmpty() || segmentId.isEmpty()) {
-            send(session, new ErrorMessage("WHO_HAS requires streamId and segmentId"));
+        if (movieId.isEmpty() || qualityId.isEmpty() || segmentId.isEmpty()) {
+            send(session, new ErrorMessage("whoHas requires movieId, qualityId and segmentId"));
             return;
         }
-        WhoHasReplyMessage reply = signalingService.handleWhoHas(streamId, segmentId);
+        WhoHasReplyMessage reply = signalingService.handleWhoHas(movieId, qualityId, segmentId);
         send(session, reply);
     }
 
     private void handleReportSegment(WebSocketSession session, JsonNode payload) throws IOException {
         String clientId = attribute(session, SignalingHandshakeInterceptor.ATTR_CLIENT_ID);
-        String streamIdRaw = payload.path("streamId").textValue();
-        String streamId;
-        if (streamIdRaw == null) {
-            streamId = attribute(session, SignalingHandshakeInterceptor.ATTR_STREAM_ID);
+        String movieIdRaw = payload.path("movieId").textValue();
+        String movieId;
+        if (movieIdRaw == null) {
+            movieId = attribute(session, SignalingHandshakeInterceptor.ATTR_MOVIE_ID);
         } else {
-            streamId = streamIdRaw.trim();
-            if (streamId.isEmpty()) {
-                streamId = attribute(session, SignalingHandshakeInterceptor.ATTR_STREAM_ID);
+            movieId = movieIdRaw.trim();
+            if (movieId.isEmpty()) {
+                movieId = attribute(session, SignalingHandshakeInterceptor.ATTR_MOVIE_ID);
             }
+        }
+        String qualityIdRaw = payload.path("qualityId").textValue();
+        if (qualityIdRaw == null) {
+            send(session, new ErrorMessage("reportSegment requires qualityId"));
+            return;
+        }
+        String qualityId = qualityIdRaw.trim();
+        if (qualityId.isEmpty()) {
+            send(session, new ErrorMessage("reportSegment requires qualityId"));
+            return;
         }
         String segmentIdRaw = payload.path("segmentId").textValue();
         if (segmentIdRaw == null) {
-            send(session, new ErrorMessage("REPORT_SEGMENT requires segmentId"));
+            send(session, new ErrorMessage("reportSegment requires segmentId"));
             return;
         }
         String segmentId = segmentIdRaw.trim();
         if (segmentId.isEmpty()) {
-            send(session, new ErrorMessage("REPORT_SEGMENT requires segmentId"));
+            send(session, new ErrorMessage("reportSegment requires segmentId"));
             return;
         }
-        String sourceRaw = payload.path("source").textValue();
-        String source = sourceRaw == null ? "peer" : sourceRaw.trim();
-        if (source.isEmpty()) {
-            source = "peer";
+        String source = payload.path("source").textValue();
+        if (source == null || source.isEmpty()) {
+            send(session, new ErrorMessage("reportSegment requires source"));
+            return;
         }
         long latency = payload.path("latency").asLong(0L);
         double speed = payload.path("speed").asDouble(0.0d);
-        ReportSegmentAckMessage ack = signalingService.handleReportSegment(clientId, streamId, segmentId, source, speed,
-                latency);
+        ReportSegmentAckMessage ack = signalingService.handleReportSegment(clientId, movieId, qualityId, segmentId,
+                source, speed, latency);
         send(session, ack);
     }
 

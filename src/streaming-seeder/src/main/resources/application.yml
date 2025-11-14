@@ -32,8 +32,9 @@ streaming:
       bucket: ${SEEDER_ORIGIN_BUCKET:}
       object-prefix: ${SEEDER_ORIGIN_PREFIX:hls}
       segment-extensions:
-        - ts
         - m4s
+        - mp4
+        - m3u8
 
 logging:
   level:

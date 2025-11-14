@@ -35,22 +35,6 @@ public class MovieController {
                 this.reviewService = reviewService;
         }
 
-        @Operation(summary = "Upload movie", description = "Upload a movie file directly (recommended for files < 100MB)")
-        @PostMapping(value = "/upload", consumes = "multipart/form-data")
-        public ResponseEntity<ResponseData> upload(
-                        @Parameter(description = "Movie file to upload") @RequestPart("file") MultipartFile file,
-                        @Parameter(description = "Movie metadata") @RequestPart("data") MovieUploadRequest req,
-                        HttpServletRequest httpServletRequest) {
-
-                MovieUploadResponse response = movieService.upload(file, req);
-
-                return ResponseEntity.ok(ResponseData.success(
-                                response,
-                                "Movie uploaded successfully",
-                                httpServletRequest.getRequestURI(),
-                                httpServletRequest.getMethod()));
-        }
-
         @Operation(summary = "Get movie status", description = "Get the processing status and available qualities of a movie")
         @GetMapping("/{id}/status")
         public ResponseEntity<ResponseData> status(
@@ -316,7 +300,8 @@ public class MovieController {
                         @RequestParam(defaultValue = "asc") @NonNull String sortDirection,
                         HttpServletRequest httpServletRequest) {
 
-                PaginatedResponse<MovieResponse> data = movieService.searchMovies(keyword, page - 1, size, sortBy, sortDirection);
+                PaginatedResponse<MovieResponse> data = movieService.searchMovies(keyword, page - 1, size, sortBy,
+                                sortDirection);
 
                 return ResponseEntity.ok(ResponseData.successWithMeta(
                                 data,

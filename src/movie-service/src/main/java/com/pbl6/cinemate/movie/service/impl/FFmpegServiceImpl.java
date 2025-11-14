@@ -30,21 +30,73 @@ public class FFmpegServiceImpl implements FFmpegService {
     @Value("${ffmpeg.tmp-dir:/tmp/movies}")
     private String tmpBaseDir;
 
+    @Override
+    public VideoMetadata getVideoMetadata(Path inputFile) {
+        try {
+            // Use ffprobe to get video metadata
+            List<String> command = List.of(
+                    "ffprobe", "-v", "error",
+                    "-select_streams", "v:0",
+                    "-show_entries", "stream=width,height,bit_rate",
+                    "-of", "csv=p=0",
+                    inputFile.toString());
+
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.redirectErrorStream(true);
+            Process p = pb.start();
+
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+                String line = br.readLine();
+                if (line != null && !line.isEmpty()) {
+                    String[] parts = line.split(",");
+                    if (parts.length >= 2) {
+                        int width = Integer.parseInt(parts[0].trim());
+                        int height = Integer.parseInt(parts[1].trim());
+                        long bitrate = parts.length >= 3 && !parts[2].trim().equals("N/A")
+                                ? Long.parseLong(parts[2].trim())
+                                : 0;
+
+                        log.info("Video metadata: {}x{}, bitrate: {}", width, height, bitrate);
+                        return new VideoMetadata(width, height, bitrate);
+                    }
+                }
+            }
+
+            int exitCode = p.waitFor();
+            if (exitCode != 0) {
+                throw new InternalServerException("ffprobe process failed with exit code: " + exitCode);
+            }
+
+            throw new InternalServerException("Failed to parse video metadata");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new InternalServerException("ffprobe process was interrupted: " + e.getMessage());
+        } catch (Exception e) {
+            throw new InternalServerException("Failed to get video metadata: " + e.getMessage());
+        }
+    }
+
+    @Override
     public Map<String, Path> transcode(Path inputFile, UUID movieId, List<Variant> variants) {
         Map<String, Path> result = new LinkedHashMap<>();
         Path baseOut = createOutputDirectory(movieId);
 
         for (Variant v : variants) {
             Path outDir = createVariantDirectory(baseOut, v);
-            Path playlist = outDir.resolve("index.m3u8");
+            Path playlist = outDir.resolve("playlist.m3u8");
 
+            // Use fMP4 format instead of MPEG-TS
             List<String> command = List.of(
                     ffmpegExecutable, "-y", "-i", inputFile.toString(),
                     "-vf", "scale=" + v.resolution(),
                     "-c:a", "aac", "-b:a", v.audioBitrate(),
                     "-c:v", "h264", "-b:v", v.videoBitrate(),
-                    "-hls_time", "6", "-hls_playlist_type", "vod",
-                    "-hls_segment_filename", outDir.resolve("seg_%03d.ts").toString(),
+                    "-f", "hls",
+                    "-hls_time", "6",
+                    "-hls_playlist_type", "vod",
+                    "-hls_segment_type", "fmp4",
+                    "-hls_fmp4_init_filename", "init.mp4",
+                    "-hls_segment_filename", outDir.resolve("seg_%04d.m4s").toString(),
                     playlist.toString());
 
             run(command, outDir.toFile());
@@ -103,7 +155,7 @@ public class FFmpegServiceImpl implements FFmpegService {
             for (Variant v : variants) {
                 bw.write(String.format("#EXT-X-STREAM-INF:BANDWIDTH=%d,RESOLUTION=%s%n",
                         v.bandwidth(), v.resolution()));
-                bw.write(v.name() + "/index.m3u8%n".formatted());
+                bw.write(v.name() + "/playlist.m3u8%n".formatted());
             }
         } catch (IOException e) {
             throw new InternalServerException("Failed to create master playlist: " + e.getMessage());

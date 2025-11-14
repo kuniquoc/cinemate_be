@@ -11,6 +11,8 @@ The streaming-seeder service keeps Redis in sync with locally cached media segme
 - Expose actuator health endpoints for operational monitoring.
 - Serve cached segments over HTTP for viewer fallback (`GET /streams/{streamId}/segments/{segmentId}`).
 
+**Note:** `segmentId` now includes the file extension (e.g., `seg_0005.m4s`), making it equivalent to the filename.
+
 ## Configuration
 
 Environment variables (defaults in `src/main/resources/application.yml`):

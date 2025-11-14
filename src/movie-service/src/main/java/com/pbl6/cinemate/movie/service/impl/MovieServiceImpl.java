@@ -30,7 +30,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -81,7 +80,7 @@ public class MovieServiceImpl implements MovieService {
     public MovieStatusResponse getMovieStatus(@NonNull UUID movieId) {
         Movie movie = repo.findById(movieId)
                 .orElseThrow(() -> new NotFoundException("Movie not found with id: " + movieId));
-        Map<String, String> qualities = MovieUtils.parseQualitiesJson(movie.getQualitiesJson());
+        List<String> qualities = movie.getQualities() != null ? movie.getQualities() : List.of();
         return new MovieStatusResponse(movie.getId(), movie.getStatus().name(), qualities);
     }
 
@@ -89,7 +88,7 @@ public class MovieServiceImpl implements MovieService {
     public MovieInfoResponse getMovieInfo(@NonNull UUID movieId) {
         Movie movie = repo.findById(movieId)
                 .orElseThrow(() -> new NotFoundException("Movie not found with id: " + movieId));
-        
+
         // Fetch actors for the movie (only id and fullname)
         List<ActorResponse> actors = movieActorRepository.findByMovieIdWithActor(movieId)
                 .stream()
@@ -98,7 +97,7 @@ public class MovieServiceImpl implements MovieService {
                         .fullname(movieActor.getActor().getFullname())
                         .build())
                 .toList();
-        
+
         // Fetch categories for the movie (only id and name)
         List<CategoryResponse> categories = movieCategoryRepository.findByMovieId(movieId)
                 .stream()
@@ -112,7 +111,7 @@ public class MovieServiceImpl implements MovieService {
                 })
                 .filter(category -> category != null)
                 .toList();
-        
+
         return MovieUtils.mapToMovieInfoResponse(movie, actors, categories);
     }
 
@@ -155,9 +154,9 @@ public class MovieServiceImpl implements MovieService {
 
         List<CategoryResponse> categoryResponses = categories.stream()
                 .map(category -> CategoryResponse.builder()
-                                .id(category.getId())
-                                .name(category.getName())
-                                .build())
+                        .id(category.getId())
+                        .name(category.getName())
+                        .build())
                 .toList();
 
         return MovieUtils.mapToMovieResponse(savedMovie, categoryResponses);
@@ -205,9 +204,9 @@ public class MovieServiceImpl implements MovieService {
 
         List<CategoryResponse> categoryResponses = categories.stream()
                 .map(category -> CategoryResponse.builder()
-                                .id(category.getId())
-                                .name(category.getName())
-                                .build())
+                        .id(category.getId())
+                        .name(category.getName())
+                        .build())
                 .toList();
 
         return MovieUtils.mapToMovieResponse(updatedMovie, categoryResponses);
@@ -264,13 +263,14 @@ public class MovieServiceImpl implements MovieService {
 
     private List<CategoryResponse> getCategoryNameForMovie(UUID movieId) {
         List<UUID> categoryIds = movieCategoryRepository.findByMovieId(movieId)
-                        .stream().map(movieCategory -> movieCategory.getCategoryId()).toList();
+                .stream().map(movieCategory -> movieCategory.getCategoryId()).toList();
         return categoryRepository.findAllByIdIn(categoryIds)
-                                    .stream()
-                                    .map(category -> CategoryResponse.builder()
-                                                        .id(category.getId())
-                                                        .name(category.getName())
-                                                        .build()).toList();
+                .stream()
+                .map(category -> CategoryResponse.builder()
+                        .id(category.getId())
+                        .name(category.getName())
+                        .build())
+                .toList();
     }
 
 }

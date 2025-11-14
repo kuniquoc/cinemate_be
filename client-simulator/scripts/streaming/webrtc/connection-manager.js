@@ -34,7 +34,7 @@ class WebRtcConnectionManager extends EventEmitter {
             msg.peers.filter((pid) => pid !== this.clientId).forEach((pid) => this.ensureOffer(pid));
         });
 
-        this.signaling.on('RTC_OFFER', async (msg) => {
+        this.signaling.on('rtcOffer', async (msg) => {
             const from = msg.from;
             if (!from || from === this.clientId) return;
             const { pc } = this._ensurePeer(from, false);
@@ -49,7 +49,7 @@ class WebRtcConnectionManager extends EventEmitter {
             }
         });
 
-        this.signaling.on('RTC_ANSWER', async (msg) => {
+        this.signaling.on('rtcAnswer', async (msg) => {
             const from = msg.from;
             if (!from || from === this.clientId) return;
             const peer = this.peers.get(from);
@@ -61,7 +61,7 @@ class WebRtcConnectionManager extends EventEmitter {
             }
         });
 
-        this.signaling.on('ICE_CANDIDATE', async (msg) => {
+        this.signaling.on('iceCandidate', async (msg) => {
             const from = msg.from;
             if (!from || from === this.clientId) return;
             const peer = this.peers.get(from);

@@ -18,7 +18,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class SignalingHandshakeInterceptor implements HandshakeInterceptor {
 
     static final String ATTR_CLIENT_ID = "clientId";
-    static final String ATTR_STREAM_ID = "streamId";
+    static final String ATTR_MOVIE_ID = "movieId";
     private static final Logger log = LoggerFactory.getLogger(SignalingHandshakeInterceptor.class);
 
     @Override
@@ -32,16 +32,18 @@ public class SignalingHandshakeInterceptor implements HandshakeInterceptor {
                 .build()
                 .getQueryParams();
 
+        // Accept clientId
         Optional.ofNullable(queryParams.getFirst(ATTR_CLIENT_ID))
                 .ifPresent(clientId -> attributes.put(ATTR_CLIENT_ID, clientId));
-        Optional.ofNullable(queryParams.getFirst(ATTR_STREAM_ID))
-                .ifPresent(streamId -> attributes.put(ATTR_STREAM_ID, streamId));
 
-        if (!attributes.containsKey(ATTR_CLIENT_ID) || !attributes.containsKey(ATTR_STREAM_ID)) {
-            log.warn("Handshake rejected: missing clientId or streamId. uri={}", request.getURI());
+        // Accept movieId
+        Optional.ofNullable(queryParams.getFirst(ATTR_MOVIE_ID))
+                .ifPresent(movieId -> attributes.put(ATTR_MOVIE_ID, movieId));
+
+        if (!attributes.containsKey(ATTR_CLIENT_ID) || !attributes.containsKey(ATTR_MOVIE_ID)) {
+            log.warn("Handshake rejected: missing clientId or movieId. uri={}", request.getURI());
             return false;
         }
-
         return true;
     }
 

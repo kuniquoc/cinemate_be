@@ -1,171 +1,206 @@
 package com.pbl6.cinemate.streaming.seeder;
 
+import com.pbl6.cinemate.streaming.seeder.SegmentKey.SegmentType;
 import com.pbl6.cinemate.streaming.seeder.config.SeederProperties;
+import com.pbl6.cinemate.streaming.seeder.service.MinioObjectNameBuilder;
+import com.pbl6.cinemate.streaming.seeder.service.SegmentCacheWriter;
+import com.pbl6.cinemate.streaming.seeder.service.SegmentIdNormalizer;
+import com.pbl6.cinemate.streaming.seeder.validation.SegmentIdentifierValidator;
 import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.errors.ErrorResponseException;
-import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.FileTime;
-import java.time.Clock;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+/**
+ * Fetches segments from MinIO/S3 origin storage.
+ * Supports fMP4/DASH format with multi-quality ABR.
+ */
 @Component
 public class OriginSegmentFetcher {
 
     private static final Logger log = LoggerFactory.getLogger(OriginSegmentFetcher.class);
+
+    // MinIO error codes
+    private static final String ERROR_NO_SUCH_KEY = "NoSuchKey";
+
     private final MinioClient minioClient;
     private final SeederProperties properties;
-    private final Clock clock;
+    private final SegmentIdentifierValidator validator;
+    private final SegmentIdNormalizer normalizer;
+    private final MinioObjectNameBuilder objectNameBuilder;
+    private final SegmentCacheWriter cacheWriter;
     private final String defaultBucket;
+
+    /**
+     * Internal record to hold fetch context parameters.
+     */
+    private record FetchContext(
+            String movieId,
+            String qualityId,
+            String sanitizedSegmentId,
+            SegmentType type,
+            String bucket) {
+    }
 
     public OriginSegmentFetcher(
             MinioClient minioClient,
             SeederProperties properties,
-            Clock clock,
+            SegmentIdentifierValidator validator,
+            SegmentIdNormalizer normalizer,
+            MinioObjectNameBuilder objectNameBuilder,
+            SegmentCacheWriter cacheWriter,
             @Value("${minio.bucket}") String defaultBucket) {
         this.minioClient = minioClient;
         this.properties = properties;
-        this.clock = clock;
+        this.validator = validator;
+        this.normalizer = normalizer;
+        this.objectNameBuilder = objectNameBuilder;
+        this.cacheWriter = cacheWriter;
         this.defaultBucket = defaultBucket;
     }
 
-    public Optional<CachedSegment> fetchFromOrigin(String streamId, String segmentId) {
-        if (!properties.getOrigin().isEnabled()) {
-            return Optional.empty();
-        }
-        StreamDescriptor descriptor = parseStreamId(streamId);
-        if (descriptor == null) {
-            log.debug("Cannot parse streamId {} for origin fetch", streamId);
-            return Optional.empty();
-        }
-        String sanitizedSegmentId = sanitize(segmentId);
-        if (sanitizedSegmentId == null) {
-            log.debug("Segment id {} is not valid for origin fetch", segmentId);
-            return Optional.empty();
-        }
-
-        Path streamDir = properties.getCachePath().resolve(streamId);
-        try {
-            Files.createDirectories(streamDir);
-        } catch (IOException ex) {
-            log.warn("Failed to prepare cache directory {}: {}", streamDir, ex.getMessage());
+    /**
+     * Fetches a segment from origin storage.
+     *
+     * @param movieId   the movie identifier
+     * @param qualityId the quality variant (can be null for master playlist)
+     * @param segmentId the segment identifier
+     * @return Optional containing the cached segment if found
+     */
+    public Optional<CachedSegment> fetchFromOrigin(String movieId, String qualityId, String segmentId) {
+        if (!isOriginEnabled()) {
             return Optional.empty();
         }
 
+        if (!validator.isValidMovieId(movieId)) {
+            log.debug("Invalid movieId '{}' for origin fetch", movieId);
+            return Optional.empty();
+        }
+
+        String sanitizedSegmentId = normalizer.sanitize(segmentId);
+        if (sanitizedSegmentId == null || !validator.isSafeIdentifier(sanitizedSegmentId)) {
+            log.debug("Invalid segment id '{}' for origin fetch", segmentId);
+            return Optional.empty();
+        }
+
+        SegmentKey key = new SegmentKey(movieId, qualityId, sanitizedSegmentId);
+        SegmentType type = key.getType();
         String bucket = resolveBucket();
-        List<String> extensions = properties.getOrigin().getSegmentExtensions();
-        if (extensions == null || extensions.isEmpty()) {
-            log.warn("Không có segment extension nào được cấu hình cho origin; bỏ qua đồng bộ");
-            return Optional.empty();
-        }
+
+        return fetchSegmentWithExtensions(movieId, qualityId, sanitizedSegmentId, type, bucket);
+    }
+
+    /**
+     * Attempts to fetch the segment by trying different file extensions.
+     */
+    private Optional<CachedSegment> fetchSegmentWithExtensions(
+            String movieId,
+            String qualityId,
+            String sanitizedSegmentId,
+            SegmentType type,
+            String bucket) {
+
+        List<String> extensions = getExtensionsForType(type);
+        FetchContext context = new FetchContext(movieId, qualityId, sanitizedSegmentId, type, bucket);
+
         for (String extension : extensions) {
-            String fileName = sanitizedSegmentId + "." + extension;
-            String objectName = buildObjectName(descriptor, fileName);
-            try (InputStream objectStream = minioClient.getObject(GetObjectArgs.builder()
-                    .bucket(bucket)
-                    .object(objectName)
-                    .build())) {
-                Path target = streamDir.resolve(fileName);
-                Files.copy(objectStream, target, StandardCopyOption.REPLACE_EXISTING);
-                Instant now = Instant.now(clock);
-                Files.setLastModifiedTime(target, FileTime.from(now));
-                log.info("Fetched segment {} for stream {} from origin {}", sanitizedSegmentId, streamId, objectName);
-                return Optional.of(new CachedSegment(streamId, sanitizedSegmentId, target, now));
-            } catch (ErrorResponseException ex) {
-                if (isNotFound(ex)) {
-                    log.debug("Segment {} not present at {}/{}", fileName, bucket, objectName);
-                    continue;
-                }
-                log.warn("Origin request for {}/{} failed: {}", bucket, objectName, ex.getMessage());
-            } catch (Exception ex) {
-                log.warn("Failed to write segment {} from origin: {}", objectName, ex.getMessage());
+            // SegmentId is now the complete filename, but we still try different extensions
+            // for non-media segments (init, playlists)
+            String fileName = sanitizedSegmentId.endsWith("." + extension)
+                    ? sanitizedSegmentId
+                    : sanitizedSegmentId + "." + extension;
+            String objectName = objectNameBuilder.buildObjectName(movieId, qualityId, fileName, type);
+
+            Optional<CachedSegment> segment = fetchSingleSegment(context, fileName, objectName);
+
+            if (segment.isPresent()) {
+                return segment;
             }
         }
+
         return Optional.empty();
     }
 
+    /**
+     * Fetches a single segment from MinIO and caches it locally.
+     */
+    private Optional<CachedSegment> fetchSingleSegment(FetchContext context, String fileName, String objectName) {
+        try (InputStream objectStream = minioClient.getObject(GetObjectArgs.builder()
+                .bucket(context.bucket())
+                .object(objectName)
+                .build())) {
+
+            CachedSegment segment = cacheWriter.saveToCache(
+                    context.movieId(),
+                    context.qualityId(),
+                    context.sanitizedSegmentId(),
+                    fileName,
+                    context.type(),
+                    objectStream);
+
+            log.info("Fetched {} segment '{}' for movie '{}' quality '{}' from origin '{}'",
+                    context.type(), context.sanitizedSegmentId(), context.movieId(),
+                    context.qualityId(), objectName);
+
+            return Optional.of(segment);
+
+        } catch (ErrorResponseException ex) {
+            handleMinioError(ex, context.bucket(), objectName, fileName);
+        } catch (Exception ex) {
+            log.warn("Failed to fetch segment '{}' from origin: {}", objectName, ex.getMessage());
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Handles MinIO-specific errors during segment fetching.
+     */
+    private void handleMinioError(ErrorResponseException ex, String bucket, String objectName, String fileName) {
+        if (isNotFound(ex)) {
+            log.debug("Segment '{}' not found at {}/{}", fileName, bucket, objectName);
+        } else {
+            log.warn("MinIO request failed for {}/{}: {}", bucket, objectName, ex.getMessage());
+        }
+    }
+
+    /**
+     * Checks if origin fetching is enabled.
+     */
+    private boolean isOriginEnabled() {
+        return properties.getOrigin().isEnabled();
+    }
+
+    /**
+     * Returns the list of file extensions to try for each segment type.
+     */
+    private List<String> getExtensionsForType(SegmentType type) {
+        return switch (type) {
+            case INIT -> List.of("mp4", "m4s"); // Prioritize .mp4 for init
+            case MASTER_PLAYLIST, VARIANT_PLAYLIST -> List.of("m3u8");
+            case MEDIA -> List.of("m4s", "mp4"); // fMP4 media segments
+        };
+    }
+
+    /**
+     * Resolves the bucket name to use.
+     */
     private String resolveBucket() {
         String configured = properties.getOrigin().getBucket();
-        if (configured != null && !configured.isBlank()) {
-            return configured;
-        }
-        return defaultBucket;
+        return (configured != null && !configured.isBlank()) ? configured : defaultBucket;
     }
 
-    private String buildObjectName(StreamDescriptor descriptor, String fileName) {
-        String prefix = properties.getOrigin().getObjectPrefix();
-        if (prefix == null || prefix.isBlank()) {
-            return descriptor.movieId() + "/" + descriptor.quality() + "/" + fileName;
-        }
-        return prefix.replaceAll("/*$", "") + "/" + descriptor.movieId() + "/" + descriptor.quality() + "/" + fileName;
-    }
-
-    private StreamDescriptor parseStreamId(String streamId) {
-        if (streamId == null) {
-            return null;
-        }
-        int separator = streamId.indexOf('_');
-        if (separator <= 0 || separator >= streamId.length() - 1) {
-            return null;
-        }
-        String moviePart = streamId.substring(0, separator);
-        String qualityPart = streamId.substring(separator + 1);
-        if (!isValidUuid(moviePart) || !isSafeComponent(qualityPart)) {
-            return null;
-        }
-        return new StreamDescriptor(moviePart, qualityPart);
-    }
-
-    private boolean isValidUuid(String value) {
-        try {
-            UUID.fromString(value);
-            return true;
-        } catch (IllegalArgumentException ex) {
-            return false;
-        }
-    }
-
-    private boolean isSafeComponent(String value) {
-        if (value == null || value.isBlank()) {
-            return false;
-        }
-        return !value.contains("..") && !value.contains("/") && !value.contains("\\");
-    }
-
-    private String sanitize(String segmentId) {
-        if (segmentId == null || segmentId.isBlank()) {
-            return null;
-        }
-        String trimmed = segmentId.trim();
-        int firstDot = trimmed.indexOf('.');
-        if (firstDot > 0) {
-            trimmed = trimmed.substring(0, firstDot);
-        }
-        if (trimmed.isBlank()) {
-            return null;
-        }
-        if (trimmed.contains("..") || trimmed.contains("/") || trimmed.contains("\\")) {
-            return null;
-        }
-        return trimmed;
-    }
-
+    /**
+     * Checks if the error response indicates a "not found" error.
+     */
     private boolean isNotFound(ErrorResponseException ex) {
-        return "NoSuchKey".equalsIgnoreCase(ex.errorResponse().code())
+        return ERROR_NO_SUCH_KEY.equalsIgnoreCase(ex.errorResponse().code())
                 || ex.errorResponse().code() == null;
-    }
-
-    private record StreamDescriptor(String movieId, String quality) {
     }
 }

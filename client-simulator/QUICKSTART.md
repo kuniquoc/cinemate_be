@@ -106,9 +106,9 @@ client-simulator/
    ```bash
    npm run streaming:playback -- --stream=<movieId>_<quality>
    ```
-   Viewer sẽ tự gọi Movie Service để lấy URL manifest và tải `index.m3u8` tương ứng (các segment được đọc từ playlist). Chỉ truyền thêm `--manifest=<path>` nếu muốn dùng file cục bộ. Start ít nhất hai viewer (máy/terminal khác nhau) cùng `streamId` để nhìn thấy luồng P2P thực sự.
+   Viewer sẽ tự gọi Movie Service để lấy URL manifest và tải `playlist.m3u8` tương ứng (các segment được đọc từ playlist). Chỉ truyền thêm `--manifest=<path>` nếu muốn dùng file cục bộ. Start ít nhất hai viewer (máy/terminal khác nhau) cùng `streamId` để nhìn thấy luồng P2P thực sự.
 3. **Cấu hình fallback sang seeder:** đảm bảo `config.streaming.fallback.seeder.baseUrl` (hoặc biến môi trường `STREAMING_SEEDER_BASE_URL`) trỏ về `http://<host>:8084`.
 4. **Seeder tự đồng bộ MinIO:** lần đầu yêu cầu một segment, seeder sẽ tải từ MinIO dựa trên `minio.*` + `streaming.seeder.origin.*`. Theo dõi log `streaming-seeder` để thấy dòng `Fetched segment ... from origin`.
 5. **Seeder đồng bộ origin tự động:** seeder nhận request từ viewer, nếu segment chưa có trong cache sẽ tải từ MinIO theo cấu hình `streaming.seeder.origin.*`, ghi vào cache rồi trả về cho viewer. Viewer không gọi origin trực tiếp nữa; nếu seeder không phản hồi được, phiên phát sẽ báo lỗi.
 
-> Viewer lần lượt gọi `GET /api/movies/{movieId}` để lấy danh sách quality, sau đó tải file `index.m3u8` tương ứng từ origin (dựa trên cấu hình `STREAMING_ORIGIN_BASE_URL`). Endpoint origin chỉ dùng để tải manifest, không lấy trực tiếp các segment.
+> Viewer lần lượt gọi `GET /api/movies/{movieId}` để lấy danh sách quality, sau đó tải file `playlist.m3u8` tương ứng từ origin (dựa trên cấu hình `STREAMING_ORIGIN_BASE_URL`). Endpoint origin chỉ dùng để tải manifest, không lấy trực tiếp các segment.

@@ -8,6 +8,7 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -31,9 +32,9 @@ public class Movie {
     private Instant createdAt;
     private Instant updatedAt;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
-    private String qualitiesJson;
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(columnDefinition = "text[]")
+    private List<String> qualities;
 
     // New fields
     private String verticalPoster;
@@ -43,7 +44,7 @@ public class Movie {
     private Integer age;
     private Integer year;
     private String country;
-    
+
     @Column(name = "is_vip", nullable = false)
     private Boolean isVip;
 
