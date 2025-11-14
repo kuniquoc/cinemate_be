@@ -78,7 +78,7 @@ public class SegmentController {
         return serveSegment(movieId, qualityId, "playlist");
     }
 
-    @GetMapping("/movies/{movieId}/{qualityId}/segments/{segmentId}")
+    @GetMapping("/movies/{movieId}/{qualityId}/{segmentId}")
     public ResponseEntity<Resource> getSegment(
             @PathVariable("movieId") String movieId,
             @PathVariable("qualityId") String qualityId,

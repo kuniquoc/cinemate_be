@@ -87,4 +87,19 @@ public class DirectorController {
                 httpServletRequest.getRequestURI(),
                 httpServletRequest.getMethod()));
     }
+
+    @Operation(summary = "Delete director", description = "Delete a director by their ID")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ResponseData> deleteDirector(
+            @Parameter(description = "Director ID") @PathVariable UUID id,
+            HttpServletRequest httpServletRequest) {
+
+        directorService.deleteDirector(id);
+
+        return ResponseEntity.ok(ResponseData.success(
+                null,
+                "Director deleted successfully",
+                httpServletRequest.getRequestURI(),
+                httpServletRequest.getMethod()));
+    }
 }

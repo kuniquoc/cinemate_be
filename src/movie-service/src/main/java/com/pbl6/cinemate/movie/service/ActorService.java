@@ -15,4 +15,6 @@ public interface ActorService {
     ActorResponse getActorById(UUID id);
 
     ActorResponse updateActor(UUID id, ActorUpdateRequest request);
+
+    void deleteActor(UUID id);
 }
