@@ -22,6 +22,10 @@ public interface MovieActorRepository extends JpaRepository<MovieActor, UUID> {
     @Query("DELETE FROM MovieActor ma WHERE ma.movie.id = :movieId")
     void deleteByMovieId(@Param("movieId") UUID movieId);
 
+    @Modifying
+    @Query("DELETE FROM MovieActor ma WHERE ma.actor.id = :actorId")
+    void deleteByActorId(@Param("actorId") UUID actorId);
+
     @Query("SELECT COUNT(ma) > 0 FROM MovieActor ma WHERE ma.movie.id = :movieId AND ma.actor.id = :actorId")
     boolean existsByMovieIdAndActorId(@Param("movieId") UUID movieId, @Param("actorId") UUID actorId);
 }

@@ -8,13 +8,12 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @Builder
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public record DirectorResponse(
-        UUID id,
-        String fullname,
-        String biography,
-        String avatar,
-        LocalDate dateOfBirth,
-        Instant createdAt,
-        Instant updatedAt) {
+                UUID id,
+                String fullname,
+                String biography,
+                String avatar,
+                LocalDate dateOfBirth,
+                Instant createdAt,
+                Instant updatedAt) {
 }

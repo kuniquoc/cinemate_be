@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -19,6 +20,14 @@ public interface MovieDirectorRepository extends JpaRepository<MovieDirector, UU
     List<MovieDirector> findByMovieId(UUID movieId);
 
     List<MovieDirector> findByDirectorId(UUID directorId);
+
+    @Modifying
+    @Query("DELETE FROM MovieDirector md WHERE md.movie.id = :movieId")
+    void deleteByMovieId(@Param("movieId") UUID movieId);
+
+    @Modifying
+    @Query("DELETE FROM MovieDirector md WHERE md.director.id = :directorId")
+    void deleteByDirectorId(@Param("directorId") UUID directorId);
 
     void deleteByMovieIdAndDirectorId(UUID movieId, UUID directorId);
 }

@@ -35,7 +35,7 @@ public class MovieActorService {
 
         // Validate movie exists
         Movie movie = movieRepository.findById(movieId)
-            .orElseThrow(() -> new NotFoundException("Movie not found with ID: " + movieId));
+                .orElseThrow(() -> new NotFoundException("Movie not found with ID: " + movieId));
 
         // Validate all actors exist
         List<Actor> actors = actorRepository.findAllById(request.getActorIds());
@@ -45,9 +45,9 @@ public class MovieActorService {
 
         // Check for existing relationships and add only new ones
         List<MovieActor> newMovieActors = actors.stream()
-            .filter(actor -> !movieActorRepository.existsByMovieIdAndActorId(movieId, actor.getId()))
-            .map(actor -> new MovieActor(movie, actor))
-            .collect(Collectors.toList());
+                .filter(actor -> !movieActorRepository.existsByMovieIdAndActorId(movieId, actor.getId()))
+                .map(actor -> new MovieActor(movie, actor))
+                .collect(Collectors.toList());
 
         if (newMovieActors.isEmpty()) {
             throw new BadRequestException("All actors are already assigned to this movie");
@@ -71,8 +71,8 @@ public class MovieActorService {
         List<MovieActor> movieActors = movieActorRepository.findByMovieIdWithActor(movieId);
 
         List<ActorResponse> actorResponses = movieActors.stream()
-            .map(movieActor -> mapToActorResponse(movieActor.getActor()))
-            .collect(Collectors.toList());
+                .map(movieActor -> mapToActorResponse(movieActor.getActor()))
+                .collect(Collectors.toList());
 
         return new MovieActorResponse(actorResponses, actorResponses.size());
     }
@@ -83,7 +83,7 @@ public class MovieActorService {
 
         // Validate movie exists
         Movie movie = movieRepository.findById(movieId)
-            .orElseThrow(() -> new NotFoundException("Movie not found with ID: " + movieId));
+                .orElseThrow(() -> new NotFoundException("Movie not found with ID: " + movieId));
 
         // Validate all actors exist
         List<Actor> actors = actorRepository.findAllById(request.getActorIds());
@@ -91,13 +91,14 @@ public class MovieActorService {
             throw new BadRequestException("One or more actors not found");
         }
 
-        // Remove all existing relationships
+        // Remove all existing relationships and flush to prevent duplicates
         movieActorRepository.deleteByMovieId(movieId);
+        movieActorRepository.flush();
 
         // Add new relationships
         List<MovieActor> newMovieActors = actors.stream()
-            .map(actor -> new MovieActor(movie, actor))
-            .collect(Collectors.toList());
+                .map(actor -> new MovieActor(movie, actor))
+                .collect(Collectors.toList());
 
         movieActorRepository.saveAll(newMovieActors);
 
@@ -107,13 +108,13 @@ public class MovieActorService {
 
     private ActorResponse mapToActorResponse(Actor actor) {
         return ActorResponse.builder()
-            .id(actor.getId())
-            .fullname(actor.getFullname())
-            .biography(actor.getBiography())
-            .avatar(actor.getAvatar())
-            .dateOfBirth(actor.getDateOfBirth())
-            .createdAt(actor.getCreatedAt())
-            .updatedAt(actor.getUpdatedAt())
-            .build();
+                .id(actor.getId())
+                .fullname(actor.getFullname())
+                .biography(actor.getBiography())
+                .avatar(actor.getAvatar())
+                .dateOfBirth(actor.getDateOfBirth())
+                .createdAt(actor.getCreatedAt())
+                .updatedAt(actor.getUpdatedAt())
+                .build();
     }
 }

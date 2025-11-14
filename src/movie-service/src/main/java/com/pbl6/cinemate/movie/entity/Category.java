@@ -36,7 +36,8 @@ public class Category {
     private LocalDateTime updatedAt;
 
     @Builder.Default
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "category", cascade = { CascadeType.PERSIST,
+            CascadeType.MERGE }, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<MovieCategory> movieCategories = new HashSet<>();
 
     @PrePersist

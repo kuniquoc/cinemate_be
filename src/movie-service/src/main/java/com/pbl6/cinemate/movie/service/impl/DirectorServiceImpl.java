@@ -5,6 +5,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.pbl6.cinemate.movie.dto.request.DirectorCreationRequest;
 import com.pbl6.cinemate.movie.dto.request.DirectorUpdateRequest;
@@ -12,15 +13,18 @@ import com.pbl6.cinemate.movie.dto.response.DirectorResponse;
 import com.pbl6.cinemate.movie.entity.Director;
 import com.pbl6.cinemate.movie.exception.NotFoundException;
 import com.pbl6.cinemate.movie.repository.DirectorRepository;
+import com.pbl6.cinemate.movie.repository.MovieDirectorRepository;
 import com.pbl6.cinemate.movie.service.DirectorService;
 
 @Service
 public class DirectorServiceImpl implements DirectorService {
 
     private final DirectorRepository directorRepository;
+    private final MovieDirectorRepository movieDirectorRepository;
 
-    public DirectorServiceImpl(DirectorRepository directorRepository) {
+    public DirectorServiceImpl(DirectorRepository directorRepository, MovieDirectorRepository movieDirectorRepository) {
         this.directorRepository = directorRepository;
+        this.movieDirectorRepository = movieDirectorRepository;
     }
 
     @Override
@@ -76,15 +80,16 @@ public class DirectorServiceImpl implements DirectorService {
     }
 
     @Override
+    @Transactional
     public void deleteDirector(UUID id) {
-        Director director = directorRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Director not found with id: " + id));
-
-        if (director.getDeletedAt() != null) {
+        if (!directorRepository.existsById(id)) {
             throw new NotFoundException("Director not found with id: " + id);
         }
-
-        directorRepository.delete(director);
+        // Delete all movie-director relationships first
+        movieDirectorRepository.deleteByDirectorId(id);
+        movieDirectorRepository.flush();
+        // Then delete the director
+        directorRepository.deleteById(id);
     }
 
     private DirectorResponse mapToDirectorResponse(Director director) {

@@ -41,7 +41,7 @@ public class Director {
     private Instant deletedAt;
 
     @Builder.Default
-    @OneToMany(mappedBy = "director", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "director", fetch = FetchType.LAZY)
     private Set<MovieDirector> movieDirectors = new HashSet<>();
 
     public Director(String fullname, String biography, String avatar, LocalDate dateOfBirth) {
