@@ -22,7 +22,10 @@ FROM eclipse-temurin:21-jre-alpine
 RUN apk add --no-cache curl
 WORKDIR /app
 COPY --from=build /app/streaming-seeder/target/*.jar app.jar
-RUN addgroup -S spring && adduser -S spring -G spring && chown spring:spring app.jar
+RUN addgroup -S spring && adduser -S spring -G spring && \
+    chown spring:spring app.jar && \
+    mkdir -p /var/cinemate/cache && \
+    chown -R spring:spring /var/cinemate
 USER spring
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 CMD curl -f http://localhost:8080/actuator/health || exit 1

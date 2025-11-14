@@ -16,6 +16,8 @@ public interface MovieActorRepository extends JpaRepository<MovieActor, UUID> {
     @Query("SELECT ma FROM MovieActor ma JOIN FETCH ma.actor WHERE ma.movie.id = :movieId")
     List<MovieActor> findByMovieIdWithActor(@Param("movieId") UUID movieId);
 
+    List<MovieActor> findByMovieId(UUID movieId);
+
     @Modifying
     @Query("DELETE FROM MovieActor ma WHERE ma.movie.id = :movieId")
     void deleteByMovieId(@Param("movieId") UUID movieId);

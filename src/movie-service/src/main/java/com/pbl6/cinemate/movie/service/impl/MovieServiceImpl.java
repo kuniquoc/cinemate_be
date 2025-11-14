@@ -3,18 +3,13 @@ package com.pbl6.cinemate.movie.service.impl;
 import com.pbl6.cinemate.movie.dto.request.MovieRequest;
 import com.pbl6.cinemate.movie.dto.request.MovieUploadRequest;
 import com.pbl6.cinemate.movie.dto.response.*;
-import com.pbl6.cinemate.movie.entity.Category;
-import com.pbl6.cinemate.movie.entity.Movie;
-import com.pbl6.cinemate.movie.entity.MovieCategory;
+import com.pbl6.cinemate.movie.entity.*;
 import com.pbl6.cinemate.movie.enums.MovieStatus;
 import com.pbl6.cinemate.movie.event.MovieCreatedEvent;
 import com.pbl6.cinemate.movie.exception.BadRequestException;
 import com.pbl6.cinemate.movie.exception.InternalServerException;
 import com.pbl6.cinemate.movie.exception.NotFoundException;
-import com.pbl6.cinemate.movie.repository.CategoryRepository;
-import com.pbl6.cinemate.movie.repository.MovieActorRepository;
-import com.pbl6.cinemate.movie.repository.MovieCategoryRepository;
-import com.pbl6.cinemate.movie.repository.MovieRepository;
+import com.pbl6.cinemate.movie.repository.*;
 import com.pbl6.cinemate.movie.service.MinioStorageService;
 import com.pbl6.cinemate.movie.service.MovieService;
 import com.pbl6.cinemate.movie.util.MovieUtils;
@@ -39,6 +34,9 @@ public class MovieServiceImpl implements MovieService {
     private final CategoryRepository categoryRepository;
     private final MovieCategoryRepository movieCategoryRepository;
     private final MovieActorRepository movieActorRepository;
+    private final MovieDirectorRepository movieDirectorRepository;
+    private final ActorRepository actorRepository;
+    private final DirectorRepository directorRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Value("${minio.movie-bucket:}")
@@ -46,12 +44,17 @@ public class MovieServiceImpl implements MovieService {
 
     public MovieServiceImpl(MinioStorageService minio, MovieRepository repo,
             CategoryRepository categoryRepository, MovieCategoryRepository movieCategoryRepository,
-            MovieActorRepository movieActorRepository, ApplicationEventPublisher eventPublisher) {
+            MovieActorRepository movieActorRepository, MovieDirectorRepository movieDirectorRepository,
+            ActorRepository actorRepository, DirectorRepository directorRepository,
+            ApplicationEventPublisher eventPublisher) {
         this.minio = minio;
         this.repo = repo;
         this.categoryRepository = categoryRepository;
         this.movieCategoryRepository = movieCategoryRepository;
         this.movieActorRepository = movieActorRepository;
+        this.movieDirectorRepository = movieDirectorRepository;
+        this.actorRepository = actorRepository;
+        this.directorRepository = directorRepository;
         this.eventPublisher = eventPublisher;
     }
 
@@ -89,69 +92,111 @@ public class MovieServiceImpl implements MovieService {
         Movie movie = repo.findById(movieId)
                 .orElseThrow(() -> new NotFoundException("Movie not found with id: " + movieId));
 
-        // Fetch actors for the movie (only id and fullname)
+        // Fetch actors for the movie
         List<ActorResponse> actors = movieActorRepository.findByMovieIdWithActor(movieId)
                 .stream()
                 .map(movieActor -> ActorResponse.builder()
                         .id(movieActor.getActor().getId())
                         .fullname(movieActor.getActor().getFullname())
+                        .biography(movieActor.getActor().getBiography())
+                        .avatar(movieActor.getActor().getAvatar())
+                        .dateOfBirth(movieActor.getActor().getDateOfBirth())
                         .build())
                 .toList();
 
-        // Fetch categories for the movie (only id and name)
-        List<CategoryResponse> categories = movieCategoryRepository.findByMovieId(movieId)
+        // Fetch directors for the movie
+        List<DirectorResponse> directors = movieDirectorRepository.findByMovieIdWithDirector(movieId)
                 .stream()
-                .map(movieCategory -> {
-                    return categoryRepository.findById(movieCategory.getCategoryId())
-                            .map(category -> CategoryResponse.builder()
-                                    .id(category.getId())
-                                    .name(category.getName())
-                                    .build())
-                            .orElse(null);
-                })
-                .filter(category -> category != null)
+                .map(movieDirector -> DirectorResponse.builder()
+                        .id(movieDirector.getDirector().getId())
+                        .fullname(movieDirector.getDirector().getFullname())
+                        .biography(movieDirector.getDirector().getBiography())
+                        .avatar(movieDirector.getDirector().getAvatar())
+                        .dateOfBirth(movieDirector.getDirector().getDateOfBirth())
+                        .build())
                 .toList();
 
-        return MovieUtils.mapToMovieInfoResponse(movie, actors, categories);
+        // Fetch categories for the movie
+        List<CategoryResponse> categories = movieCategoryRepository.findByMovieId(movieId)
+                .stream()
+                .map(movieCategory -> CategoryResponse.builder()
+                        .id(movieCategory.getCategory().getId())
+                        .name(movieCategory.getCategory().getName())
+                        .build())
+                .toList();
+
+        return MovieUtils.mapToMovieInfoResponse(movie, actors, directors, categories);
     }
 
     @Override
     public List<MovieResponse> getAllMovies() {
         return repo.findAll().stream().map(movie -> {
-            List<CategoryResponse> categories = getCategoryNameForMovie(movie.getId());
-            return MovieUtils.mapToMovieResponse(movie, categories);
+            List<CategoryResponse> categories = getCategoriesForMovie(movie.getId());
+            List<ActorResponse> actors = getActorsForMovie(movie.getId());
+            List<DirectorResponse> directors = getDirectorsForMovie(movie.getId());
+            return MovieUtils.mapToMovieResponse(movie, categories, actors, directors);
         }).toList();
     }
 
     @Override
     @Transactional
     public MovieResponse createMovie(MovieRequest movieRequest) {
+        // Validate and fetch categories
         List<UUID> categoryIds = movieRequest.getCategoryIds();
         if (categoryIds == null || categoryIds.isEmpty()) {
             throw new BadRequestException("At least one category ID must be provided");
         }
-
         List<Category> categories = categoryRepository.findAllByIdIn(categoryIds);
-
         if (categories.size() != categoryIds.size()) {
             throw new NotFoundException("Some category IDs were not found");
         }
 
+        // Validate and fetch actors
+        List<UUID> actorIds = movieRequest.getActorIds();
+        if (actorIds == null || actorIds.isEmpty()) {
+            throw new BadRequestException("At least one actor ID must be provided");
+        }
+        List<Actor> actors = actorRepository.findAllById(actorIds);
+        if (actors.size() != actorIds.size()) {
+            throw new NotFoundException("Some actor IDs were not found");
+        }
+
+        // Validate and fetch directors
+        List<UUID> directorIds = movieRequest.getDirectorIds();
+        if (directorIds == null || directorIds.isEmpty()) {
+            throw new BadRequestException("At least one director ID must be provided");
+        }
+        List<Director> directors = directorRepository.findAllById(directorIds);
+        if (directors.size() != directorIds.size()) {
+            throw new NotFoundException("Some director IDs were not found");
+        }
+
+        // Create and save movie
         Movie movie = MovieUtils.mapToMovie(movieRequest);
         if (movie == null) {
             throw new InternalServerException("Failed to map MovieRequest to Movie entity");
         }
         Movie savedMovie = repo.save(movie);
 
+        // Create MovieCategory relationships
         List<MovieCategory> movieCategories = categories.stream()
-                .map(category -> MovieCategory.builder()
-                        .movieId(savedMovie.getId())
-                        .categoryId(category.getId())
-                        .build())
+                .map(category -> new MovieCategory(savedMovie, category))
                 .toList();
-
         movieCategoryRepository.saveAll(movieCategories);
 
+        // Create MovieActor relationships
+        List<MovieActor> movieActors = actors.stream()
+                .map(actor -> new MovieActor(savedMovie, actor))
+                .toList();
+        movieActorRepository.saveAll(movieActors);
+
+        // Create MovieDirector relationships
+        List<MovieDirector> movieDirectors = directors.stream()
+                .map(director -> new MovieDirector(savedMovie, director))
+                .toList();
+        movieDirectorRepository.saveAll(movieDirectors);
+
+        // Build responses
         List<CategoryResponse> categoryResponses = categories.stream()
                 .map(category -> CategoryResponse.builder()
                         .id(category.getId())
@@ -159,7 +204,21 @@ public class MovieServiceImpl implements MovieService {
                         .build())
                 .toList();
 
-        return MovieUtils.mapToMovieResponse(savedMovie, categoryResponses);
+        List<ActorResponse> actorResponses = actors.stream()
+                .map(actor -> ActorResponse.builder()
+                        .id(actor.getId())
+                        .fullname(actor.getFullname())
+                        .build())
+                .toList();
+
+        List<DirectorResponse> directorResponses = directors.stream()
+                .map(director -> DirectorResponse.builder()
+                        .id(director.getId())
+                        .fullname(director.getFullname())
+                        .build())
+                .toList();
+
+        return MovieUtils.mapToMovieResponse(savedMovie, categoryResponses, actorResponses, directorResponses);
     }
 
     @Override
@@ -168,16 +227,37 @@ public class MovieServiceImpl implements MovieService {
         Movie movie = repo.findById(movieId)
                 .orElseThrow(() -> new NotFoundException("Movie not found with id: " + movieId));
 
+        // Validate and fetch categories
         List<UUID> categoryIds = movieRequest.getCategoryIds();
         if (categoryIds == null || categoryIds.isEmpty()) {
             throw new BadRequestException("At least one category ID must be provided");
         }
-
         List<Category> categories = categoryRepository.findAllByIdIn(categoryIds);
         if (categories.size() != categoryIds.size()) {
             throw new NotFoundException("Some category IDs were not found");
         }
 
+        // Validate and fetch actors
+        List<UUID> actorIds = movieRequest.getActorIds();
+        if (actorIds == null || actorIds.isEmpty()) {
+            throw new BadRequestException("At least one actor ID must be provided");
+        }
+        List<Actor> actors = actorRepository.findAllById(actorIds);
+        if (actors.size() != actorIds.size()) {
+            throw new NotFoundException("Some actor IDs were not found");
+        }
+
+        // Validate and fetch directors
+        List<UUID> directorIds = movieRequest.getDirectorIds();
+        if (directorIds == null || directorIds.isEmpty()) {
+            throw new BadRequestException("At least one director ID must be provided");
+        }
+        List<Director> directors = directorRepository.findAllById(directorIds);
+        if (directors.size() != directorIds.size()) {
+            throw new NotFoundException("Some director IDs were not found");
+        }
+
+        // Update movie fields
         movie.setTitle(movieRequest.getTitle());
         movie.setDescription(movieRequest.getDescription());
         movie.setHorizontalPoster(movieRequest.getHorizontalPoster());
@@ -187,21 +267,32 @@ public class MovieServiceImpl implements MovieService {
         movie.setAge(movieRequest.getAge());
         movie.setYear(movieRequest.getYear());
         movie.setCountry(movieRequest.getCountry());
-        movie.setIsVip(movieRequest.getIsVip() != null ? movieRequest.getIsVip() : false);
+        movie.setIsVip(Boolean.TRUE.equals(movieRequest.getIsVip()));
 
         Movie updatedMovie = repo.save(movie);
 
+        // Update categories
         movieCategoryRepository.deleteByMovieId(movieId);
-
         List<MovieCategory> movieCategories = categories.stream()
-                .map(category -> MovieCategory.builder()
-                        .movieId(updatedMovie.getId())
-                        .categoryId(category.getId())
-                        .build())
+                .map(category -> new MovieCategory(updatedMovie, category))
                 .toList();
-
         movieCategoryRepository.saveAll(movieCategories);
 
+        // Update actors
+        movieActorRepository.deleteAll(movieActorRepository.findByMovieId(movieId));
+        List<MovieActor> movieActors = actors.stream()
+                .map(actor -> new MovieActor(updatedMovie, actor))
+                .toList();
+        movieActorRepository.saveAll(movieActors);
+
+        // Update directors
+        movieDirectorRepository.deleteAll(movieDirectorRepository.findByMovieId(movieId));
+        List<MovieDirector> movieDirectors = directors.stream()
+                .map(director -> new MovieDirector(updatedMovie, director))
+                .toList();
+        movieDirectorRepository.saveAll(movieDirectors);
+
+        // Build responses
         List<CategoryResponse> categoryResponses = categories.stream()
                 .map(category -> CategoryResponse.builder()
                         .id(category.getId())
@@ -209,7 +300,21 @@ public class MovieServiceImpl implements MovieService {
                         .build())
                 .toList();
 
-        return MovieUtils.mapToMovieResponse(updatedMovie, categoryResponses);
+        List<ActorResponse> actorResponses = actors.stream()
+                .map(actor -> ActorResponse.builder()
+                        .id(actor.getId())
+                        .fullname(actor.getFullname())
+                        .build())
+                .toList();
+
+        List<DirectorResponse> directorResponses = directors.stream()
+                .map(director -> DirectorResponse.builder()
+                        .id(director.getId())
+                        .fullname(director.getFullname())
+                        .build())
+                .toList();
+
+        return MovieUtils.mapToMovieResponse(updatedMovie, categoryResponses, actorResponses, directorResponses);
     }
 
     @Override
@@ -227,8 +332,10 @@ public class MovieServiceImpl implements MovieService {
         var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
         var moviePage = repo.findAll(pageable);
         List<MovieResponse> movies = moviePage.getContent().stream().map(movie -> {
-            List<CategoryResponse> categories = getCategoryNameForMovie(movie.getId());
-            return MovieUtils.mapToMovieResponse(movie, categories);
+            List<CategoryResponse> categories = getCategoriesForMovie(movie.getId());
+            List<ActorResponse> actors = getActorsForMovie(movie.getId());
+            List<DirectorResponse> directors = getDirectorsForMovie(movie.getId());
+            return MovieUtils.mapToMovieResponse(movie, categories, actors, directors);
         }).toList();
         return new PaginatedResponse<>(movies, moviePage.getNumber(), moviePage.getSize(), moviePage.getTotalPages());
     }
@@ -239,8 +346,10 @@ public class MovieServiceImpl implements MovieService {
         var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
         var moviePage = repo.searchMoviesByKeyword(keyword, pageable);
         List<MovieResponse> movies = moviePage.getContent().stream().map(movie -> {
-            List<CategoryResponse> categories = getCategoryNameForMovie(movie.getId());
-            return MovieUtils.mapToMovieResponse(movie, categories);
+            List<CategoryResponse> categories = getCategoriesForMovie(movie.getId());
+            List<ActorResponse> actors = getActorsForMovie(movie.getId());
+            List<DirectorResponse> directors = getDirectorsForMovie(movie.getId());
+            return MovieUtils.mapToMovieResponse(movie, categories, actors, directors);
         }).toList();
         return new PaginatedResponse<>(movies, moviePage.getNumber(), moviePage.getSize(), moviePage.getTotalPages());
     }
@@ -261,14 +370,32 @@ public class MovieServiceImpl implements MovieService {
         }
     }
 
-    private List<CategoryResponse> getCategoryNameForMovie(UUID movieId) {
-        List<UUID> categoryIds = movieCategoryRepository.findByMovieId(movieId)
-                .stream().map(movieCategory -> movieCategory.getCategoryId()).toList();
-        return categoryRepository.findAllByIdIn(categoryIds)
+    private List<CategoryResponse> getCategoriesForMovie(UUID movieId) {
+        return movieCategoryRepository.findByMovieId(movieId)
                 .stream()
-                .map(category -> CategoryResponse.builder()
-                        .id(category.getId())
-                        .name(category.getName())
+                .map(mc -> CategoryResponse.builder()
+                        .id(mc.getCategory().getId())
+                        .name(mc.getCategory().getName())
+                        .build())
+                .toList();
+    }
+
+    private List<ActorResponse> getActorsForMovie(UUID movieId) {
+        return movieActorRepository.findByMovieIdWithActor(movieId)
+                .stream()
+                .map(ma -> ActorResponse.builder()
+                        .id(ma.getActor().getId())
+                        .fullname(ma.getActor().getFullname())
+                        .build())
+                .toList();
+    }
+
+    private List<DirectorResponse> getDirectorsForMovie(UUID movieId) {
+        return movieDirectorRepository.findByMovieIdWithDirector(movieId)
+                .stream()
+                .map(md -> DirectorResponse.builder()
+                        .id(md.getDirector().getId())
+                        .fullname(md.getDirector().getFullname())
                         .build())
                 .toList();
     }

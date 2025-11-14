@@ -3,6 +3,7 @@ package com.pbl6.cinemate.movie.util;
 import com.pbl6.cinemate.movie.dto.request.MovieRequest;
 import com.pbl6.cinemate.movie.dto.response.ActorResponse;
 import com.pbl6.cinemate.movie.dto.response.CategoryResponse;
+import com.pbl6.cinemate.movie.dto.response.DirectorResponse;
 import com.pbl6.cinemate.movie.dto.response.MovieInfoResponse;
 import com.pbl6.cinemate.movie.dto.response.MovieResponse;
 import com.pbl6.cinemate.movie.entity.Movie;
@@ -10,22 +11,27 @@ import com.pbl6.cinemate.movie.entity.Movie;
 import java.util.List;
 
 public final class MovieUtils {
-    public static MovieResponse mapToMovieResponse(Movie movie, List<CategoryResponse> categories) {
+    public static MovieResponse mapToMovieResponse(Movie movie, List<CategoryResponse> categories,
+            List<ActorResponse> actors, List<DirectorResponse> directors) {
         return new MovieResponse(
                 movie.getId(),
                 movie.getTitle(),
                 movie.getDescription(),
                 movie.getHorizontalPoster(),
                 movie.getVerticalPoster(),
-                categories,
-                movie.getIsVip(),
+                movie.getReleaseDate(),
+                movie.getTrailerUrl(),
                 movie.getAge(),
                 movie.getYear(),
-                movie.getTrailerUrl());
+                movie.getCountry(),
+                movie.getIsVip(),
+                categories,
+                actors,
+                directors);
     }
 
     public static MovieInfoResponse mapToMovieInfoResponse(Movie movie, List<ActorResponse> actors,
-            List<CategoryResponse> categories) {
+            List<DirectorResponse> directors, List<CategoryResponse> categories) {
         List<String> qualities = movie.getQualities() != null ? movie.getQualities() : List.of();
         return new MovieInfoResponse(
                 movie.getId(),
@@ -42,6 +48,7 @@ public final class MovieUtils {
                 movie.getCountry(),
                 movie.getIsVip(),
                 actors,
+                directors,
                 categories);
     }
 
