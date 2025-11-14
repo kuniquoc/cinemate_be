@@ -1,14 +1,18 @@
 package com.pbl6.cinemate.movie.service.impl;
 
 import com.pbl6.cinemate.movie.dto.request.CategoryRequest;
+import com.pbl6.cinemate.movie.dto.response.ActorResponse;
 import com.pbl6.cinemate.movie.dto.response.CategoryResponse;
+import com.pbl6.cinemate.movie.dto.response.DirectorResponse;
 import com.pbl6.cinemate.movie.dto.response.MovieResponse;
 import com.pbl6.cinemate.movie.entity.Category;
 import com.pbl6.cinemate.movie.entity.Movie;
 import com.pbl6.cinemate.movie.entity.MovieCategory;
 import com.pbl6.cinemate.movie.exception.NotFoundException;
 import com.pbl6.cinemate.movie.repository.CategoryRepository;
+import com.pbl6.cinemate.movie.repository.MovieActorRepository;
 import com.pbl6.cinemate.movie.repository.MovieCategoryRepository;
+import com.pbl6.cinemate.movie.repository.MovieDirectorRepository;
 import com.pbl6.cinemate.movie.repository.MovieRepository;
 import com.pbl6.cinemate.movie.service.CategoryService;
 import com.pbl6.cinemate.movie.util.MovieUtils;
@@ -27,6 +31,8 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final MovieCategoryRepository movieCategoryRepository;
     private final MovieRepository movieRepository;
+    private final MovieActorRepository movieActorRepository;
+    private final MovieDirectorRepository movieDirectorRepository;
 
     @Transactional(readOnly = true)
     @Override
@@ -89,20 +95,20 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public void addMovieToCategory(UUID categoryId, UUID movieId) {
-        if (!categoryRepository.existsById(categoryId)) {
-            throw new NotFoundException("Category not found with id: " + categoryId);
-        }
-        if (!movieRepository.existsById(movieId)) {
-            throw new NotFoundException("Movie not found with id: " + movieId);
-        }
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new NotFoundException("Category not found with id: " + categoryId));
+        Movie movie = movieRepository.findById(movieId)
+                .orElseThrow(() -> new NotFoundException("Movie not found with id: " + movieId));
+
         boolean exists = movieCategoryRepository.findByCategoryId(categoryId).stream()
-                .anyMatch(mc -> mc.getMovieId().equals(movieId));
+                .anyMatch(mc -> mc.getMovie().getId().equals(movieId));
         if (exists) {
             throw new NotFoundException("Movie already in category");
         }
+
         MovieCategory mc = MovieCategory.builder()
-                .categoryId(categoryId)
-                .movieId(movieId)
+                .category(category)
+                .movie(movie)
                 .build();
         movieCategoryRepository.save(mc);
     }
@@ -124,33 +130,42 @@ public class CategoryServiceImpl implements CategoryService {
         }
 
         List<UUID> movieIds = movieCategories.stream()
-                .map(MovieCategory::getMovieId)
+                .map(mc -> mc.getMovie().getId())
                 .toList();
 
         List<Movie> movies = movieRepository.findAllById(movieIds);
 
         return movies.stream().map(movie -> {
-            List<MovieCategory> relatedMovieCategories = movieCategoryRepository.findByMovieId(movie.getId());
-            List<UUID> relatedCategoryIds = relatedMovieCategories.stream()
-                    .map(MovieCategory::getCategoryId)
-                    .toList();
-
-            // Lấy thông tin category từ repository
-            List<Category> relatedCategories = categoryRepository.findAllByIdIn(relatedCategoryIds);
-
-            // Map sang CategoryResponse
-            List<CategoryResponse> categoryResponses = relatedCategories.stream()
-                    .map(cat -> CategoryResponse.builder()
-                            .id(cat.getId())
-                            .name(cat.getName())
+            // Get categories
+            List<CategoryResponse> categoryResponses = movieCategoryRepository.findByMovieId(movie.getId())
+                    .stream()
+                    .map(mc -> CategoryResponse.builder()
+                            .id(mc.getCategory().getId())
+                            .name(mc.getCategory().getName())
                             .build())
                     .toList();
 
-            // Map sang MovieResponse (giờ nên hỗ trợ list category)
-            return MovieUtils.mapToMovieResponse(movie, categoryResponses);
-        }).collect(Collectors.toList());
-    }
+            // Get actors
+            List<ActorResponse> actorResponses = movieActorRepository.findByMovieIdWithActor(movie.getId())
+                    .stream()
+                    .map(ma -> ActorResponse.builder()
+                            .id(ma.getActor().getId())
+                            .fullname(ma.getActor().getFullname())
+                            .build())
+                    .toList();
 
+            // Get directors
+            List<DirectorResponse> directorResponses = movieDirectorRepository.findByMovieIdWithDirector(movie.getId())
+                    .stream()
+                    .map(md -> DirectorResponse.builder()
+                            .id(md.getDirector().getId())
+                            .fullname(md.getDirector().getFullname())
+                            .build())
+                    .toList();
+
+            return MovieUtils.mapToMovieResponse(movie, categoryResponses, actorResponses, directorResponses);
+        }).toList();
+    }
 
     private CategoryResponse mapToResponse(Category category) {
         return CategoryResponse.builder()

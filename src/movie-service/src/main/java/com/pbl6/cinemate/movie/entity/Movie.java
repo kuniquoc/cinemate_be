@@ -8,7 +8,9 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -47,6 +49,18 @@ public class Movie {
 
     @Column(name = "is_vip", nullable = false)
     private Boolean isVip;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<MovieCategory> movieCategories = new HashSet<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<MovieActor> movieActors = new HashSet<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<MovieDirector> movieDirectors = new HashSet<>();
 
     public Movie(String title, String description, MovieStatus status) {
         this.title = title;

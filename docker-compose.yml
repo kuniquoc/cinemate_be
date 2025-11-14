@@ -196,7 +196,7 @@ services:
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_ENDPOINT: http://minio:9000
     volumes:
-      - ${STREAMING_SEEDER_CACHE_HOST_PATH:-./data/streaming-cache}:/var/cinemate/cache:rw
+      - streaming-seeder-cache:/var/cinemate/cache
     depends_on:
       - cinemate-redis
     networks:
@@ -280,6 +280,7 @@ volumes:
   cinemate-redis-data:
   cinemate-zookeeper-data:
   cinemate-kafka-data:
+  streaming-seeder-cache:
 
 
 networks:

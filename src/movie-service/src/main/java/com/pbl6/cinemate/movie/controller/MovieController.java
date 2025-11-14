@@ -4,6 +4,7 @@ import com.pbl6.cinemate.movie.dto.general.ResponseData;
 import com.pbl6.cinemate.movie.dto.request.*;
 import com.pbl6.cinemate.movie.dto.response.*;
 import com.pbl6.cinemate.movie.service.MovieActorService;
+import com.pbl6.cinemate.movie.service.MovieDirectorService;
 import com.pbl6.cinemate.movie.service.MovieService;
 import com.pbl6.cinemate.movie.service.ReviewService;
 import com.pbl6.cinemate.movie.service.impl.ReviewServiceImpl;
@@ -22,16 +23,18 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/movies")
-@Tag(name = "Movie Management", description = "Movie management including upload, information retrieval, actors and reviews")
+@Tag(name = "Movie Management", description = "Movie management including upload, information retrieval, actors, directors and reviews")
 public class MovieController {
         private final MovieService movieService;
         private final MovieActorService movieActorService;
+        private final MovieDirectorService movieDirectorService;
         private final ReviewService reviewService;
 
         public MovieController(MovieService movieService, MovieActorService movieActorService,
-                        ReviewServiceImpl reviewService) {
+                        MovieDirectorService movieDirectorService, ReviewServiceImpl reviewService) {
                 this.movieService = movieService;
                 this.movieActorService = movieActorService;
+                this.movieDirectorService = movieDirectorService;
                 this.reviewService = reviewService;
         }
 
@@ -123,6 +126,56 @@ public class MovieController {
                 return ResponseEntity.ok(ResponseData.success(
                                 response,
                                 "Movie actors updated successfully",
+                                httpServletRequest.getRequestURI(),
+                                httpServletRequest.getMethod()));
+        }
+
+        // Movie-Director nested endpoints
+        // TODO: secure these endpoints to admin only
+        @Operation(summary = "Add directors to movie", description = "Add a list of directors to a specific movie")
+        @PostMapping("/{movieId}/directors")
+        public ResponseEntity<ResponseData> addDirectorsToMovie(
+                        @Parameter(description = "Movie ID") @PathVariable UUID movieId,
+                        @Valid @RequestBody MovieDirectorRequest request,
+                        HttpServletRequest httpServletRequest) {
+
+                MovieDirectorResponse response = movieDirectorService.addDirectorsToMovie(movieId, request);
+
+                return ResponseEntity.ok(ResponseData.success(
+                                response,
+                                "Directors added to movie successfully",
+                                httpServletRequest.getRequestURI(),
+                                httpServletRequest.getMethod()));
+        }
+
+        @Operation(summary = "Get directors by movie", description = "Get all directors associated with a specific movie")
+        @GetMapping("/{movieId}/directors")
+        public ResponseEntity<ResponseData> getDirectorsByMovie(
+                        @Parameter(description = "Movie ID") @PathVariable UUID movieId,
+                        HttpServletRequest httpServletRequest) {
+
+                MovieDirectorResponse response = movieDirectorService.getDirectorsByMovieId(movieId);
+
+                return ResponseEntity.ok(ResponseData.success(
+                                response,
+                                "Movie directors retrieved successfully",
+                                httpServletRequest.getRequestURI(),
+                                httpServletRequest.getMethod()));
+        }
+
+        // TODO: admin only
+        @Operation(summary = "Update movie directors", description = "Replace all directors for a specific movie with the provided list")
+        @PutMapping("/{movieId}/directors")
+        public ResponseEntity<ResponseData> updateMovieDirectors(
+                        @Parameter(description = "Movie ID") @PathVariable UUID movieId,
+                        @Valid @RequestBody MovieDirectorRequest request,
+                        HttpServletRequest httpServletRequest) {
+
+                MovieDirectorResponse response = movieDirectorService.updateMovieDirectors(movieId, request);
+
+                return ResponseEntity.ok(ResponseData.success(
+                                response,
+                                "Movie directors updated successfully",
                                 httpServletRequest.getRequestURI(),
                                 httpServletRequest.getMethod()));
         }

@@ -14,13 +14,13 @@ import java.util.Set;
 import java.util.UUID;
 
 @Entity
-@Table(name = "actor")
+@Table(name = "director")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Actor {
+public class Director {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -41,10 +41,10 @@ public class Actor {
     private Instant deletedAt;
 
     @Builder.Default
-    @OneToMany(mappedBy = "actor", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<MovieActor> movieActors = new HashSet<>();
+    @OneToMany(mappedBy = "director", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<MovieDirector> movieDirectors = new HashSet<>();
 
-    public Actor(String fullname, String biography, String avatar, LocalDate dateOfBirth) {
+    public Director(String fullname, String biography, String avatar, LocalDate dateOfBirth) {
         this.fullname = fullname;
         this.biography = biography;
         this.avatar = avatar;

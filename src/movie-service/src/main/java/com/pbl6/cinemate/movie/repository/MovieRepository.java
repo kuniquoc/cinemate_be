@@ -11,13 +11,13 @@ import org.springframework.data.repository.query.Param;
 import com.pbl6.cinemate.movie.entity.Movie;
 
 public interface MovieRepository extends JpaRepository<Movie, UUID> {
-    
+
     @Query("""
             SELECT DISTINCT m FROM Movie m
             LEFT JOIN MovieActor ma ON ma.movie.id = m.id
             LEFT JOIN Actor a ON a.id = ma.actor.id
-            LEFT JOIN MovieCategory mc ON mc.movieId = m.id
-            LEFT JOIN Category c ON c.id = mc.categoryId
+            LEFT JOIN MovieCategory mc ON mc.movie.id = m.id
+            LEFT JOIN Category c ON c.id = mc.category.id
             WHERE LOWER(m.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR LOWER(m.description) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR LOWER(m.country) LIKE LOWER(CONCAT('%', :keyword, '%'))
