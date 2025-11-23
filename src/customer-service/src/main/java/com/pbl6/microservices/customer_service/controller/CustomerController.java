@@ -1,6 +1,7 @@
 package com.pbl6.microservices.customer_service.controller;
 
 import com.pbl6.microservices.customer_service.constants.FeedbackMessage;
+import com.pbl6.microservices.customer_service.payload.general.PageMeta;
 import com.pbl6.microservices.customer_service.payload.general.ResponseData;
 import com.pbl6.microservices.customer_service.payload.request.FavoriteCreateRequest;
 import com.pbl6.microservices.customer_service.payload.request.UpdateProfileRequest;
@@ -14,11 +15,11 @@ import com.pbl6.microservices.customer_service.service.StorageService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -71,9 +72,23 @@ public class CustomerController {
 
     @GetMapping("/favorites")
     public ResponseEntity<ResponseData> getFavorites(@CurrentUser UserPrincipal userPrincipal,
+                                                     @RequestParam(value = "page", defaultValue = "1") int page,
+                                                     @RequestParam(value = "limit", defaultValue = "10") int limit,
                                                      HttpServletRequest httpRequest) {
-        List<FavoriteResponse> favorites = favoriteService.getFavorites(userPrincipal.getUserId());
-        return ResponseEntity.ok(ResponseData.success(favorites, "Favorites fetched", httpRequest.getRequestURI(), httpRequest.getMethod()));
+        Page<FavoriteResponse> favoritePage = favoriteService.getFavorites(userPrincipal.getUserId(), page, limit);
+        
+        PageMeta pageMeta = PageMeta.builder()
+                .limit(limit)
+                .currentPage(page)
+                .totalPage(favoritePage.getTotalPages())
+                .build();
+        
+        return ResponseEntity.ok(ResponseData.successWithMeta(
+                favoritePage.getContent(), 
+                pageMeta, 
+                "Favorites fetched", 
+                httpRequest.getRequestURI(), 
+                httpRequest.getMethod()));
     }
 
     @DeleteMapping("/favorites/{movieId}")

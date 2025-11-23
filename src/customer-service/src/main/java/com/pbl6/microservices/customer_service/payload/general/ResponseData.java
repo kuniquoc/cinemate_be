@@ -35,6 +35,11 @@ public class ResponseData {
                 .data(data).build();
     }
 
+    public static ResponseData successWithMeta(Object data, Object meta, String message, String apiPath, String method) {
+        return ResponseData.builder().status(CommonConstant.SUCCESS).message(message).path(apiPath).method(method)
+                .data(data).meta(meta).build();
+    }
+
     public static ResponseData successWithoutMetaAndData(String message, String apiPath, String method) {
         return ResponseData.builder().status(CommonConstant.SUCCESS).message(message).path(apiPath)
                 .method(method).build();

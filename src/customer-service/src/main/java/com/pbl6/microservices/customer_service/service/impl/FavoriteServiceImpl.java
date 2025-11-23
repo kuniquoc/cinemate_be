@@ -6,6 +6,10 @@ import com.pbl6.microservices.customer_service.payload.response.FavoriteResponse
 import com.pbl6.microservices.customer_service.repository.FavoriteRepository;
 import com.pbl6.microservices.customer_service.service.FavoriteService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +45,13 @@ public class FavoriteServiceImpl implements FavoriteService {
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Page<FavoriteResponse> getFavorites(UUID customerId, int page, int limit) {
+        Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Favorite> favoritePage = favoriteRepository.findByCustomerId(customerId, pageable);
+        return favoritePage.map(this::toResponse);
     }
 
     @Override
