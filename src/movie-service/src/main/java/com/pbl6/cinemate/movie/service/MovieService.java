@@ -3,6 +3,7 @@ package com.pbl6.cinemate.movie.service;
 import com.pbl6.cinemate.movie.dto.request.MovieRequest;
 import com.pbl6.cinemate.movie.dto.request.MovieUploadRequest;
 import com.pbl6.cinemate.movie.dto.response.*;
+import com.pbl6.cinemate.movie.enums.MovieStatus;
 import com.pbl6.cinemate.shared.dto.general.PaginatedResponse;
 
 import org.springframework.lang.NonNull;
@@ -26,9 +27,12 @@ public interface MovieService {
 
     void deleteMovie(@NonNull UUID movieId);
 
-    PaginatedResponse<MovieResponse> getMovies(int page, int size, String sortBy, @NonNull String sortDirection);
-
-    PaginatedResponse<MovieResponse> searchMovies(@NonNull String keyword, int page, int size, String sortBy, @NonNull String sortDirection);
+    PaginatedResponse<MovieResponse> getMovies(String keyword, int page, int size, String sortBy,
+            @NonNull String sortDirection, String userRole);
 
     List<MovieResponse> getTopTenMovies();
+
+    MovieProcessStatusResponse getMovieProcessStatus(@NonNull UUID movieId);
+
+    MovieResponse updateMovieStatus(@NonNull UUID movieId, @NonNull String newStatusString);
 }

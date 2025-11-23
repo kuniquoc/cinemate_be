@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.pbl6.cinemate.movie.entity.Movie;
+import com.pbl6.cinemate.movie.enums.MovieProcessStatus;
 import com.pbl6.cinemate.movie.enums.MovieStatus;
 import com.pbl6.cinemate.movie.repository.MovieRepository;
 import com.pbl6.cinemate.movie.service.FFmpegService;
@@ -43,7 +44,7 @@ public class MovieTranscodeServiceImpl implements MovieTranscodeService {
                 .orElseThrow(() -> new NotFoundException("Movie not found with id: " + movieId));
 
         try {
-            movie.setStatus(MovieStatus.PROCESSING);
+            movie.setProcessStatus(MovieProcessStatus.PROCESSING);
             repo.save(movie);
 
             // Get video metadata to determine max quality
@@ -88,13 +89,14 @@ public class MovieTranscodeServiceImpl implements MovieTranscodeService {
                     .map(FFmpegService.Variant::name)
                     .toList();
             movie.setQualities(qualities);
-            movie.setStatus(MovieStatus.READY);
+            movie.setProcessStatus(MovieProcessStatus.COMPLETED);
+            movie.setStatus(MovieStatus.PRIVATE); // Set to PRIVATE after successful transcoding
             repo.save(movie);
 
             log.info("Successfully transcoded movie with id: {}", movieId);
         } catch (Exception e) {
             log.error("Failed to transcode movie with id: {}", movieId, e);
-            movie.setStatus(MovieStatus.FAILED);
+            movie.setProcessStatus(MovieProcessStatus.FAILED);
             repo.save(movie);
         }
     }

@@ -5,6 +5,7 @@ import com.pbl6.cinemate.movie.dto.request.MovieUploadRequest;
 import com.pbl6.cinemate.movie.dto.response.*;
 import com.pbl6.cinemate.movie.entity.*;
 import com.pbl6.cinemate.movie.enums.MovieStatus;
+import com.pbl6.cinemate.movie.enums.MovieProcessStatus;
 import com.pbl6.cinemate.movie.event.MovieCreatedEvent;
 import com.pbl6.cinemate.movie.repository.*;
 import com.pbl6.cinemate.movie.service.MinioStorageService;
@@ -17,6 +18,7 @@ import com.pbl6.cinemate.shared.exception.NotFoundException;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
@@ -63,7 +65,10 @@ public class MovieServiceImpl implements MovieService {
     @Override
     @Transactional
     public MovieUploadResponse upload(MultipartFile file, MovieUploadRequest req) {
-        Movie movie = repo.save(new Movie(req.title(), req.description(), MovieStatus.PENDING));
+        Movie movie = repo.save(Movie.builder()
+                .title(req.title())
+                .description(req.description())
+                .build());
 
         Path tmp = createTempFile();
         if (tmp == null) {
@@ -339,24 +344,27 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public PaginatedResponse<MovieResponse> getMovies(int page, int size, String sortBy,
-            @NonNull String sortDirection) {
+    public PaginatedResponse<MovieResponse> getMovies(String keyword, int page, int size, String sortBy,
+            @NonNull String sortDirection, String userRole) {
+        // TODO: Replace userRole parameter with proper authentication/authorization
+        // after implementing security for movie-service
         var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
-        var moviePage = repo.findAll(pageable);
-        List<MovieResponse> movies = moviePage.getContent().stream().map(movie -> {
-            List<CategoryResponse> categories = getCategoriesForMovie(movie.getId());
-            List<ActorResponse> actors = getActorsForMovie(movie.getId());
-            List<DirectorResponse> directors = getDirectorsForMovie(movie.getId());
-            return MovieUtils.mapToMovieResponse(movie, categories, actors, directors);
-        }).toList();
-        return new PaginatedResponse<>(movies, moviePage.getNumber(), moviePage.getSize(), moviePage.getTotalPages());
-    }
 
-    @Override
-    public PaginatedResponse<MovieResponse> searchMovies(@NonNull String keyword, int page, int size, String sortBy,
-            @NonNull String sortDirection) {
-        var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
-        var moviePage = repo.searchMoviesByKeyword(keyword, pageable);
+        // If user role is ADMIN, pass null to get all movies; otherwise pass "PUBLIC"
+        // to get only public movies
+        MovieStatus statusFilter = "ADMIN".equalsIgnoreCase(userRole) ? null : MovieStatus.PUBLIC;
+
+        // Use different queries based on whether keyword exists to avoid unnecessary
+        // JOINs
+        Page<Movie> moviePage;
+        if (keyword != null && !keyword.isBlank()) {
+            // Search with JOINs when keyword is provided
+            moviePage = repo.searchMoviesByKeyword(keyword, statusFilter, pageable);
+        } else {
+            // Simple query without JOINs when no keyword
+            moviePage = repo.findAllByStatus(statusFilter, pageable);
+        }
+
         List<MovieResponse> movies = moviePage.getContent().stream().map(movie -> {
             List<CategoryResponse> categories = getCategoriesForMovie(movie.getId());
             List<ActorResponse> actors = getActorsForMovie(movie.getId());
@@ -422,6 +430,51 @@ public class MovieServiceImpl implements MovieService {
                         .fullname(md.getDirector().getFullname())
                         .build())
                 .toList();
+    }
+
+    @Override
+    public MovieProcessStatusResponse getMovieProcessStatus(@NonNull UUID movieId) {
+        Movie movie = repo.findById(movieId)
+                .orElseThrow(() -> new NotFoundException("Movie not found with id: " + movieId));
+        return new MovieProcessStatusResponse(movie.getId(),
+                movie.getProcessStatus() != null ? movie.getProcessStatus().name() : null);
+    }
+
+    @Override
+    @Transactional
+    public MovieResponse updateMovieStatus(@NonNull UUID movieId, @NonNull String newStatusString) {
+        var newStatus = MovieStatus.valueOf(newStatusString);
+
+        Movie movie = repo.findById(movieId)
+                .orElseThrow(() -> new NotFoundException("Movie not found with id: " + movieId));
+
+        // Reject DRAFT status updates
+        if (movie.getStatus() == MovieStatus.DRAFT) {
+            throw new BadRequestException("Cannot update status of a DRAFT movie, upload a new movie instead");
+        }
+
+        // Only allow PRIVATE or PUBLIC
+        if (newStatus != MovieStatus.PRIVATE && newStatus != MovieStatus.PUBLIC) {
+            throw new BadRequestException("Status can only be updated to PRIVATE or PUBLIC");
+        }
+
+        // Check that transcoding is completed before allowing status change
+        if (movie.getProcessStatus() != MovieProcessStatus.COMPLETED) {
+            throw new BadRequestException(
+                    "Cannot update movie status. Movie processing is not completed yet. Current process status: "
+                            + movie.getProcessStatus().name());
+        }
+
+        // Update status
+        movie.setStatus(newStatus);
+        Movie updatedMovie = repo.save(movie);
+
+        // Return movie response with full details
+        List<CategoryResponse> categories = getCategoriesForMovie(movieId);
+        List<ActorResponse> actors = getActorsForMovie(movieId);
+        List<DirectorResponse> directors = getDirectorsForMovie(movieId);
+
+        return MovieUtils.mapToMovieResponse(updatedMovie, categories, actors, directors);
     }
 
 }
