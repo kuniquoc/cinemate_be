@@ -6,11 +6,12 @@ import com.pbl6.cinemate.movie.dto.response.MovieActorResponse;
 import com.pbl6.cinemate.movie.entity.Actor;
 import com.pbl6.cinemate.movie.entity.Movie;
 import com.pbl6.cinemate.movie.entity.MovieActor;
-import com.pbl6.cinemate.movie.exception.BadRequestException;
-import com.pbl6.cinemate.movie.exception.NotFoundException;
 import com.pbl6.cinemate.movie.repository.ActorRepository;
 import com.pbl6.cinemate.movie.repository.MovieActorRepository;
 import com.pbl6.cinemate.movie.repository.MovieRepository;
+import com.pbl6.cinemate.shared.exception.BadRequestException;
+import com.pbl6.cinemate.shared.exception.NotFoundException;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

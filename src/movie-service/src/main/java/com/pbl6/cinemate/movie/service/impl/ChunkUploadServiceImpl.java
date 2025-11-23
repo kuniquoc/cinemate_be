@@ -12,13 +12,13 @@ import com.pbl6.cinemate.movie.dto.response.MovieUploadResponse;
 import com.pbl6.cinemate.movie.entity.ChunkUpload;
 import com.pbl6.cinemate.movie.entity.Movie;
 import com.pbl6.cinemate.movie.enums.ChunkUploadStatus;
-import com.pbl6.cinemate.movie.exception.BadRequestException;
-import com.pbl6.cinemate.movie.exception.InternalServerException;
-import com.pbl6.cinemate.movie.exception.NotFoundException;
 import com.pbl6.cinemate.movie.repository.ChunkUploadRepository;
 import com.pbl6.cinemate.movie.repository.MovieRepository;
 import com.pbl6.cinemate.movie.service.ChunkUploadService;
 import com.pbl6.cinemate.movie.service.MinioStorageService;
+import com.pbl6.cinemate.shared.exception.BadRequestException;
+import com.pbl6.cinemate.shared.exception.InternalServerException;
+import com.pbl6.cinemate.shared.exception.NotFoundException;
 import com.pbl6.cinemate.movie.event.MovieCreatedEvent;
 
 import lombok.RequiredArgsConstructor;

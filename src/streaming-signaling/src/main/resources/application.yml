@@ -31,6 +31,7 @@ streaming:
   signaling:
     redis-ttl-segment-keys: PT90S
     peer-last-seen-ttl: PT60S
+    peer-metrics-ttl: PT5M
   playback:
     max-active-peers: ${STREAMING_MAX_ACTIVE_PEERS:3}
     peer-connect-timeout: PT5S

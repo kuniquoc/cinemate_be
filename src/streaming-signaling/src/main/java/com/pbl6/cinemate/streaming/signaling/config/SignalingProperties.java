@@ -26,6 +26,9 @@ public class SignalingProperties {
         @NotNull
         private Duration peerLastSeenTtl = Duration.ofSeconds(60);
 
+        @NotNull
+        private Duration peerMetricsTtl = Duration.ofMinutes(5);
+
         public Duration getRedisTtlSegmentKeys() {
             return redisTtlSegmentKeys;
         }
@@ -40,6 +43,14 @@ public class SignalingProperties {
 
         public void setPeerLastSeenTtl(Duration peerLastSeenTtl) {
             this.peerLastSeenTtl = peerLastSeenTtl;
+        }
+
+        public Duration getPeerMetricsTtl() {
+            return peerMetricsTtl;
+        }
+
+        public void setPeerMetricsTtl(Duration peerMetricsTtl) {
+            this.peerMetricsTtl = peerMetricsTtl;
         }
     }
 

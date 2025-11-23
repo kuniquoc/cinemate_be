@@ -16,8 +16,8 @@ import org.springframework.stereotype.Service;
 
 import lombok.extern.slf4j.Slf4j;
 
-import com.pbl6.cinemate.movie.exception.InternalServerException;
 import com.pbl6.cinemate.movie.service.MinioStorageService;
+import com.pbl6.cinemate.shared.exception.InternalServerException;
 
 import io.minio.BucketExistsArgs;
 import io.minio.ComposeObjectArgs;

@@ -6,11 +6,11 @@ import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.pbl6.cinemate.movie.dto.general.ResponseData;
 import com.pbl6.cinemate.movie.dto.request.DirectorCreationRequest;
 import com.pbl6.cinemate.movie.dto.request.DirectorUpdateRequest;
 import com.pbl6.cinemate.movie.dto.response.DirectorResponse;
 import com.pbl6.cinemate.movie.service.DirectorService;
+import com.pbl6.cinemate.shared.dto.general.ResponseData;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

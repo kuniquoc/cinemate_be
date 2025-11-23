@@ -11,10 +11,10 @@ import com.pbl6.cinemate.movie.dto.request.DirectorCreationRequest;
 import com.pbl6.cinemate.movie.dto.request.DirectorUpdateRequest;
 import com.pbl6.cinemate.movie.dto.response.DirectorResponse;
 import com.pbl6.cinemate.movie.entity.Director;
-import com.pbl6.cinemate.movie.exception.NotFoundException;
 import com.pbl6.cinemate.movie.repository.DirectorRepository;
 import com.pbl6.cinemate.movie.repository.MovieDirectorRepository;
 import com.pbl6.cinemate.movie.service.DirectorService;
+import com.pbl6.cinemate.shared.exception.NotFoundException;
 
 @Service
 public class DirectorServiceImpl implements DirectorService {

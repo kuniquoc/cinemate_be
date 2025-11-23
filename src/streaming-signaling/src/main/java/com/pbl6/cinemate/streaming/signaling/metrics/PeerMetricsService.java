@@ -1,7 +1,9 @@
 package com.pbl6.cinemate.streaming.signaling.metrics;
 
 import com.pbl6.cinemate.shared.streaming.StreamingRedisKeys;
+import com.pbl6.cinemate.streaming.signaling.config.SignalingProperties;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
@@ -22,11 +24,14 @@ public class PeerMetricsService {
     private static final String FIELD_SUCCESS_RATE = "successRate";
     private static final String FIELD_LAST_ACTIVE = "lastActive";
     private static final String CLIENT_ID_REQUIRED_MESSAGE = "clientId must not be null";
+    private static final String PEER_METRICS_TTL_REQUIRED = "Peer metrics TTL must not be null";
     private final StringRedisTemplate redisTemplate;
+    private final SignalingProperties properties;
     private final Clock clock;
 
-    public PeerMetricsService(StringRedisTemplate redisTemplate, Clock clock) {
+    public PeerMetricsService(StringRedisTemplate redisTemplate, SignalingProperties properties, Clock clock) {
         this.redisTemplate = redisTemplate;
+        this.properties = properties;
         this.clock = clock;
     }
 
@@ -53,6 +58,11 @@ public class PeerMetricsService {
         String lastActiveValue = String.valueOf(clock.instant().getEpochSecond());
         hashOps.put(metricsKey, FIELD_SUCCESS_RATE, Objects.requireNonNull(successRateValue));
         hashOps.put(metricsKey, FIELD_LAST_ACTIVE, Objects.requireNonNull(lastActiveValue));
+
+        Duration ttl = Objects.requireNonNull(
+                properties.getSignaling().getPeerMetricsTtl(),
+                PEER_METRICS_TTL_REQUIRED);
+        redisTemplate.expire(metricsKey, ttl);
 
         log.debug(
                 "Updated reliability for client {} (source={}): total={}, success={}, rate={}",
@@ -84,6 +94,11 @@ public class PeerMetricsService {
         } else {
             log.debug("Marking last active for client {}: {}", sanitizedClientId, lastActiveValue);
             redisTemplate.opsForHash().put(metricsKey, FIELD_LAST_ACTIVE, lastActiveValue);
+
+            Duration ttl = Objects.requireNonNull(
+                    properties.getSignaling().getPeerMetricsTtl(),
+                    PEER_METRICS_TTL_REQUIRED);
+            redisTemplate.expire(metricsKey, ttl);
         }
 
         return epochSecond;

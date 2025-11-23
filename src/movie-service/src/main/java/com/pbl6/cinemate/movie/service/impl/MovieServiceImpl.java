@@ -6,13 +6,15 @@ import com.pbl6.cinemate.movie.dto.response.*;
 import com.pbl6.cinemate.movie.entity.*;
 import com.pbl6.cinemate.movie.enums.MovieStatus;
 import com.pbl6.cinemate.movie.event.MovieCreatedEvent;
-import com.pbl6.cinemate.movie.exception.BadRequestException;
-import com.pbl6.cinemate.movie.exception.InternalServerException;
-import com.pbl6.cinemate.movie.exception.NotFoundException;
 import com.pbl6.cinemate.movie.repository.*;
 import com.pbl6.cinemate.movie.service.MinioStorageService;
 import com.pbl6.cinemate.movie.service.MovieService;
 import com.pbl6.cinemate.movie.util.MovieUtils;
+import com.pbl6.cinemate.shared.dto.general.PaginatedResponse;
+import com.pbl6.cinemate.shared.exception.BadRequestException;
+import com.pbl6.cinemate.shared.exception.InternalServerException;
+import com.pbl6.cinemate.shared.exception.NotFoundException;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;

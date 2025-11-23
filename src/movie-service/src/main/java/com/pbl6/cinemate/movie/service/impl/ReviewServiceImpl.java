@@ -5,11 +5,12 @@ import com.pbl6.cinemate.movie.dto.request.ReviewUpdateRequest;
 import com.pbl6.cinemate.movie.dto.response.ReviewResponse;
 import com.pbl6.cinemate.movie.entity.Movie;
 import com.pbl6.cinemate.movie.entity.Review;
-import com.pbl6.cinemate.movie.exception.BadRequestException;
-import com.pbl6.cinemate.movie.exception.NotFoundException;
 import com.pbl6.cinemate.movie.repository.MovieRepository;
 import com.pbl6.cinemate.movie.repository.ReviewRepository;
 import com.pbl6.cinemate.movie.service.ReviewService;
+import com.pbl6.cinemate.shared.exception.BadRequestException;
+import com.pbl6.cinemate.shared.exception.NotFoundException;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
