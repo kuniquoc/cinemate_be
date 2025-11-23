@@ -16,6 +16,7 @@ public record MovieResponse(
                 Integer year,
                 String country,
                 Boolean isVip,
+                Integer rank,
                 List<CategoryResponse> categories,
                 List<ActorResponse> actors,
                 List<DirectorResponse> directors) {

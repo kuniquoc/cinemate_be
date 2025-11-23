@@ -18,6 +18,7 @@ public record MovieInfoResponse(
         Integer year,
         String country,
         Boolean isVip,
+        Integer rank,
         List<ActorResponse> actors,
         List<DirectorResponse> directors,
         List<CategoryResponse> categories) {
