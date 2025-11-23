@@ -28,4 +28,6 @@ public interface MovieService {
     PaginatedResponse<MovieResponse> getMovies(int page, int size, String sortBy, @NonNull String sortDirection);
 
     PaginatedResponse<MovieResponse> searchMovies(@NonNull String keyword, int page, int size, String sortBy, @NonNull String sortDirection);
+
+    List<MovieResponse> getTopTenMovies();
 }
