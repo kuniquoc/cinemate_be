@@ -20,6 +20,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @RestController
@@ -50,6 +51,21 @@ public class MovieController {
                 return ResponseEntity.ok(ResponseData.success(
                                 response,
                                 "Movie status retrieved successfully",
+                                httpServletRequest.getRequestURI(),
+                                httpServletRequest.getMethod()));
+        }
+
+        @Operation(summary = "Get movie process status", description = "Get only the processing status of a movie (UPLOADING, PROCESSING, COMPLETED, FAILED)")
+        @GetMapping("/{id}/process-status")
+        public ResponseEntity<ResponseData> getProcessStatus(
+                        @Parameter(description = "Movie ID") @NonNull @PathVariable UUID id,
+                        HttpServletRequest httpServletRequest) {
+
+                MovieProcessStatusResponse response = movieService.getMovieProcessStatus(id);
+
+                return ResponseEntity.ok(ResponseData.success(
+                                response,
+                                "Movie process status retrieved successfully",
                                 httpServletRequest.getRequestURI(),
                                 httpServletRequest.getMethod()));
         }
@@ -312,6 +328,24 @@ public class MovieController {
                                 httpServletRequest.getMethod()));
         }
 
+        @Operation(summary = "Update movie status", description = "Update movie publication status (PRIVATE or PUBLIC only). Cannot change to DRAFT - upload a new movie instead.")
+        @PatchMapping("/{movieId}/status")
+        public ResponseEntity<ResponseData> updateMovieStatus(
+                        @NonNull @PathVariable UUID movieId,
+                        @Valid @RequestBody UpdateMovieStatusRequest request,
+                        HttpServletRequest httpServletRequest) {
+
+                MovieResponse movieResponse = movieService.updateMovieStatus(
+                                movieId,
+                                Objects.requireNonNull(request.status()));
+
+                return ResponseEntity.ok(ResponseData.success(
+                                movieResponse,
+                                "Movie status updated successfully",
+                                httpServletRequest.getRequestURI(),
+                                httpServletRequest.getMethod()));
+        }
+
         @Operation(summary = "Delete a movie", description = "Delete a movie by ID")
         @DeleteMapping("/{movieId}")
         public ResponseEntity<ResponseData> deleteMovie(
@@ -326,40 +360,27 @@ public class MovieController {
                                 httpServletRequest.getMethod()));
         }
 
-        @Operation(summary = "Get movies with pagination and sorting", description = "Retrieve a paginated and sorted list of movies")
+        @Operation(summary = "Get or search movies with pagination and sorting", description = "Retrieve a paginated and sorted list of movies. Optionally provide a keyword to search across title, description, country, actors, and categories")
         @GetMapping
         public ResponseEntity<ResponseData> getMovies(
-                        @RequestParam(defaultValue = "0") int page,
-                        @RequestParam(defaultValue = "10") int size,
-                        @RequestParam(defaultValue = "title") String sortBy,
-                        @RequestParam(defaultValue = "asc") @NonNull String sortDirection,
-                        HttpServletRequest httpServletRequest) {
-
-                PaginatedResponse<MovieResponse> data = movieService.getMovies(page - 1, size, sortBy, sortDirection);
-
-                return ResponseEntity.ok(ResponseData.successWithMeta(
-                                data,
-                                "Movies retrieved successfully",
-                                httpServletRequest.getRequestURI(),
-                                httpServletRequest.getMethod()));
-        }
-
-        @Operation(summary = "Search movies by keyword", description = "Search movies by keyword across title, description, country, actors, and categories with pagination and sorting")
-        @GetMapping("/search")
-        public ResponseEntity<ResponseData> searchMovies(
-                        @Parameter(description = "Search keyword") @RequestParam @NonNull String keyword,
+                        @Parameter(description = "Optional search keyword") @RequestParam(required = false) String keyword,
                         @RequestParam(defaultValue = "1") int page,
                         @RequestParam(defaultValue = "10") int size,
                         @RequestParam(defaultValue = "title") String sortBy,
                         @RequestParam(defaultValue = "asc") @NonNull String sortDirection,
+                        @Parameter(description = "User role (ADMIN or USER) - TODO: Replace with actual authentication") @RequestParam(defaultValue = "USER") String userRole,
                         HttpServletRequest httpServletRequest) {
 
-                PaginatedResponse<MovieResponse> data = movieService.searchMovies(keyword, page - 1, size, sortBy,
-                                sortDirection);
+                PaginatedResponse<MovieResponse> data = movieService.getMovies(keyword, page - 1, size, sortBy,
+                                sortDirection, userRole);
+
+                String message = (keyword != null && !keyword.isBlank())
+                                ? "Movies search results retrieved successfully"
+                                : "Movies retrieved successfully";
 
                 return ResponseEntity.ok(ResponseData.successWithMeta(
                                 data,
-                                "Movies search results retrieved successfully",
+                                message,
                                 httpServletRequest.getRequestURI(),
                                 httpServletRequest.getMethod()));
         }
