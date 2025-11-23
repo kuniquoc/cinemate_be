@@ -3,6 +3,7 @@ package com.pbl6.cinemate.movie.service;
 import com.pbl6.cinemate.movie.dto.request.MovieRequest;
 import com.pbl6.cinemate.movie.dto.request.MovieUploadRequest;
 import com.pbl6.cinemate.movie.dto.response.*;
+import com.pbl6.cinemate.shared.dto.general.PaginatedResponse;
 
 import org.springframework.lang.NonNull;
 import org.springframework.web.multipart.MultipartFile;

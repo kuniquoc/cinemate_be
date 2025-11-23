@@ -1,4 +1,4 @@
-package com.pbl6.cinemate.movie.dto.general;
+package com.pbl6.cinemate.shared.dto.general;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AccessLevel;
