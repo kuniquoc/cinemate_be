@@ -1,8 +1,9 @@
-package com.pbl6.cinemate.movie.exception.handler;
+package com.pbl6.cinemate.shared.exception.handler;
 
-import com.pbl6.cinemate.movie.dto.general.ErrorResponse;
-import com.pbl6.cinemate.movie.dto.general.ResponseData;
-import com.pbl6.cinemate.movie.exception.*;
+import com.pbl6.cinemate.shared.dto.general.ErrorResponse;
+import com.pbl6.cinemate.shared.dto.general.ResponseData;
+import com.pbl6.cinemate.shared.exception.*;
+
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

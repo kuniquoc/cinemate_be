@@ -13,10 +13,10 @@ import com.pbl6.cinemate.movie.dto.response.MovieDirectorResponse;
 import com.pbl6.cinemate.movie.entity.Director;
 import com.pbl6.cinemate.movie.entity.Movie;
 import com.pbl6.cinemate.movie.entity.MovieDirector;
-import com.pbl6.cinemate.movie.exception.NotFoundException;
 import com.pbl6.cinemate.movie.repository.DirectorRepository;
 import com.pbl6.cinemate.movie.repository.MovieDirectorRepository;
 import com.pbl6.cinemate.movie.repository.MovieRepository;
+import com.pbl6.cinemate.shared.exception.NotFoundException;
 
 import lombok.RequiredArgsConstructor;
 

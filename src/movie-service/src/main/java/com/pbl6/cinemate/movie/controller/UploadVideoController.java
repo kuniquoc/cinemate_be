@@ -1,8 +1,9 @@
 package com.pbl6.cinemate.movie.controller;
 
-import com.pbl6.cinemate.movie.dto.general.ResponseData;
 import com.pbl6.cinemate.movie.dto.response.VideoUploadResponse;
 import com.pbl6.cinemate.movie.service.VideoUploadService;
+import com.pbl6.cinemate.shared.dto.general.ResponseData;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

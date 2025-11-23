@@ -13,10 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.pbl6.cinemate.movie.dto.response.VideoUploadResponse;
-import com.pbl6.cinemate.movie.exception.BadRequestException;
-import com.pbl6.cinemate.movie.exception.InternalServerException;
 import com.pbl6.cinemate.movie.service.MinioStorageService;
 import com.pbl6.cinemate.movie.service.VideoUploadService;
+import com.pbl6.cinemate.shared.exception.BadRequestException;
+import com.pbl6.cinemate.shared.exception.InternalServerException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

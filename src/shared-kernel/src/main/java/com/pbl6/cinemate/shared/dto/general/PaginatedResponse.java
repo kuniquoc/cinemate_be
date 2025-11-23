@@ -1,4 +1,4 @@
-package com.pbl6.cinemate.movie.dto.response;
+package com.pbl6.cinemate.shared.dto.general;
 
 import lombok.Getter;
 import lombok.Setter;

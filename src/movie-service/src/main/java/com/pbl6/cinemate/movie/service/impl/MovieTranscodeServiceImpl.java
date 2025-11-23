@@ -12,11 +12,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.pbl6.cinemate.movie.entity.Movie;
 import com.pbl6.cinemate.movie.enums.MovieStatus;
-import com.pbl6.cinemate.movie.exception.NotFoundException;
 import com.pbl6.cinemate.movie.repository.MovieRepository;
 import com.pbl6.cinemate.movie.service.FFmpegService;
 import com.pbl6.cinemate.movie.service.MinioStorageService;
 import com.pbl6.cinemate.movie.service.MovieTranscodeService;
+import com.pbl6.cinemate.shared.exception.NotFoundException;
 
 import lombok.extern.slf4j.Slf4j;
 

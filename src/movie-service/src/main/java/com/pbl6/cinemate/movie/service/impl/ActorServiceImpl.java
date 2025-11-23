@@ -10,10 +10,10 @@ import com.pbl6.cinemate.movie.dto.request.ActorCreationRequest;
 import com.pbl6.cinemate.movie.dto.request.ActorUpdateRequest;
 import com.pbl6.cinemate.movie.dto.response.ActorResponse;
 import com.pbl6.cinemate.movie.entity.Actor;
-import com.pbl6.cinemate.movie.exception.NotFoundException;
 import com.pbl6.cinemate.movie.repository.ActorRepository;
 import com.pbl6.cinemate.movie.repository.MovieActorRepository;
 import com.pbl6.cinemate.movie.service.ActorService;
+import com.pbl6.cinemate.shared.exception.NotFoundException;
 
 @Service
 public class ActorServiceImpl implements ActorService {

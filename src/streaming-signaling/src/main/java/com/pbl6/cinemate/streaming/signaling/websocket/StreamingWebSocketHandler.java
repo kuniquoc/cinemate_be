@@ -60,6 +60,7 @@ public class StreamingWebSocketHandler extends TextWebSocketHandler {
         switch (type) {
             case "whoHas" -> handleWhoHas(session, payload);
             case "reportSegment" -> handleReportSegment(session, payload);
+            case "removeSegment" -> handleRemoveSegment(session, payload);
             case "rtcOffer", "rtcAnswer", "iceCandidate" -> handleRtcRelay(session, payload);
             default -> send(session, new ErrorMessage("Unsupported message type: " + type));
         }
@@ -135,6 +136,41 @@ public class StreamingWebSocketHandler extends TextWebSocketHandler {
         ReportSegmentAckMessage ack = signalingService.handleReportSegment(clientId, movieId, qualityId, segmentId,
                 source, speed, latency);
         send(session, ack);
+    }
+
+    private void handleRemoveSegment(WebSocketSession session, JsonNode payload) throws IOException {
+        String clientId = attribute(session, SignalingHandshakeInterceptor.ATTR_CLIENT_ID);
+        String movieIdRaw = payload.path("movieId").textValue();
+        String movieId;
+        if (movieIdRaw == null) {
+            movieId = attribute(session, SignalingHandshakeInterceptor.ATTR_MOVIE_ID);
+        } else {
+            movieId = movieIdRaw.trim();
+            if (movieId.isEmpty()) {
+                movieId = attribute(session, SignalingHandshakeInterceptor.ATTR_MOVIE_ID);
+            }
+        }
+        String qualityIdRaw = payload.path("qualityId").textValue();
+        if (qualityIdRaw == null) {
+            send(session, new ErrorMessage("removeSegment requires qualityId"));
+            return;
+        }
+        String qualityId = qualityIdRaw.trim();
+        if (qualityId.isEmpty()) {
+            send(session, new ErrorMessage("removeSegment requires qualityId"));
+            return;
+        }
+        String segmentIdRaw = payload.path("segmentId").textValue();
+        if (segmentIdRaw == null) {
+            send(session, new ErrorMessage("removeSegment requires segmentId"));
+            return;
+        }
+        String segmentId = segmentIdRaw.trim();
+        if (segmentId.isEmpty()) {
+            send(session, new ErrorMessage("removeSegment requires segmentId"));
+            return;
+        }
+        signalingService.handleRemoveSegment(clientId, movieId, qualityId, segmentId);
     }
 
     private void handleRtcRelay(WebSocketSession session, JsonNode payload) throws IOException {

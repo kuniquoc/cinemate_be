@@ -1,6 +1,5 @@
 package com.pbl6.cinemate.movie.controller;
 
-import com.pbl6.cinemate.movie.dto.general.ResponseData;
 import com.pbl6.cinemate.movie.dto.request.ChunkUploadInitRequest;
 import com.pbl6.cinemate.movie.dto.request.ChunkUploadRequest;
 import com.pbl6.cinemate.movie.dto.response.ChunkUploadInitResponse;
@@ -8,6 +7,8 @@ import com.pbl6.cinemate.movie.dto.response.ChunkUploadResponse;
 import com.pbl6.cinemate.movie.dto.response.ChunkUploadStatusResponse;
 import com.pbl6.cinemate.movie.dto.response.MovieUploadResponse;
 import com.pbl6.cinemate.movie.service.ChunkUploadService;
+import com.pbl6.cinemate.shared.dto.general.ResponseData;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

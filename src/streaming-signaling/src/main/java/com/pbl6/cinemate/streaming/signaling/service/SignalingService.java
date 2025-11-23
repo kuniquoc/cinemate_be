@@ -95,6 +95,12 @@ public class SignalingService {
             return new PeerListMessage(sanitizedMovieId, Collections.emptySet());
         }
 
+        redisTemplate.opsForSet().add(peerKey, sanitizedClientId);
+        Duration ttl = Objects.requireNonNull(
+                properties.getSignaling().getRedisTtlSegmentKeys(),
+                SEGMENT_TTL_REQUIRED);
+        redisTemplate.expire(peerKey, ttl);
+
         Set<String> peers = Optional
                 .ofNullable(redisTemplate.opsForSet().members(peerKey))
                 .orElseGet(Collections::emptySet);
@@ -116,7 +122,7 @@ public class SignalingService {
         if (segmentKey == null) {
             log.warn("Segment key is null for movieId: {} qualityId: {} segmentId: {}",
                     sanitizedMovieId, qualityId, sanitizedSegmentId);
-            return new WhoHasReplyMessage(sanitizedSegmentId, List.of());
+            return new WhoHasReplyMessage(qualityId, sanitizedSegmentId, List.of());
         }
 
         Set<String> peerIds = Optional
@@ -126,7 +132,7 @@ public class SignalingService {
         if (peerIds.isEmpty()) {
             log.debug("No peers found for movie {} quality {} segment {}",
                     sanitizedMovieId, qualityId, sanitizedSegmentId);
-            return new WhoHasReplyMessage(sanitizedSegmentId, List.of());
+            return new WhoHasReplyMessage(qualityId, sanitizedSegmentId, List.of());
         }
 
         List<PeerInfo> peerInfos = new ArrayList<>(peerIds.size());
@@ -140,7 +146,7 @@ public class SignalingService {
         }
         log.debug("Found {} peers for movie {} quality {} segment {}",
                 peerInfos.size(), sanitizedMovieId, qualityId, sanitizedSegmentId);
-        return new WhoHasReplyMessage(sanitizedSegmentId, peerInfos);
+        return new WhoHasReplyMessage(qualityId, sanitizedSegmentId, peerInfos);
     }
 
     /**
@@ -207,6 +213,41 @@ public class SignalingService {
         return new ReportSegmentAckMessage(sanitizedSegmentId);
     }
 
+    /**
+     * Handles removal of a segment from a client's cache.
+     * Removes the client from the set of peers that own this segment.
+     * 
+     * @param clientId  the client identifier
+     * @param movieId   the movie identifier
+     * @param qualityId the quality variant
+     * @param segmentId the segment identifier
+     */
+    public void handleRemoveSegment(
+            @NonNull String clientId,
+            @NonNull String movieId,
+            String qualityId,
+            @NonNull String segmentId) {
+        String sanitizedClientId = Objects.requireNonNull(clientId, CLIENT_ID_REQUIRED);
+        String sanitizedMovieId = Objects.requireNonNull(movieId, MOVIE_ID_REQUIRED);
+        String sanitizedSegmentId = Objects.requireNonNull(segmentId, SEGMENT_ID_REQUIRED);
+
+        String segmentKey = StreamingRedisKeys.segmentOwnersKey(sanitizedMovieId, qualityId, sanitizedSegmentId);
+        if (segmentKey == null) {
+            log.warn("Segment key is null for movieId: {} qualityId: {} segmentId: {}",
+                    sanitizedMovieId, qualityId, sanitizedSegmentId);
+            return;
+        }
+
+        Long removed = redisTemplate.opsForSet().remove(segmentKey, sanitizedClientId);
+        if (removed != null && removed > 0) {
+            log.info("Client {} removed segment {} (movie={}, quality={})",
+                    sanitizedClientId, sanitizedSegmentId, sanitizedMovieId, qualityId);
+        } else {
+            log.debug("Client {} attempted to remove segment {} but was not listed as owner (movie={}, quality={})",
+                    sanitizedClientId, sanitizedSegmentId, sanitizedMovieId, qualityId);
+        }
+    }
+
     public void handleDisconnect(@NonNull String clientId, @NonNull String movieId) {
         String sanitizedClientId = Objects.requireNonNull(clientId, CLIENT_ID_REQUIRED);
         String sanitizedMovieId = Objects.requireNonNull(movieId, MOVIE_ID_REQUIRED);
@@ -220,6 +261,33 @@ public class SignalingService {
             return;
         }
         redisTemplate.opsForSet().remove(peerKey, sanitizedClientId);
+
+        // Clean up peer-specific keys
+        cleanupPeerKeys(sanitizedClientId);
+    }
+
+    private void cleanupPeerKeys(@NonNull String clientId) {
+        String sanitizedClientId = Objects.requireNonNull(clientId, CLIENT_ID_REQUIRED);
+
+        // Delete peer metrics key
+        String metricsKey = StreamingRedisKeys.peerMetricsKey(sanitizedClientId);
+        if (metricsKey != null) {
+            Boolean deleted = redisTemplate.delete(metricsKey);
+            if (Boolean.TRUE.equals(deleted)) {
+                log.debug("Deleted metrics key for client {}", sanitizedClientId);
+            }
+        }
+
+        // Delete peer last seen key
+        String lastSeenKey = StreamingRedisKeys.peerLastSeenKey(sanitizedClientId);
+        if (lastSeenKey != null) {
+            Boolean deleted = redisTemplate.delete(lastSeenKey);
+            if (Boolean.TRUE.equals(deleted)) {
+                log.debug("Deleted last seen key for client {}", sanitizedClientId);
+            }
+        }
+
+        log.info("Cleaned up Redis keys for disconnected client {}", sanitizedClientId);
     }
 
     private void removeClientFromSegments(@NonNull String clientId, @NonNull String movieId) {

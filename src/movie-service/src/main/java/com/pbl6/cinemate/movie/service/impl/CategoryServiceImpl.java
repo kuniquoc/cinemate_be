@@ -8,7 +8,6 @@ import com.pbl6.cinemate.movie.dto.response.MovieResponse;
 import com.pbl6.cinemate.movie.entity.Category;
 import com.pbl6.cinemate.movie.entity.Movie;
 import com.pbl6.cinemate.movie.entity.MovieCategory;
-import com.pbl6.cinemate.movie.exception.NotFoundException;
 import com.pbl6.cinemate.movie.repository.CategoryRepository;
 import com.pbl6.cinemate.movie.repository.MovieActorRepository;
 import com.pbl6.cinemate.movie.repository.MovieCategoryRepository;
@@ -16,6 +15,8 @@ import com.pbl6.cinemate.movie.repository.MovieDirectorRepository;
 import com.pbl6.cinemate.movie.repository.MovieRepository;
 import com.pbl6.cinemate.movie.service.CategoryService;
 import com.pbl6.cinemate.movie.util.MovieUtils;
+import com.pbl6.cinemate.shared.exception.NotFoundException;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
