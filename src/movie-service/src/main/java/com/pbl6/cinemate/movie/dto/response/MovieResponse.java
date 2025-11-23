@@ -5,19 +5,20 @@ import java.util.List;
 import java.util.UUID;
 
 public record MovieResponse(
-                UUID id,
-                String title,
-                String description,
-                String horizontalPoster,
-                String verticalPoster,
-                LocalDate releaseDate,
-                String trailerUrl,
-                Integer age,
-                Integer year,
-                String country,
-                Boolean isVip,
-                Integer rank,
-                List<CategoryResponse> categories,
-                List<ActorResponse> actors,
-                List<DirectorResponse> directors) {
+        UUID id,
+        String title,
+        String description,
+        String status,
+        String horizontalPoster,
+        String verticalPoster,
+        LocalDate releaseDate,
+        String trailerUrl,
+        Integer age,
+        Integer year,
+        String country,
+        Boolean isVip,
+        Integer rank,
+        List<CategoryResponse> categories,
+        List<ActorResponse> actors,
+        List<DirectorResponse> directors) {
 }

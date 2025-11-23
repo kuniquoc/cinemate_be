@@ -1,5 +1,6 @@
 package com.pbl6.cinemate.movie.entity;
 
+import com.pbl6.cinemate.movie.enums.MovieProcessStatus;
 import com.pbl6.cinemate.movie.enums.MovieStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -30,6 +31,9 @@ public class Movie {
 
     @Enumerated(EnumType.STRING)
     private MovieStatus status;
+
+    @Enumerated(EnumType.STRING)
+    private MovieProcessStatus processStatus;
 
     private Instant createdAt;
     private Instant updatedAt;
@@ -65,20 +69,13 @@ public class Movie {
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<MovieDirector> movieDirectors = new HashSet<>();
 
-    public Movie(String title, String description, MovieStatus status) {
-        this.title = title;
-        this.description = description;
-        this.status = status;
-        this.createdAt = Instant.now();
-        this.updatedAt = Instant.now();
-    }
-
     @PrePersist
     public void prePersist() {
         Instant now = Instant.now();
         this.createdAt = now;
         this.updatedAt = now;
-        this.status = MovieStatus.PENDING;
+        this.status = MovieStatus.DRAFT;
+        this.processStatus = MovieProcessStatus.UPLOADING;
         if (this.isVip == null) {
             this.isVip = false;
         }
