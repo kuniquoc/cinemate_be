@@ -16,7 +16,6 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -359,6 +358,17 @@ public class MovieController {
                 return ResponseEntity.ok(ResponseData.successWithMeta(
                                 data,
                                 "Movies search results retrieved successfully",
+                                httpServletRequest.getRequestURI(),
+                                httpServletRequest.getMethod()));
+        }
+
+        @Operation(summary = "Get top ten movies", description = "Retrieve the top 10 movies ranked by their average review stars")
+        @GetMapping("/top-ten")
+        public ResponseEntity<ResponseData> getTopTenMovies(HttpServletRequest httpServletRequest) {
+                List<MovieResponse> response = movieService.getTopTenMovies();
+                return ResponseEntity.ok(ResponseData.success(
+                                response,
+                                "Top ten movies retrieved successfully",
                                 httpServletRequest.getRequestURI(),
                                 httpServletRequest.getMethod()));
         }

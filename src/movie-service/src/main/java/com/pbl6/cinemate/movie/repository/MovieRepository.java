@@ -1,5 +1,6 @@
 package com.pbl6.cinemate.movie.repository;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -25,4 +26,7 @@ public interface MovieRepository extends JpaRepository<Movie, UUID> {
                 OR LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
             """)
     Page<Movie> searchMoviesByKeyword(@Param("keyword") String keyword, Pageable pageable);
+
+    @Query("SELECT m FROM Movie m ORDER BY m.rank ASC NULLS LAST")
+    List<Movie> findTop10ByOrderByRankAsc(Pageable pageable);
 }

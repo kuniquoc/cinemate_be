@@ -50,6 +50,9 @@ public class Movie {
     @Column(name = "is_vip", nullable = false)
     private Boolean isVip;
 
+    @Column(name = "rank")
+    private Integer rank;
+
     @Builder.Default
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<MovieCategory> movieCategories = new HashSet<>();

@@ -25,6 +25,7 @@ public final class MovieUtils {
                 movie.getYear(),
                 movie.getCountry(),
                 movie.getIsVip(),
+                movie.getRank(),
                 categories,
                 actors,
                 directors);
@@ -47,6 +48,7 @@ public final class MovieUtils {
                 movie.getYear(),
                 movie.getCountry(),
                 movie.getIsVip(),
+                movie.getRank(),
                 actors,
                 directors,
                 categories);
