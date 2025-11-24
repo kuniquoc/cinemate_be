@@ -1,18 +1,14 @@
 package com.pbl6.cinemate.auth_service.service.implement;
 
-import com.pbl6.cinemate.auth_service.constant.ErrorMessage;
 import com.pbl6.cinemate.auth_service.constant.RoleName;
 import com.pbl6.cinemate.auth_service.entity.Role;
 import com.pbl6.cinemate.auth_service.entity.Token;
 import com.pbl6.cinemate.auth_service.entity.User;
-import com.pbl6.cinemate.auth_service.entity.UserPrincipal;
 import com.pbl6.cinemate.auth_service.enums.CachePrefix;
 import com.pbl6.cinemate.auth_service.event.ForgotPasswordEvent;
 import com.pbl6.cinemate.auth_service.event.UserRegistrationEvent;
 import com.pbl6.cinemate.auth_service.event.kafka.UserRegisteredEvent;
 import com.pbl6.cinemate.auth_service.event.kafka.publisher.UserRegisteredPublisher;
-import com.pbl6.cinemate.auth_service.exception.BadRequestException;
-import com.pbl6.cinemate.auth_service.exception.UnauthenticatedException;
 import com.pbl6.cinemate.auth_service.mapper.UserMapper;
 import com.pbl6.cinemate.auth_service.payload.request.*;
 import com.pbl6.cinemate.auth_service.payload.response.JwtLoginResponse;
@@ -20,7 +16,12 @@ import com.pbl6.cinemate.auth_service.payload.response.LoginResponse;
 import com.pbl6.cinemate.auth_service.payload.response.SignUpResponse;
 import com.pbl6.cinemate.auth_service.payload.response.VerifyTokenResponse;
 import com.pbl6.cinemate.auth_service.service.*;
-import com.pbl6.cinemate.auth_service.utils.JwtUtils;
+import com.pbl6.cinemate.shared.constants.ErrorMessage;
+import com.pbl6.cinemate.shared.exception.BadRequestException;
+import com.pbl6.cinemate.shared.exception.UnauthenticatedException;
+import com.pbl6.cinemate.shared.security.UserPrincipal;
+import com.pbl6.cinemate.shared.utils.JwtUtils;
+
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
@@ -35,6 +36,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -180,9 +182,14 @@ public class AuthServiceImpl implements AuthService {
         User savedUser = userService.save(user);
 
         boolean isRefreshToken = true;
-        UserPrincipal userPrincipal = UserPrincipal.createUserPrincipal(savedUser);
-        String accessToken = jwtUtils.generateToken(userPrincipal, !isRefreshToken);
-        String refreshToken = jwtUtils.generateToken(userPrincipal, isRefreshToken);
+
+        String id = savedUser.getId().toString();
+        String username = savedUser.getEmail();
+        String role = "ROLE_" + savedUser.getRole().getName();
+        List<String> permissions = user.getRole().getPermissions().stream().map(permission -> permission.getName()).toList();
+
+        String accessToken = jwtUtils.generateToken(id, username, role, permissions, !isRefreshToken);
+        String refreshToken = jwtUtils.generateToken(id, username, role, permissions, isRefreshToken);
 
         userRegisteredPublisher.publishUserRegistered(new UserRegisteredEvent(user.getId(), user.getEmail(),
                 user.getFirstName(), user.getLastName()));

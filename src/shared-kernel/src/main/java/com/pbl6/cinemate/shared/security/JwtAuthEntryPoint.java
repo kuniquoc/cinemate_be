@@ -1,16 +1,15 @@
-package com.pbl6.cinemate.auth_service.security.entrypoint;
+package com.pbl6.cinemate.shared.security;
 
-import com.pbl6.cinemate.auth_service.constant.ErrorMessage;
-import com.pbl6.cinemate.auth_service.payload.general.ErrorResponse;
-import com.pbl6.cinemate.auth_service.payload.general.ResponseData;
-import com.pbl6.cinemate.auth_service.utils.CommonUtils;
-import com.pbl6.cinemate.auth_service.utils.ErrorUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
+
+import com.pbl6.cinemate.shared.dto.general.ErrorResponse;
+import com.pbl6.cinemate.shared.dto.general.ResponseData;
+import com.pbl6.cinemate.shared.utils.CommonUtils;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -27,9 +26,9 @@ public class JwtAuthEntryPoint implements AuthenticationEntryPoint {
 
         ErrorResponse error;
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            error = ErrorUtils.getExceptionError(ErrorMessage.MISSING_JWT);
+            error = new ErrorResponse( "AUTH0001", "missing jwt");
         } else {
-            error = ErrorUtils.getExceptionError(ErrorMessage.UNAUTHENTICATED);
+            error = new ErrorResponse("AUTH0002", "Unauthenticated");
         }
 
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

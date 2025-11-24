@@ -1,10 +1,5 @@
-package com.pbl6.cinemate.auth_service.utils;
+package com.pbl6.cinemate.shared.utils;
 
-
-import com.pbl6.cinemate.auth_service.config.AppProperties;
-import com.pbl6.cinemate.auth_service.constant.ErrorMessage;
-import com.pbl6.cinemate.auth_service.entity.UserPrincipal;
-import com.pbl6.cinemate.auth_service.exception.UnauthenticatedException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -12,6 +7,10 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
+import com.pbl6.cinemate.shared.config.AppProperties;
+import com.pbl6.cinemate.shared.exception.UnauthenticatedException;
+import com.pbl6.cinemate.shared.security.UserPrincipal;
 
 import java.security.Key;
 import java.util.Base64;
@@ -24,14 +23,32 @@ import java.util.UUID;
 public class JwtUtils {
     private final AppProperties appProperties;
 
+    public String generateToken(String userId, String username, String role, List<String> permissions, 
+                                    boolean isRefreshToken) {
+        return Jwts.builder().setSubject(UUID.randomUUID().toString())
+                .claim("user_id", userId)
+                .claim("username", username)
+                .claim("role", role)
+                .claim("permissions", permissions)
+                .setIssuedAt(new Date())
+                .setExpiration(isRefreshToken
+                        ? new Date(new Date().getTime() + appProperties.getAuth().getRefreshTokenExpirationMsec())
+                        : new Date(new Date().getTime() + appProperties.getAuth().getAccessTokenExpirationMsec()))
+                .signWith(isRefreshToken ? getRefreshTokenSecretKey() : getAccessTokenSecretKey(),
+                        SignatureAlgorithm.HS512).compact();
+    }
+
     public String generateToken(UserPrincipal userPrincipal, boolean isRefreshToken) {
         return Jwts.builder().setSubject(UUID.randomUUID().toString())
                 .claim("user_id", userPrincipal.getId())
                 .claim("username", userPrincipal.getUsername())
                 .claim("role", userPrincipal.getAuthorities().stream()
                         .findFirst()
-                        .map(role -> role.getAuthority())
+                        .map(role -> "ROLE_" + role.getAuthority())
                         .orElse(null))
+                .claim("permissions", userPrincipal.getAuthorities().stream()
+                        .skip(1)
+                        .map(role -> role.getAuthority()).toList())
                 .setIssuedAt(new Date())
                 .setExpiration(isRefreshToken
                         ? new Date(new Date().getTime() + appProperties.getAuth().getRefreshTokenExpirationMsec())
@@ -45,6 +62,7 @@ public class JwtUtils {
                 .claim("user_id", claims.get("user_id", String.class))
                 .claim("username", claims.get("username", String.class))
                 .claim("role", claims.get("role", String.class))
+                .claim("permissions", claims.get("permissions", List.class))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(new Date().getTime() + appProperties.getAuth().getAccessTokenExpirationMsec()))
                 .signWith(getAccessTokenSecretKey(),
@@ -76,14 +94,14 @@ public class JwtUtils {
 
     private String getExpiredErrorMessage(boolean isRefreshToken) {
         return isRefreshToken
-                ? ErrorMessage.EXPIRED_REFRESH_TOKEN
-                : ErrorMessage.EXPIRED_ACCESS_TOKEN;
+                ? "Expired refresh token"
+                : "Expired access token";
     }
 
     private String getInvalidErrorMessage(boolean isRefreshToken) {
         return isRefreshToken
-                ? ErrorMessage.INVALID_REFRESH_TOKEN
-                : ErrorMessage.INVALID_ACCESS_TOKEN;
+                ? "Invalid refresh token"
+                : "Invalid access token";
     }
 
     public Long getTokenAvailableDuration(Claims claims) {

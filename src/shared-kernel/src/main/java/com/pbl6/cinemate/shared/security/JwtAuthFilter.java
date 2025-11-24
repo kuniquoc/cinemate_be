@@ -1,14 +1,5 @@
-package com.pbl6.cinemate.auth_service.security.filter;
+package com.pbl6.cinemate.shared.security;
 
-
-import com.pbl6.cinemate.auth_service.constant.ErrorMessage;
-import com.pbl6.cinemate.auth_service.exception.UnauthenticatedException;
-import com.pbl6.cinemate.auth_service.payload.general.ErrorResponse;
-import com.pbl6.cinemate.auth_service.payload.general.ResponseData;
-import com.pbl6.cinemate.auth_service.service.implement.CustomUserDetailsService;
-import com.pbl6.cinemate.auth_service.utils.CommonUtils;
-import com.pbl6.cinemate.auth_service.utils.ErrorUtils;
-import com.pbl6.cinemate.auth_service.utils.JwtUtils;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -25,7 +16,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.pbl6.cinemate.shared.dto.general.ErrorResponse;
+import com.pbl6.cinemate.shared.dto.general.ResponseData;
+import com.pbl6.cinemate.shared.exception.UnauthenticatedException;
+import com.pbl6.cinemate.shared.utils.CommonUtils;
+import com.pbl6.cinemate.shared.utils.JwtUtils;
+
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
 
 @Component
@@ -33,7 +31,6 @@ import java.util.Objects;
 @Slf4j
 public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtUtils jwtUtils;
-    private final CustomUserDetailsService customUserDetailsService;
 
 
     @Override
@@ -46,9 +43,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         try {
             if (StringUtils.hasText(token)) {
-                Claims claims = jwtUtils.verifyToken(token, false);
-                UserDetails userDetails = customUserDetailsService
-                        .loadUserByUsername(jwtUtils.getUsernameFromJWTClaims(claims));
+                Claims claims = jwtUtils.verifyToken(token, false);       
+                String userId = claims.get("user_id", String.class);
+                String username = claims.get("username", String.class);
+                String role = claims.get("role", String.class);
+                List<String> permissions = claims.get("permissions", List.class);
+                UserDetails userDetails = UserPrincipal.createUserPrincipal(userId, username, null, role, permissions);
 
                 var authentication = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
@@ -60,14 +60,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         } catch (UnauthenticatedException ex) {
             log.error("Auth failed for {} {}: {}", request.getMethod(), request.getRequestURL(), ex.getMessage());
             String errorMessage = ex.getMessage();
-            ErrorResponse error = ErrorUtils.getExceptionError(errorMessage);
+            ErrorResponse error = new ErrorResponse("AUTH0001", errorMessage);
             writeErrorResponse(request, response, HttpServletResponse.SC_UNAUTHORIZED, error);
 
         } catch (Exception ex) {
             log.error("Internal error for {} {}: {}", request.getMethod(), request.getRequestURL(), ex.getMessage());
             writeErrorResponse(request, response,
                     HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                    ErrorUtils.getExceptionError(ErrorMessage.INTERNAL_SERVER_ERROR));
+                    new ErrorResponse("INTERNAL",  "Internal server error"));
         }
     }
 

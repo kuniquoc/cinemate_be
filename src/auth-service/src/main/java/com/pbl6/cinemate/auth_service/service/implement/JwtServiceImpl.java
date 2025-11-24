@@ -1,12 +1,13 @@
 package com.pbl6.cinemate.auth_service.service.implement;
 
-import com.pbl6.cinemate.auth_service.constant.ErrorMessage;
 import com.pbl6.cinemate.auth_service.enums.CachePrefix;
-import com.pbl6.cinemate.auth_service.exception.UnauthenticatedException;
 import com.pbl6.cinemate.auth_service.payload.response.RefreshTokenResponse;
 import com.pbl6.cinemate.auth_service.service.CacheService;
 import com.pbl6.cinemate.auth_service.service.JwtService;
-import com.pbl6.cinemate.auth_service.utils.JwtUtils;
+import com.pbl6.cinemate.shared.constants.ErrorMessage;
+import com.pbl6.cinemate.shared.exception.UnauthenticatedException;
+import com.pbl6.cinemate.shared.utils.JwtUtils;
+
 import io.jsonwebtoken.Claims;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;

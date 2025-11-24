@@ -2,12 +2,13 @@ package com.pbl6.cinemate.auth_service.controller;
 
 import com.pbl6.cinemate.auth_service.constant.ApiPath;
 import com.pbl6.cinemate.auth_service.constant.FeedbackMessage;
-import com.pbl6.cinemate.auth_service.entity.UserPrincipal;
-import com.pbl6.cinemate.auth_service.payload.general.ResponseData;
 import com.pbl6.cinemate.auth_service.payload.request.*;
-import com.pbl6.cinemate.auth_service.security.annotation.CurrentUser;
 import com.pbl6.cinemate.auth_service.service.AuthService;
 import com.pbl6.cinemate.auth_service.service.JwtService;
+import com.pbl6.cinemate.shared.dto.general.ResponseData;
+import com.pbl6.cinemate.shared.security.CurrentUser;
+import com.pbl6.cinemate.shared.security.UserPrincipal;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

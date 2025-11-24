@@ -1,4 +1,4 @@
-package com.pbl6.cinemate.auth_service.constant;
+package com.pbl6.cinemate.shared.constants;
 
 public final class CommonConstant {
     public static final String SUCCESS = "success";

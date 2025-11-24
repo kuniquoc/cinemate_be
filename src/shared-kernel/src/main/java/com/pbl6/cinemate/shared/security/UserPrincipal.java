@@ -1,4 +1,4 @@
-package com.pbl6.cinemate.auth_service.entity;
+package com.pbl6.cinemate.shared.security;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -17,29 +17,33 @@ public class UserPrincipal implements UserDetails {
     private UUID id;
     private String email;
     private String password;
-    private Role role;
+    private String role;
+    private List<String> permissions;
     private Boolean enabled;
 
-    public static UserPrincipal createUserPrincipal(User user) {
+    public static UserPrincipal createUserPrincipal(String userId, String username, 
+        String password, String role, List<String> permissions) {
         return UserPrincipal.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .password(user.getPassword())
-                .role(user.getRole()) // chỉ 1 role
-                .enabled(user.getIsEnabled())
+                .id(UUID.fromString(userId))
+                .email(username)
+                .password(password)
+                .role(role) // chỉ 1 role
+                .permissions(permissions)
+                .enabled(true)
                 .build();
     }
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // Bắt buộc có role với prefix ROLE_
         List<GrantedAuthority> authorities =
-                new ArrayList<>(List.of(new SimpleGrantedAuthority("ROLE_" + role.getName())));
+                new ArrayList<>(List.of(new SimpleGrantedAuthority(role)));
 
         // Thêm tất cả permission của role (nếu có)
-        if (role.getPermissions() != null) {
-            role.getPermissions().forEach(permission ->
-                    authorities.add(new SimpleGrantedAuthority(permission.getName())));
+        if (permissions != null) {
+            permissions.forEach(permission ->
+                    authorities.add(new SimpleGrantedAuthority(permission)));
         }
 
         return authorities;

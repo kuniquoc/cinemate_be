@@ -1,4 +1,4 @@
-package com.pbl6.cinemate.auth_service.utils;
+package com.pbl6.cinemate.shared.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;

@@ -1,4 +1,4 @@
-package com.pbl6.cinemate.auth_service.config;
+package com.pbl6.cinemate.shared.config;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -11,6 +11,14 @@ import org.springframework.context.annotation.Configuration;
 public class AppProperties {
     private final Auth auth = new Auth();
     private final Admin admin = new Admin();
+
+    public Auth getAuth() {
+        return auth;
+    }
+
+    public Admin getAdmin() {
+        return admin;
+    }
 
     @Getter
     @Setter

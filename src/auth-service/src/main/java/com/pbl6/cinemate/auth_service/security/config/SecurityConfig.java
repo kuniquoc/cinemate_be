@@ -1,8 +1,6 @@
 package com.pbl6.cinemate.auth_service.security.config;
 
 import com.pbl6.cinemate.auth_service.constant.ApiPath;
-import com.pbl6.cinemate.auth_service.security.entrypoint.JwtAuthEntryPoint;
-import com.pbl6.cinemate.auth_service.security.filter.JwtAuthFilter;
 import com.pbl6.cinemate.auth_service.service.implement.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -18,6 +16,10 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.pbl6.cinemate.shared.security.JwtAuthEntryPoint;
+import com.pbl6.cinemate.shared.security.JwtAuthFilter;
+
 
 @EnableWebSecurity
 @Configuration

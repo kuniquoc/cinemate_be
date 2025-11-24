@@ -1,4 +1,5 @@
-package com.pbl6.cinemate.auth_service.security.annotation;
+package com.pbl6.cinemate.shared.security;
+
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
