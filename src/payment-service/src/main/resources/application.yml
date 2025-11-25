@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: payment-service
+  datasource:
+    url: jdbc:postgresql://localhost:5832/cinemate_payment
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+server:
+  port: 8996
+
+vnpay:
+  url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+  tmn-code: 1HFIAMAT
+  hash-secret: CADXA3EU1ARGTN6ZDVVDEVGTZWDEDSSB
+  return-url: https://0866b2616bdc.ngrok-free.app/api/payments/vnpay-return
+  ipn-url: https://0866b2616bdc.ngrok-free.app/api/payments/vnpay-ipn

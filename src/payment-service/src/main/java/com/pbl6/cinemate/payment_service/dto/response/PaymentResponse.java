@@ -1,0 +1,34 @@
+package com.pbl6.cinemate.payment_service.dto.response;
+
+import com.pbl6.cinemate.payment_service.enums.PaymentMethod;
+import com.pbl6.cinemate.payment_service.enums.PaymentStatus;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class PaymentResponse {
+    
+    private Long id;
+    private Long userId;
+    private Long subscriptionId;
+    private BigDecimal amount;
+    private PaymentMethod paymentMethod;
+    private PaymentStatus status;
+    private String transactionId;
+    private String vnpTxnRef;
+    private String vnpTransactionNo;
+    private String vnpBankCode;
+    private String vnpCardType;
+    private String vnpOrderInfo;
+    private String vnpPayDate;
+    private String vnpResponseCode;
+    private LocalDateTime paymentDate;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+}
