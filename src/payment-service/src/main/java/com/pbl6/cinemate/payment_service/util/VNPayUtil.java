@@ -15,7 +15,8 @@ public class VNPayUtil {
             // Sort parameters by key
             Map<String, String> sortedParams = new TreeMap<>(params);
             
-            // Build hash data WITH URL encoding (VNPay requirement)
+            // Build hash data WITHOUT URL encoding (VNPay official spec)
+            // Hash is calculated from raw parameter values
             // Exclude vnp_SecureHash and vnp_SecureHashType
             String hashData = sortedParams.entrySet().stream()
                     .filter(entry -> entry.getValue() != null && !entry.getValue().isEmpty())

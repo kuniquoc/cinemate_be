@@ -3,15 +3,17 @@ package com.pbl6.cinemate.payment_service.controller;
 import com.pbl6.cinemate.payment_service.dto.request.RegisterDeviceRequest;
 import com.pbl6.cinemate.payment_service.dto.response.DeviceResponse;
 import com.pbl6.cinemate.payment_service.service.DeviceService;
+import com.pbl6.cinemate.shared.dto.general.ResponseData;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/devices")
@@ -21,33 +23,46 @@ public class DeviceController {
     private final DeviceService deviceService;
     
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<DeviceResponse>> getUserDevices(@PathVariable Long userId) {
+    public ResponseEntity<ResponseData> getUserDevices(
+            @PathVariable UUID userId,
+            HttpServletRequest httpRequest) {
         List<DeviceResponse> devices = deviceService.getUserDevices(userId);
-        return ResponseEntity.ok(devices);
+        return ResponseEntity.ok(ResponseData.success(
+                devices,
+                "User devices retrieved successfully",
+                httpRequest.getRequestURI(),
+                httpRequest.getMethod()));
     }
     
     @PostMapping("/register")
-    public ResponseEntity<DeviceResponse> registerDevice(@Valid @RequestBody RegisterDeviceRequest request) {
+    public ResponseEntity<ResponseData> registerDevice(
+            @Valid @RequestBody RegisterDeviceRequest request,
+            HttpServletRequest httpRequest) {
         DeviceResponse device = deviceService.registerDevice(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(device);
+        return ResponseEntity.ok(ResponseData.success(
+                device,
+                "Device registered successfully",
+                httpRequest.getRequestURI(),
+                httpRequest.getMethod()));
     }
     
     @DeleteMapping("/{deviceId}")
-    public ResponseEntity<Map<String, String>> removeDevice(
-            @PathVariable Long deviceId,
-            @RequestParam Long userId) {
+    public ResponseEntity<ResponseData> removeDevice(
+            @PathVariable UUID deviceId,
+            @RequestParam UUID userId,
+            HttpServletRequest httpRequest) {
         deviceService.removeDevice(deviceId, userId);
-        
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Device removed successfully");
-        
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ResponseData.success(
+                "Device removed successfully",
+                httpRequest.getRequestURI(),
+                httpRequest.getMethod()));
     }
     
     @GetMapping("/verify")
-    public ResponseEntity<Map<String, Object>> verifyDevice(
-            @RequestParam Long userId,
-            @RequestParam String deviceId) {
+    public ResponseEntity<ResponseData> verifyDevice(
+            @RequestParam UUID userId,
+            @RequestParam String deviceId,
+            HttpServletRequest httpRequest) {
         boolean isRegistered = deviceService.isDeviceRegistered(userId, deviceId);
         
         Map<String, Object> response = new HashMap<>();
@@ -55,6 +70,10 @@ public class DeviceController {
         response.put("userId", userId);
         response.put("deviceId", deviceId);
         
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ResponseData.success(
+                response,
+                "Device verification completed successfully",
+                httpRequest.getRequestURI(),
+                httpRequest.getMethod()));
     }
 }

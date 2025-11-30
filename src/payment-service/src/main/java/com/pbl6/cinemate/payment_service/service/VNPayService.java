@@ -66,6 +66,7 @@ public class VNPayService {
             String paymentUrl = vnPayConfig.getUrl() + "?" + queryString;
             
             log.info("Created VNPay payment URL for transaction: {}", payment.getVnpTxnRef());
+            log.info("Full payment URL: {}", paymentUrl);
             
             return new PaymentUrlResponse(
                     paymentUrl,

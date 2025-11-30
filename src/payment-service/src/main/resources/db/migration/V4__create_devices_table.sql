@@ -1,6 +1,6 @@
 CREATE TABLE devices (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
     device_name VARCHAR(255) NOT NULL,
     device_type VARCHAR(20) NOT NULL,
     device_id VARCHAR(255) NOT NULL,

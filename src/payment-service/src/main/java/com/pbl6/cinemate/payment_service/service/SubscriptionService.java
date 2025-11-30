@@ -2,11 +2,13 @@ package com.pbl6.cinemate.payment_service.service;
 
 import com.pbl6.cinemate.payment_service.dto.request.CreateSubscriptionRequest;
 import com.pbl6.cinemate.payment_service.dto.response.SubscriptionResponse;
+import com.pbl6.cinemate.payment_service.entity.FamilyMember;
 import com.pbl6.cinemate.payment_service.entity.Subscription;
 import com.pbl6.cinemate.payment_service.entity.SubscriptionPlan;
 import com.pbl6.cinemate.payment_service.enums.SubscriptionStatus;
 import com.pbl6.cinemate.payment_service.exception.ResourceNotFoundException;
 import com.pbl6.cinemate.payment_service.exception.SubscriptionException;
+import com.pbl6.cinemate.payment_service.repository.FamilyMemberRepository;
 import com.pbl6.cinemate.payment_service.repository.SubscriptionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,6 +30,7 @@ public class SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final SubscriptionPlanService planService;
     private final ModelMapper modelMapper;
+    private final FamilyMemberRepository familyMemberRepository;
     
     @Transactional
     public SubscriptionResponse createSubscription(CreateSubscriptionRequest request) {
@@ -53,7 +57,7 @@ public class SubscriptionService {
     }
     
     @Transactional
-    public SubscriptionResponse activateSubscription(Long subscriptionId) {
+    public SubscriptionResponse activateSubscription(UUID subscriptionId) {
         Subscription subscription = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Subscription", "id", subscriptionId));
         
@@ -69,12 +73,22 @@ public class SubscriptionService {
         
         Subscription updatedSubscription = subscriptionRepository.save(subscription);
         log.info("Activated subscription: {}", subscriptionId);
+
+        if(updatedSubscription.getPlan().getIsFamilyPlan())
+        {
+            FamilyMember familyMember = new FamilyMember();
+            familyMember.setIsOwner(true);
+            familyMember.setSubscription(updatedSubscription);
+            familyMember.setUserId(updatedSubscription.getUserId());
+            familyMember.setJoinedAt(now);
+            familyMemberRepository.save(familyMember);
+        }
         
         return mapToResponse(updatedSubscription);
     }
     
     @Transactional
-    public SubscriptionResponse cancelSubscription(Long subscriptionId, Long userId) {
+    public SubscriptionResponse cancelSubscription(UUID subscriptionId, UUID userId) {
         Subscription subscription = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Subscription", "id", subscriptionId));
         
@@ -96,7 +110,7 @@ public class SubscriptionService {
     }
     
     @Transactional
-    public SubscriptionResponse renewSubscription(Long userId, Long planId) {
+    public SubscriptionResponse renewSubscription(UUID userId, UUID planId) {
         // Cancel any existing active subscription
         Optional<Subscription> existingSubscription = subscriptionRepository.findActiveSubscriptionByUserId(userId);
         existingSubscription.ifPresent(sub -> {
@@ -114,21 +128,21 @@ public class SubscriptionService {
     }
     
     @Transactional(readOnly = true)
-    public SubscriptionResponse getCurrentSubscription(Long userId) {
+    public SubscriptionResponse getCurrentSubscription(UUID userId) {
         Subscription subscription = subscriptionRepository.findActiveSubscriptionByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Active subscription not found for user: " + userId));
         return mapToResponse(subscription);
     }
     
     @Transactional(readOnly = true)
-    public List<SubscriptionResponse> getSubscriptionHistory(Long userId) {
+    public List<SubscriptionResponse> getSubscriptionHistory(UUID userId) {
         return subscriptionRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
     
     @Transactional(readOnly = true)
-    public boolean hasActiveSubscription(Long userId) {
+    public boolean hasActiveSubscription(UUID userId) {
         return subscriptionRepository.existsByUserIdAndStatus(userId, SubscriptionStatus.ACTIVE);
     }
     

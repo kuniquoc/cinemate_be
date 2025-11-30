@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
@@ -15,10 +16,10 @@ import java.math.BigDecimal;
 public class CreatePaymentRequest {
     
     @NotNull(message = "User ID is required")
-    private Long userId;
+    private UUID userId;
     
     @NotNull(message = "Subscription ID is required")
-    private Long subscriptionId;
+    private UUID subscriptionId;
     
     @NotNull(message = "Amount is required")
     @Positive(message = "Amount must be positive")

@@ -1,7 +1,7 @@
 CREATE TABLE subscriptions (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    plan_id BIGINT NOT NULL,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    plan_id UUID NOT NULL,
     status VARCHAR(20) NOT NULL,
     start_date TIMESTAMP,
     end_date TIMESTAMP,

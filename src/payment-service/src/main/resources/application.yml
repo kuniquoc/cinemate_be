@@ -22,9 +22,16 @@ spring:
 server:
   port: 8996
 
+app:
+  auth:
+    access-token-secret: Ckj2tdZqqx4zYqn0iSB9bUPIsckWdFoa/YIi1kzGWKc9qM5XCbRoPHmWhft9pZZCGeKYcAhgILzOu++4toDC0Gn9iDWTlRAlnQ8efRnVU8I=
+    access-token-expiration-msec: 900000
+    refresh-token-secret: Ckj2tdZqqx4zYqn0iSB9bUPIsckWdFoa/YIi1kzGWKc9qM5XCbRoPHmWhft9pZZCGeKYcAhgILzOu++4toDC0Gn9iDWTlRAlnQ8efRnVU8I=
+    refresh-token-expiration-msec: 604800000
+
 vnpay:
   url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
   tmn-code: 1HFIAMAT
   hash-secret: CADXA3EU1ARGTN6ZDVVDEVGTZWDEDSSB
-  return-url: https://0866b2616bdc.ngrok-free.app/api/payments/vnpay-return
-  ipn-url: https://0866b2616bdc.ngrok-free.app/api/payments/vnpay-ipn
+  return-url: https://fb1009042c83.ngrok-free.app/api/payments/vnpay-return
+  ipn-url: https://fb1009042c83.ngrok-free.app/api/payments/vnpay-ipn

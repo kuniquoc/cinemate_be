@@ -1,7 +1,7 @@
 CREATE TABLE payments (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    subscription_id BIGINT,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    subscription_id UUID,
     amount DECIMAL(10, 2) NOT NULL,
     payment_method VARCHAR(20) NOT NULL,
     status VARCHAR(20) NOT NULL,

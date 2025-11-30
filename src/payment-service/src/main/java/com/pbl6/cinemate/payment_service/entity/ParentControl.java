@@ -1,6 +1,5 @@
 package com.pbl6.cinemate.payment_service.entity;
 
-import com.pbl6.cinemate.payment_service.enums.SubscriptionStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,35 +9,31 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "subscriptions")
+@Table(name = "parent_control")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Subscription {
+public class ParentControl {
     
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
     
-    @Column(name = "user_id", nullable = false)
-    private UUID userId;
+    @Column(name = "parent_id", nullable = false)
+    private UUID parentId;
+    
+    @Column(name = "kid_id", nullable = false)
+    private UUID kidId;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "plan_id", nullable = false)
-    private SubscriptionPlan plan;
+    @JoinColumn(name = "subscription_id", nullable = false)
+    private Subscription subscription;
     
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private SubscriptionStatus status;
+    @Column(name = "blocked_categories", columnDefinition = "TEXT")
+    private String blockedCategories; // Comma-separated list of category names to block
     
-    @Column(name = "start_date")
-    private LocalDateTime startDate;
-    
-    @Column(name = "end_date")
-    private LocalDateTime endDate;
-    
-    @Column(name = "auto_renew", nullable = false)
-    private Boolean autoRenew = false;
+    @Column(name = "watch_time_limit_minutes")
+    private Integer watchTimeLimitMinutes;
     
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

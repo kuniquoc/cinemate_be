@@ -5,16 +5,18 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateSubscriptionRequest {
     
     @NotNull(message = "User ID is required")
-    private Long userId;
+    private UUID userId;
     
     @NotNull(message = "Plan ID is required")
-    private Long planId;
+    private UUID planId;
     
     private Boolean autoRenew = false;
 }

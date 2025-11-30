@@ -10,19 +10,20 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface SubscriptionRepository extends JpaRepository<Subscription, Long> {
+public interface SubscriptionRepository extends JpaRepository<Subscription, UUID> {
     
-    Optional<Subscription> findByUserIdAndStatus(Long userId, SubscriptionStatus status);
+    Optional<Subscription> findByUserIdAndStatus(UUID userId, SubscriptionStatus status);
     
-    List<Subscription> findByUserIdOrderByCreatedAtDesc(Long userId);
+    List<Subscription> findByUserIdOrderByCreatedAtDesc(UUID userId);
     
     @Query("SELECT s FROM Subscription s WHERE s.status = :status AND s.endDate < :now")
     List<Subscription> findExpiredSubscriptions(@Param("status") SubscriptionStatus status, @Param("now") LocalDateTime now);
     
     @Query("SELECT s FROM Subscription s WHERE s.userId = :userId AND s.status = 'ACTIVE'")
-    Optional<Subscription> findActiveSubscriptionByUserId(@Param("userId") Long userId);
+    Optional<Subscription> findActiveSubscriptionByUserId(@Param("userId") UUID userId);
     
-    boolean existsByUserIdAndStatus(Long userId, SubscriptionStatus status);
+    boolean existsByUserIdAndStatus(UUID userId, SubscriptionStatus status);
 }

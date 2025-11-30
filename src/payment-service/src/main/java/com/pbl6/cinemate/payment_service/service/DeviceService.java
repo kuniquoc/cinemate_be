@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -73,7 +74,7 @@ public class DeviceService {
     }
     
     @Transactional
-    public void removeDevice(Long deviceId, Long userId) {
+    public void removeDevice(UUID deviceId, UUID userId) {
         Device device = deviceRepository.findById(deviceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Device", "id", deviceId));
         
@@ -87,14 +88,14 @@ public class DeviceService {
     }
     
     @Transactional(readOnly = true)
-    public List<DeviceResponse> getUserDevices(Long userId) {
+    public List<DeviceResponse> getUserDevices(UUID userId) {
         return deviceRepository.findByUserIdAndIsActiveTrue(userId).stream()
                 .map(device -> modelMapper.map(device, DeviceResponse.class))
                 .collect(Collectors.toList());
     }
     
     @Transactional(readOnly = true)
-    public void verifyDeviceLimit(Long userId) {
+    public void verifyDeviceLimit(UUID userId) {
         long activeDeviceCount = deviceRepository.countActiveDevicesByUserId(userId);
         
         if (activeDeviceCount >= MAX_DEVICES) {
@@ -106,12 +107,12 @@ public class DeviceService {
     }
     
     @Transactional(readOnly = true)
-    public boolean isDeviceRegistered(Long userId, String deviceId) {
+    public boolean isDeviceRegistered(UUID userId, String deviceId) {
         return deviceRepository.existsByUserIdAndDeviceId(userId, deviceId);
     }
     
     @Transactional
-    public void updateDeviceAccess(Long userId, String deviceId) {
+    public void updateDeviceAccess(UUID userId, String deviceId) {
         Optional<Device> device = deviceRepository.findByUserIdAndDeviceId(userId, deviceId);
         device.ifPresent(d -> {
             d.setLastAccessed(LocalDateTime.now());

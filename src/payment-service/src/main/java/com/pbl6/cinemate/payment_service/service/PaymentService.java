@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,6 +39,8 @@ public class PaymentService {
         Payment payment = new Payment();
         payment.setUserId(request.getUserId());
         payment.setSubscription(subscription);
+        // Note: In production, use exact amount. For sandbox testing, you may need to vary amounts
+        // to avoid VNPay's duplicate transaction detection
         payment.setAmount(request.getAmount());
         payment.setPaymentMethod(request.getPaymentMethod());
         payment.setStatus(PaymentStatus.PENDING);
@@ -45,9 +48,12 @@ public class PaymentService {
         // Generate unique transaction reference
         String vnpTxnRef = generateTransactionRef();
         payment.setVnpTxnRef(vnpTxnRef);
-        payment.setVnpOrderInfo(request.getOrderInfo() != null ? 
+        
+        // Make order info unique by appending transaction ref to avoid VNPay duplicate detection
+        String baseOrderInfo = request.getOrderInfo() != null ? 
                 request.getOrderInfo() : 
-                "Payment for subscription " + subscription.getId());
+                "Payment for subscription";
+        payment.setVnpOrderInfo(baseOrderInfo + " - " + vnpTxnRef);
         
         Payment savedPayment = paymentRepository.save(payment);
         log.info("Created payment with ID: {} for user: {}", savedPayment.getId(), request.getUserId());
@@ -56,7 +62,7 @@ public class PaymentService {
     }
     
     @Transactional
-    public Payment updatePaymentStatus(Long paymentId, PaymentStatus status) {
+    public Payment updatePaymentStatus(UUID paymentId, PaymentStatus status) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment", "id", paymentId));
         
@@ -72,14 +78,14 @@ public class PaymentService {
     }
     
     @Transactional(readOnly = true)
-    public List<PaymentResponse> getPaymentHistory(Long userId) {
+    public List<PaymentResponse> getPaymentHistory(UUID userId) {
         return paymentRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
                 .map(payment -> modelMapper.map(payment, PaymentResponse.class))
                 .collect(Collectors.toList());
     }
     
     @Transactional(readOnly = true)
-    public PaymentResponse getPaymentById(Long id) {
+    public PaymentResponse getPaymentById(UUID id) {
         Payment payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment", "id", id));
         return modelMapper.map(payment, PaymentResponse.class);

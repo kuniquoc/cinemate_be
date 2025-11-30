@@ -10,6 +10,7 @@ import org.hibernate.type.SqlTypes;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.UUID;
 
 @Entity
 @Table(name = "subscription_plans")
@@ -19,8 +20,8 @@ import java.util.Map;
 public class SubscriptionPlan {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
     
     @Column(nullable = false, length = 100)
     private String name;
@@ -36,6 +37,12 @@ public class SubscriptionPlan {
     
     @Column(name = "max_devices", nullable = false)
     private Integer maxDevices = 4;
+    
+    @Column(name = "max_members")
+    private Integer maxMembers; // For family plans, null for individual plans
+    
+    @Column(name = "is_family_plan", nullable = false)
+    private Boolean isFamilyPlan = false;
     
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
