@@ -255,7 +255,7 @@ public class MovieController {
         public ResponseEntity<ResponseData> deleteReviewForMovie(
                         @Parameter(description = "Movie ID") @PathVariable UUID movieId,
                         @Parameter(description = "Review ID") @PathVariable UUID reviewId,
-                        @RequestParam UUID userId,
+                        @RequestParam(name = "userId") UUID userId,
                         HttpServletRequest httpServletRequest) {
 
                 reviewService.deleteReview(reviewId, userId);
@@ -363,12 +363,13 @@ public class MovieController {
         @Operation(summary = "Get or search movies with pagination and sorting", description = "Retrieve a paginated and sorted list of movies. Optionally provide a keyword to search across title, description, country, actors, and categories")
         @GetMapping
         public ResponseEntity<ResponseData> getMovies(
-                        @Parameter(description = "Optional search keyword") @RequestParam(required = false) String keyword,
-                        @RequestParam(defaultValue = "1") int page,
-                        @RequestParam(defaultValue = "10") int size,
-                        @RequestParam(defaultValue = "title") String sortBy,
-                        @RequestParam(defaultValue = "asc") @NonNull String sortDirection,
-                        @Parameter(description = "User role (ADMIN or USER) - TODO: Replace with actual authentication") @RequestParam(defaultValue = "USER") String userRole,
+                        @Parameter(description = "Optional search keyword") 
+                        @RequestParam(name = "keyword", required = false) String keyword,
+                        @RequestParam(name = "page", defaultValue = "1") int page,
+                        @RequestParam(name = "size",defaultValue = "10") int size,
+                        @RequestParam(name = "sortBy",defaultValue = "title") String sortBy,
+                        @RequestParam(name = "sortDirection",defaultValue = "asc") @NonNull String sortDirection,
+                        @Parameter(description = "User role (ADMIN or USER) - TODO: Replace with actual authentication") @RequestParam(name = "userRole",defaultValue = "USER") String userRole,
                         HttpServletRequest httpServletRequest) {
 
                 PaginatedResponse<MovieResponse> data = movieService.getMovies(keyword, page - 1, size, sortBy,

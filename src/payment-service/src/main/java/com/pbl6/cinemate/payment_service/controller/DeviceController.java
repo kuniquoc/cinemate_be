@@ -49,7 +49,7 @@ public class DeviceController {
     @DeleteMapping("/{deviceId}")
     public ResponseEntity<ResponseData> removeDevice(
             @PathVariable UUID deviceId,
-            @RequestParam UUID userId,
+            @RequestParam(name = "userId")  UUID userId,
             HttpServletRequest httpRequest) {
         deviceService.removeDevice(deviceId, userId);
         return ResponseEntity.ok(ResponseData.success(
@@ -60,8 +60,8 @@ public class DeviceController {
     
     @GetMapping("/verify")
     public ResponseEntity<ResponseData> verifyDevice(
-            @RequestParam UUID userId,
-            @RequestParam String deviceId,
+            @RequestParam(name = "userId")  UUID userId,
+            @RequestParam(name = "deviceId") String deviceId,
             HttpServletRequest httpRequest) {
         boolean isRegistered = deviceService.isDeviceRegistered(userId, deviceId);
         

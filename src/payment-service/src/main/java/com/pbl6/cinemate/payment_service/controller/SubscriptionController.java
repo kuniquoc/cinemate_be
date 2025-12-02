@@ -59,7 +59,7 @@ public class SubscriptionController {
     @PutMapping("/{subscriptionId}/cancel")
     public ResponseEntity<ResponseData> cancelSubscription(
             @PathVariable UUID subscriptionId,
-            @RequestParam UUID userId,
+            @RequestParam(name = "userId") UUID userId,
             HttpServletRequest httpRequest) {
         SubscriptionResponse subscription = subscriptionService.cancelSubscription(subscriptionId, userId);
         return ResponseEntity.ok(ResponseData.success(
@@ -71,8 +71,8 @@ public class SubscriptionController {
     
     @PostMapping("/renew")
     public ResponseEntity<ResponseData> renewSubscription(
-            @RequestParam UUID userId,
-            @RequestParam UUID planId,
+            @RequestParam(name = "userId") UUID userId,
+            @RequestParam(name = "planId") UUID planId,
             HttpServletRequest httpRequest) {
         SubscriptionResponse subscription = subscriptionService.renewSubscription(userId, planId);
         return ResponseEntity.ok(ResponseData.success(
