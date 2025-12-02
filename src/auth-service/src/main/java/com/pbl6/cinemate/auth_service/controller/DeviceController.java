@@ -52,7 +52,7 @@ public class DeviceController {
 
     @DeleteMapping("/logout-all")
     public ResponseEntity<ResponseData> logoutFromAllDevices(@CurrentUser UserPrincipal userPrincipal,
-                                                             @RequestParam(required = false) UUID currentDeviceId,
+                                                             @RequestParam(name = "currentDeviceId", required = false) UUID currentDeviceId,
                                                              HttpServletRequest request) {
         userDeviceService.logoutFromAllDevices(userPrincipal.getId(), currentDeviceId);
         
