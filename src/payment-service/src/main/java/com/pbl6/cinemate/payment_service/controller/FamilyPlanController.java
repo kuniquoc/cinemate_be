@@ -37,7 +37,7 @@ public class FamilyPlanController {
     @PostMapping("/invitations")
     public ResponseEntity<ResponseData> createInvitation(
             @Valid @RequestBody CreateInvitationRequest request,
-            @RequestParam UUID userId,
+            @RequestParam(name = "userId") UUID userId,
             HttpServletRequest httpRequest) {
         
         FamilyInvitation invitation = familyPlanService.createInvitation(
@@ -58,7 +58,7 @@ public class FamilyPlanController {
     @PostMapping("/invitations/accept")
     public ResponseEntity<ResponseData> acceptInvitation(
             @Valid @RequestBody AcceptInvitationRequest request,
-            @RequestParam UUID userId,
+            @RequestParam(name = "userId") UUID userId,
             HttpServletRequest httpRequest) {
         
         FamilyMember member = familyPlanService.acceptInvitation(
@@ -113,7 +113,7 @@ public class FamilyPlanController {
     public ResponseEntity<ResponseData> removeMember(
             @PathVariable UUID subscriptionId,
             @PathVariable UUID memberUserId,
-            @RequestParam UUID ownerId,
+            @RequestParam(name = "ownerId") UUID ownerId,
             HttpServletRequest httpRequest) {
         
         familyPlanService.removeMember(subscriptionId, ownerId, memberUserId);
@@ -127,7 +127,7 @@ public class FamilyPlanController {
     @DeleteMapping("/invitations/{invitationId}")
     public ResponseEntity<ResponseData> cancelInvitation(
             @PathVariable UUID invitationId,
-            @RequestParam UUID userId,
+            @RequestParam(name = "userId") UUID userId,
             HttpServletRequest httpRequest) {
         
         familyPlanService.cancelInvitation(invitationId, userId);
@@ -140,8 +140,8 @@ public class FamilyPlanController {
     
     @GetMapping("/parent-control")
     public ResponseEntity<ResponseData> getParentControl(
-            @RequestParam UUID parentId,
-            @RequestParam UUID kidId,
+            @RequestParam(name = "parentId") UUID parentId,
+            @RequestParam(name = "kidId") UUID kidId,
             HttpServletRequest httpRequest) {
         
         ParentControl control = familyPlanService.getParentControl(parentId, kidId);
@@ -156,8 +156,8 @@ public class FamilyPlanController {
     
     @PutMapping("/parent-control")
     public ResponseEntity<ResponseData> updateParentControl(
-            @RequestParam UUID parentId,
-            @RequestParam UUID kidId,
+            @RequestParam(name = "parentId") UUID parentId,
+            @RequestParam(name = "kidId") UUID kidId,
             @Valid @RequestBody UpdateParentControlRequest request,
             HttpServletRequest httpRequest) {
         
@@ -179,7 +179,7 @@ public class FamilyPlanController {
     
     @GetMapping("/parent-control/kids")
     public ResponseEntity<ResponseData> getKidsForParent(
-            @RequestParam UUID parentId,
+            @RequestParam(name = "parentId") UUID parentId,
             HttpServletRequest httpRequest) {
         
         List<ParentControl> controls = familyPlanService.getKidsForParent(parentId);
