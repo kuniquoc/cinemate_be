@@ -5,6 +5,7 @@ import com.pbl6.cinemate.auth_service.entity.Role;
 import com.pbl6.cinemate.auth_service.entity.User;
 import com.pbl6.cinemate.auth_service.repository.UserRepository;
 import com.pbl6.cinemate.auth_service.service.RoleService;
+import com.pbl6.cinemate.shared.config.AppProperties;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;

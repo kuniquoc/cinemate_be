@@ -1,8 +1,9 @@
 package com.pbl6.cinemate.auth_service.utils;
 
-import com.pbl6.cinemate.auth_service.payload.general.ErrorResponse;
 
 import java.util.Map;
+
+import com.pbl6.cinemate.shared.dto.general.ErrorResponse;
 
 public final class ErrorUtils {
     private static final String ERROR_FILE = "errors.yml";

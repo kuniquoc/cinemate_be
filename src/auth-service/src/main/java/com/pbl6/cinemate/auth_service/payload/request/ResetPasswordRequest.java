@@ -2,7 +2,8 @@ package com.pbl6.cinemate.auth_service.payload.request;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.pbl6.cinemate.auth_service.constant.CommonConstant;
+import com.pbl6.cinemate.shared.constants.CommonConstant;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

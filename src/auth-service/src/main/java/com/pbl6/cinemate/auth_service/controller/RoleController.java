@@ -2,12 +2,13 @@ package com.pbl6.cinemate.auth_service.controller;
 
 import com.pbl6.cinemate.auth_service.constant.ApiPath;
 import com.pbl6.cinemate.auth_service.constant.FeedbackMessage;
-import com.pbl6.cinemate.auth_service.payload.general.ResponseData;
 import com.pbl6.cinemate.auth_service.payload.request.AddingPermissionRequest;
 import com.pbl6.cinemate.auth_service.payload.request.RoleRequest;
 import com.pbl6.cinemate.auth_service.payload.response.PermissionResponse;
 import com.pbl6.cinemate.auth_service.payload.response.RoleResponse;
 import com.pbl6.cinemate.auth_service.service.RoleService;
+import com.pbl6.cinemate.shared.dto.general.ResponseData;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

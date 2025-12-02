@@ -1,13 +1,14 @@
 package com.pbl6.cinemate.auth_service.service.implement;
 
-import com.pbl6.cinemate.auth_service.constant.ErrorMessage;
 import com.pbl6.cinemate.auth_service.entity.User;
 import com.pbl6.cinemate.auth_service.entity.UserDevice;
-import com.pbl6.cinemate.auth_service.exception.NotFoundException;
 import com.pbl6.cinemate.auth_service.payload.request.DeviceInfoRequest;
 import com.pbl6.cinemate.auth_service.repository.UserDeviceRepository;
 import com.pbl6.cinemate.auth_service.service.UserDeviceService;
 import com.pbl6.cinemate.auth_service.service.UserService;
+import com.pbl6.cinemate.shared.constants.ErrorMessage;
+import com.pbl6.cinemate.shared.exception.NotFoundException;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

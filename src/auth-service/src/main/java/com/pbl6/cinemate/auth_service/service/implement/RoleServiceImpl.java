@@ -1,10 +1,7 @@
 package com.pbl6.cinemate.auth_service.service.implement;
 
-import com.pbl6.cinemate.auth_service.constant.ErrorMessage;
 import com.pbl6.cinemate.auth_service.entity.Permission;
 import com.pbl6.cinemate.auth_service.entity.Role;
-import com.pbl6.cinemate.auth_service.exception.BadRequestException;
-import com.pbl6.cinemate.auth_service.exception.NotFoundException;
 import com.pbl6.cinemate.auth_service.mapper.PermissionMapper;
 import com.pbl6.cinemate.auth_service.mapper.RoleMapper;
 import com.pbl6.cinemate.auth_service.payload.response.PermissionResponse;
@@ -12,6 +9,10 @@ import com.pbl6.cinemate.auth_service.payload.response.RoleResponse;
 import com.pbl6.cinemate.auth_service.repository.PermissionRepository;
 import com.pbl6.cinemate.auth_service.repository.RoleRepository;
 import com.pbl6.cinemate.auth_service.service.RoleService;
+import com.pbl6.cinemate.shared.constants.ErrorMessage;
+import com.pbl6.cinemate.shared.exception.BadRequestException;
+import com.pbl6.cinemate.shared.exception.NotFoundException;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

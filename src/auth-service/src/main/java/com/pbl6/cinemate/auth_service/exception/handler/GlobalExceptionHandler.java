@@ -1,10 +1,15 @@
 package com.pbl6.cinemate.auth_service.exception.handler;
 
-import com.pbl6.cinemate.auth_service.constant.ErrorMessage;
-import com.pbl6.cinemate.auth_service.exception.*;
-import com.pbl6.cinemate.auth_service.payload.general.ErrorResponse;
-import com.pbl6.cinemate.auth_service.payload.general.ResponseData;
 import com.pbl6.cinemate.auth_service.utils.ErrorUtils;
+import com.pbl6.cinemate.shared.constants.ErrorMessage;
+import com.pbl6.cinemate.shared.dto.general.ErrorResponse;
+import com.pbl6.cinemate.shared.dto.general.ResponseData;
+import com.pbl6.cinemate.shared.exception.BadRequestException;
+import com.pbl6.cinemate.shared.exception.InternalServerException;
+import com.pbl6.cinemate.shared.exception.NotFoundException;
+import com.pbl6.cinemate.shared.exception.UnauthenticatedException;
+import com.pbl6.cinemate.shared.exception.UnauthorizedException;
+
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -23,8 +28,6 @@ import java.util.Objects;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ResponseData> handlingBadRequestException(BadRequestException ex, HttpServletRequest request) {
         ErrorResponse error = ErrorUtils.getExceptionError(ex.getMessage());

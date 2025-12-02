@@ -1,6 +1,8 @@
 package com.pbl6.cinemate.shared.dto.general;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.pbl6.cinemate.shared.constants.CommonConstant;
+
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -52,6 +54,11 @@ public class ResponseData {
                 .meta(metaInfo)
                 .timestamp(System.currentTimeMillis())
                 .build();
+    }
+
+    public static ResponseData successWithoutMetaAndData(String message, String apiPath, String method) {
+        return ResponseData.builder().status(CommonConstant.SUCCESS).message(message).path(apiPath)
+                .method(method).build();
     }
 
     public static ResponseData success(String message, String apiPath, String method) {
