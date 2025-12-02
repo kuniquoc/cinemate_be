@@ -1,9 +1,12 @@
 package com.pbl6.cinemate.auth_service.service.implement;
 
-import com.pbl6.cinemate.auth_service.constant.ErrorMessage;
-import com.pbl6.cinemate.auth_service.entity.UserPrincipal;
-import com.pbl6.cinemate.auth_service.exception.NotFoundException;
+
+import com.pbl6.cinemate.auth_service.entity.User;
 import com.pbl6.cinemate.auth_service.repository.UserRepository;
+import com.pbl6.cinemate.shared.constants.ErrorMessage;
+import com.pbl6.cinemate.shared.exception.NotFoundException;
+import com.pbl6.cinemate.shared.security.UserPrincipal;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -17,7 +20,9 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        return UserPrincipal.createUserPrincipal(userRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException(ErrorMessage.USER_NOT_FOUND)));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.USER_NOT_FOUND));
+        return UserPrincipal.createUserPrincipal(user.getId().toString(), user.getEmail(), user.getPassword(),
+        user.getRole().getName(), user.getRole().getPermissions().stream().map(permission -> permission.getName()).toList());
     }
 }

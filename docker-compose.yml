@@ -272,6 +272,22 @@ services:
       - cinemate-network
   #endregion
 
+  cinemate-postgres-payment:
+    image: postgres:15
+    container_name: cinemate-postgres-payment
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cinemate_payment
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "5832:5432"  # host port: container port
+    volumes:
+      - cinemate-postgres-payment-data:/var/lib/postgresql/data
+    networks:
+      - cinemate-network
+
 volumes:
   minio-data:
   movie-db-data:
@@ -281,6 +297,7 @@ volumes:
   cinemate-zookeeper-data:
   cinemate-kafka-data:
   streaming-seeder-cache:
+  cinemate-postgres-payment-data:
 
 
 networks:

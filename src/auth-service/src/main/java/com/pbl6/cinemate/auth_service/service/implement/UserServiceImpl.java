@@ -1,11 +1,12 @@
 package com.pbl6.cinemate.auth_service.service.implement;
 
-import com.pbl6.cinemate.auth_service.constant.ErrorMessage;
 import com.pbl6.cinemate.auth_service.entity.User;
-import com.pbl6.cinemate.auth_service.exception.NotFoundException;
 import com.pbl6.cinemate.auth_service.repository.UserRepository;
 import com.pbl6.cinemate.auth_service.service.TokenService;
 import com.pbl6.cinemate.auth_service.service.UserService;
+import com.pbl6.cinemate.shared.constants.ErrorMessage;
+import com.pbl6.cinemate.shared.exception.NotFoundException;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

@@ -1,6 +1,5 @@
 package com.pbl6.cinemate.auth_service.event.handler;
 
-import com.pbl6.cinemate.auth_service.constant.CommonConstant;
 import com.pbl6.cinemate.auth_service.constant.TokenExpirationTime;
 import com.pbl6.cinemate.auth_service.email.EmailService;
 import com.pbl6.cinemate.auth_service.entity.Token;
@@ -8,7 +7,9 @@ import com.pbl6.cinemate.auth_service.entity.User;
 import com.pbl6.cinemate.auth_service.enums.TokenType;
 import com.pbl6.cinemate.auth_service.event.ForgotPasswordEvent;
 import com.pbl6.cinemate.auth_service.service.TokenService;
-import com.pbl6.cinemate.auth_service.utils.CommonUtils;
+import com.pbl6.cinemate.shared.constants.CommonConstant;
+import com.pbl6.cinemate.shared.utils.CommonUtils;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationListener;

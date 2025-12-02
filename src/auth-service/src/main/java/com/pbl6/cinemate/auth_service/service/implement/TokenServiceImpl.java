@@ -1,15 +1,16 @@
 package com.pbl6.cinemate.auth_service.service.implement;
 
-import com.pbl6.cinemate.auth_service.constant.ErrorMessage;
 import com.pbl6.cinemate.auth_service.constant.TokenExpirationTime;
 import com.pbl6.cinemate.auth_service.entity.Token;
 import com.pbl6.cinemate.auth_service.entity.User;
 import com.pbl6.cinemate.auth_service.enums.TokenType;
-import com.pbl6.cinemate.auth_service.exception.InternalServerException;
-import com.pbl6.cinemate.auth_service.exception.NotFoundException;
 import com.pbl6.cinemate.auth_service.repository.TokenRepository;
 import com.pbl6.cinemate.auth_service.service.TokenService;
-import com.pbl6.cinemate.auth_service.utils.CommonUtils;
+import com.pbl6.cinemate.shared.constants.ErrorMessage;
+import com.pbl6.cinemate.shared.exception.InternalServerException;
+import com.pbl6.cinemate.shared.exception.NotFoundException;
+import com.pbl6.cinemate.shared.utils.CommonUtils;
+
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

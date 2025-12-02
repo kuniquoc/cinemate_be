@@ -1,7 +1,7 @@
 package com.pbl6.cinemate.auth_service.email;
 
 
-import com.pbl6.cinemate.auth_service.config.AppProperties;
+import com.pbl6.cinemate.shared.config.AppProperties;
 import jakarta.mail.internet.MimeMessage;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;

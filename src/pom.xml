@@ -17,6 +17,7 @@
         <module>streaming-seeder</module>
         <module>auth-service</module>
         <module>customer-service</module>
+        <module>payment-service</module>
     </modules>
 
     <properties>

@@ -1,10 +1,7 @@
 package com.pbl6.cinemate.auth_service.service.implement;
 
-import com.pbl6.cinemate.auth_service.constant.ErrorMessage;
 import com.pbl6.cinemate.auth_service.entity.Role;
 import com.pbl6.cinemate.auth_service.entity.User;
-import com.pbl6.cinemate.auth_service.exception.BadRequestException;
-import com.pbl6.cinemate.auth_service.exception.NotFoundException;
 import com.pbl6.cinemate.auth_service.mapper.UserMapper;
 import com.pbl6.cinemate.auth_service.payload.request.AdminResetPasswordRequest;
 import com.pbl6.cinemate.auth_service.payload.request.CreateAccountRequest;
@@ -13,6 +10,10 @@ import com.pbl6.cinemate.auth_service.payload.response.UserResponse;
 import com.pbl6.cinemate.auth_service.repository.RoleRepository;
 import com.pbl6.cinemate.auth_service.repository.UserRepository;
 import com.pbl6.cinemate.auth_service.service.AccountService;
+import com.pbl6.cinemate.shared.constants.ErrorMessage;
+import com.pbl6.cinemate.shared.exception.BadRequestException;
+import com.pbl6.cinemate.shared.exception.NotFoundException;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
