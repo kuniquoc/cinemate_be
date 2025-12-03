@@ -90,7 +90,7 @@ public class AccountController {
         @PreAuthorize("hasRole('ADMIN')")
         @PatchMapping("/{id}/ban")
         public ResponseEntity<ResponseData> banAccount(
-                        @PathVariable("id") UUID id,
+                        @PathVariable UUID id,
                         @CurrentUser UserPrincipal userPrincipal,
                         HttpServletRequest httpServletRequest) {
                 accountService.banAccount(id, userPrincipal.getId());
