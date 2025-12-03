@@ -13,6 +13,7 @@ COPY streaming-seeder/pom.xml ./streaming-seeder/pom.xml
 COPY gateway/pom.xml ./gateway/pom.xml
 COPY customer-service/pom.xml ./customer-service/pom.xml
 COPY auth-service/pom.xml ./auth-service/pom.xml
+COPY payment-service/pom.xml ./payment-service/pom.xml
 
 # Download dependencies for movie-service and its dependencies
 RUN --mount=type=cache,target=/root/.m2 \
