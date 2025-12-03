@@ -9,6 +9,7 @@ COPY movie-service/pom.xml ./movie-service/pom.xml
 COPY gateway/pom.xml ./gateway/pom.xml
 COPY customer-service/pom.xml ./customer-service/pom.xml
 COPY auth-service/pom.xml ./auth-service/pom.xml
+COPY payment-service/pom.xml ./payment-service/pom.xml
 
 RUN --mount=type=cache,target=/root/.m2 \
     mvn -f pom.xml -pl streaming-seeder -am -B -DskipTests dependency:go-offline
