@@ -40,9 +40,6 @@ streaming:
     fallback-http-timeout: PT0.7S
     min-buffer-prefetch: 3
     critical-buffer-threshold: 1
-  messaging:
-    topic-prefix: ${STREAMING_TOPIC_PREFIX:stream.}
-    group-id: ${KAFKA_CONSUMER_GROUP:streaming-signaling}
 
 logging:
   level:
