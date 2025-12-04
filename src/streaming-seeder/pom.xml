@@ -63,7 +63,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.pbl6.cinemate.streaming.seeder.StreamingSeederApplication</mainClass>
+                    <mainClass>com.pbl6.cinemate.streaming_seeder.StreamingSeederApplication</mainClass>
                 </configuration>
                 <executions>
                     <execution>

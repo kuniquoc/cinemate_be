@@ -170,12 +170,8 @@ services:
       SERVER_PORT: 8080
       REDIS_HOST: cinemate-redis
       REDIS_PORT: ${REDIS_PORT}
-      KAFKA_BOOTSTRAP_SERVERS: cinemate-broker:${CINEMATE_BROKER_PORT}
-      STREAMING_TOPIC_PREFIX: ${STREAMING_TOPIC_PREFIX}
-      KAFKA_CONSUMER_GROUP: ${STREAMING_KAFKA_CONSUMER_GROUP}
     depends_on:
       - cinemate-redis
-      - cinemate-broker
     networks:
       - cinemate-network
 
@@ -282,7 +278,7 @@ services:
       POSTGRES_DB: cinemate_payment
       TZ: Asia/Ho_Chi_Minh
     ports:
-      - "5832:5432"  # host port: container port
+      - "5832:5432" # host port: container port
     volumes:
       - cinemate-postgres-payment-data:/var/lib/postgresql/data
     networks:
