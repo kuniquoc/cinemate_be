@@ -170,6 +170,8 @@ services:
       SERVER_PORT: 8080
       REDIS_HOST: cinemate-redis
       REDIS_PORT: ${REDIS_PORT}
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
     depends_on:
       - cinemate-redis
     networks:
@@ -191,6 +193,8 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_ENDPOINT: http://minio:9000
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
     volumes:
       - streaming-seeder-cache:/var/cinemate/cache
     depends_on:
@@ -209,6 +213,8 @@ services:
       - .env
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+      - ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}
+      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
     depends_on:
       - movie-db
       - minio

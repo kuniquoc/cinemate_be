@@ -67,3 +67,10 @@ chunk-upload:
   min-chunk-size: 1048576    # 1MB
   max-chunk-size: 104857600  # 100MB
   cleanup-interval: 3600000  # 1 hour in milliseconds
+
+app:
+  auth:
+    access-token-secret: ${ACCESS_TOKEN_SECRET}
+    access-token-expiration-msec: 7200000
+    refresh-token-secret: ${REFRESH_TOKEN_SECRET}
+    refresh-token-expiration-msec: 2592000000

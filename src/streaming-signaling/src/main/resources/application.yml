@@ -45,3 +45,10 @@ logging:
   level:
     root: INFO
     '[com.pbl6.cinemate.streaming.signaling]': DEBUG
+
+app:
+  auth:
+    access-token-secret: ${ACCESS_TOKEN_SECRET}
+    access-token-expiration-msec: 7200000
+    refresh-token-secret: ${REFRESH_TOKEN_SECRET}
+    refresh-token-expiration-msec: 2592000000
