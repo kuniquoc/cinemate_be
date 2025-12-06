@@ -20,7 +20,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import com.pbl6.cinemate.shared.security.JwtAuthEntryPoint;
 import com.pbl6.cinemate.shared.security.JwtAuthFilter;
 
-
 @EnableWebSecurity
 @Configuration
 @EnableMethodSecurity
