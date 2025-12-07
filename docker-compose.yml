@@ -290,6 +290,52 @@ services:
     networks:
       - cinemate-network
 
+  #region interaction-recommender-service
+  interaction-recommender-service:
+    build:
+      context: ./src/interaction-recommender-service
+      dockerfile: Dockerfile
+    container_name: cinemate-interaction-recommender
+    restart: unless-stopped
+    ports:
+      - "8090:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://admin:admin@interaction-db:5432/interaction_db
+      REDIS_URL: redis://cinemate-redis:6379
+      KAFKA_BOOTSTRAP_SERVERS: cinemate-broker:${CINEMATE_BROKER_PORT}
+      MODEL_PATH: /app/models/recommender.pkl
+      MODEL_VERSION: v1.0.0
+      ENABLE_CONSUMERS: "true"
+      ENABLE_KAFKA: "true"
+      ENABLE_FEATURE_EXTRACTION: "true"
+      DEBUG: "false"
+    volumes:
+      - interaction-recommender-models:/app/models
+    depends_on:
+      - interaction-db
+      - cinemate-redis
+      - cinemate-broker
+    networks:
+      - cinemate-network
+
+  interaction-db:
+    image: postgres:15
+    container_name: cinemate-interaction-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: interaction_db
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "5433:5432"
+    volumes:
+      - interaction-db-data:/var/lib/postgresql/data
+      - ./src/interaction-recommender-service/scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+    networks:
+      - cinemate-network
+  #endregion
+
 volumes:
   minio-data:
   movie-db-data:
@@ -300,6 +346,8 @@ volumes:
   cinemate-kafka-data:
   streaming-seeder-cache:
   cinemate-postgres-payment-data:
+  interaction-db-data:
+  interaction-recommender-models:
 
 
 networks:

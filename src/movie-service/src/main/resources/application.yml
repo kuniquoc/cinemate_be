@@ -74,3 +74,10 @@ app:
     access-token-expiration-msec: 7200000
     refresh-token-secret: ${REFRESH_TOKEN_SECRET}
     refresh-token-expiration-msec: 2592000000
+
+# Interaction Recommender Service Configuration
+interaction:
+  recommender:
+    service:
+      url: ${INTERACTION_RECOMMENDER_URL:http://interaction-recommender-service:8000}
+      enabled: ${INTERACTION_RECOMMENDER_ENABLED:true}
