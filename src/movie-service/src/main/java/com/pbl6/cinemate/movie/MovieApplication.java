@@ -2,16 +2,22 @@ package com.pbl6.cinemate.movie;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.ComponentScan;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.util.TimeZone;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {
+		"com.pbl6.cinemate.movie",
+		"com.pbl6.cinemate.shared"
+})
 @EnableScheduling
 @EnableAsync
-@ComponentScan(basePackages = { "com.pbl6.cinemate.movie", "com.pbl6.cinemate.shared" })
+@ConfigurationPropertiesScan(basePackages = {
+		"com.pbl6.cinemate.movie",
+		"com.pbl6.cinemate.shared"
+})
 public class MovieApplication {
 
 	public static void main(String[] args) {
