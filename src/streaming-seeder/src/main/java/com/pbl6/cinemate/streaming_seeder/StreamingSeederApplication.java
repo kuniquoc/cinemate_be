@@ -5,9 +5,15 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {
+        "com.pbl6.cinemate.streaming_seeder",
+        "com.pbl6.cinemate.shared"
+})
 @EnableScheduling
-@ConfigurationPropertiesScan
+@ConfigurationPropertiesScan(basePackages = {
+        "com.pbl6.cinemate.streaming_seeder",
+        "com.pbl6.cinemate.shared"
+})
 public class StreamingSeederApplication {
 
     public static void main(String[] args) {
