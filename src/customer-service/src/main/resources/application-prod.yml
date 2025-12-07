@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://${CUSTOMER_POSTGRES_HOST}:${CUSTOMER_POSTGRES_PORT}/${CUSTOMER_POSTGRES_DB}
-    username: ${CUSTOMER_POSTGRES_USER}
-    password: ${CUSTOMER_POSTGRES_PASSWORD}
+    url: ${CUSTOMER_DATASOURCE_URL:jdbc:postgresql://customer-postgres:5432/customer_db}
+    username: ${CUSTOMER_DATASOURCE_USERNAME}
+    password: ${CUSTOMER_DATASOURCE_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: none
@@ -11,7 +11,7 @@ spring:
     locations: classpath:db/migration
 
   kafka:
-    bootstrap-servers: ${CINEMATE_BROKER_HOST}:${CINEMATE_BROKER_PORT}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:cinemate-broker:29092}
     consumer:
       group-id: customer-service
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -19,14 +19,14 @@ spring:
       properties:
         spring.json.trusted.packages: "com.pbl6.events"
 server:
-  port: ${CUSTOMER_SERVICE_PORT:8080}
+  port: ${SERVICE_PORT:8080}
 
 app:
   auth:
     access-token-secret: ${ACCESS_TOKEN_SECRET}
     access-token-expiration-msec: 7200000
   minio:
-    url: ${MINIO_URL}
+    url: ${MINIO_ENDPOINT:http://minio:9000}
     access-key: ${MINIO_ACCESS_KEY}
     secret-key: ${MINIO_SECRET_KEY}
-    bucket-name: images
+    bucket-name: ${MINIO_BUCKET_NAME:images}

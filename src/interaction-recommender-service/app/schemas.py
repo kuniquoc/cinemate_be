@@ -157,6 +157,7 @@ class RecommendationResponse(BaseModel):
     
     class Config:
         populate_by_name = True
+        protected_namespaces = ()
 
 
 # ============== Feedback Schemas ==============
@@ -173,6 +174,7 @@ class FeedbackRequest(BaseModel):
     
     class Config:
         populate_by_name = True
+        protected_namespaces = ()
 
 
 class FeedbackResponse(BaseModel):

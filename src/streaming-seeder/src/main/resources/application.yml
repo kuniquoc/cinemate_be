@@ -1,15 +1,17 @@
 spring:
   application:
     name: streaming-seeder
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
+      host: ${REDIS_HOST:cinemate-redis}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
       timeout: PT2S
 
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${SERVICE_PORT:8080}
 
 management:
   endpoints:

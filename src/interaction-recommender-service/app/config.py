@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     debug: bool = False
     
     # Database
-    database_url: str = "postgresql+asyncpg://admin:admin@interaction-db:5432/interaction_db"
+    database_url: str = "postgresql+asyncpg://admin:admin@interaction-postgres:5432/interaction_db"
     db_pool_size: int = 10
     db_max_overflow: int = 20
     
@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     redis_feature_ttl: int = 86400  # 24 hours
     
     # Kafka
-    kafka_bootstrap_servers: str = "cinemate-broker:9092"
+    kafka_bootstrap_servers: str = "cinemate-broker:29092"
     kafka_consumer_group: str = "ir-consumers"
     kafka_interaction_topic: str = "interaction_events"
     kafka_features_topic: str = "processed_features"
@@ -50,10 +50,15 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
     workers: int = 2
+    
+    # Database connection retry
+    db_retry_count: int = 10
+    db_retry_delay: float = 3.0
 
     class Config:
         env_file = ".env"
         case_sensitive = False
+        protected_namespaces = ('settings_',)  # Fix Pydantic warning for model_* fields
 
 
 @lru_cache()
