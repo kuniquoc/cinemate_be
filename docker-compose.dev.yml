@@ -194,23 +194,23 @@ services:
       - interaction-postgres-data:/var/lib/postgresql/data
       - ./src/interaction-recommender-service/scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
 
-  # # ==========================================
-  # # PAYMENT SERVICE (use --profile payment)
-  # # ==========================================
-  # payment-service:
-  #   build:
-  #     context: ./src
-  #     dockerfile: ./payment-service/Dockerfile
-  #   container_name: cinemate-payment-service
-  #   <<: *common
-  #   ports:
-  #     - "8086:8086"
-  #   env_file:
-  #     - ./env/payment-service.env
-  #   depends_on:
-  #     - payment-postgres
-  #   profiles:
-  #     - payment
+  # ==========================================
+  # PAYMENT SERVICE (use --profile payment)
+  # ==========================================
+  payment-service:
+    build:
+      context: ./src
+      dockerfile: ./payment-service/Dockerfile
+    container_name: cinemate-payment-service
+    <<: *common
+    ports:
+      - "8086:8080"
+    env_file:
+      - ./env/payment-service.env
+    depends_on:
+      - payment-postgres
+    profiles:
+      - payment
 
   payment-postgres:
     image: postgres:15-alpine
