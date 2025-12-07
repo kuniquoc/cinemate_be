@@ -38,6 +38,7 @@ public class PaymentService {
         // Create payment entity
         Payment payment = new Payment();
         payment.setUserId(request.getUserId());
+        payment.setUserEmail(request.getUserEmail());
         payment.setSubscription(subscription);
         // Note: In production, use exact amount. For sandbox testing, you may need to vary amounts
         // to avoid VNPay's duplicate transaction detection

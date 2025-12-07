@@ -43,14 +43,17 @@ public class FamilyPlanController {
         FamilyInvitation invitation = familyPlanService.createInvitation(
                 request.getSubscriptionId(),
                 userId,
-                request.getMode()
+                request.getMode(),
+                request.getInviterName(),
+                request.getRecipientEmail(),
+                request.getSendEmail()
         );
         
         FamilyInvitationResponse response = toInvitationResponse(invitation);
         
         return ResponseEntity.ok(ResponseData.success(
                 response,
-                "Invitation created successfully",
+                "Invitation created successfully" + (request.getSendEmail() ? " and email sent" : ""),
                 httpRequest.getRequestURI(),
                 httpRequest.getMethod()));
     }
