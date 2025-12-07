@@ -63,9 +63,9 @@ public class PaymentController {
             // Process payment callback
             Payment payment = vnPayService.processPaymentCallback(params);
             
-            // If payment successful, activate subscription
+            // If payment successful, activate subscription and send emails
             if (payment.getStatus().toString().equals("SUCCESS")) {
-                subscriptionService.activateSubscription(payment.getSubscription().getId());
+                subscriptionService.activateSubscription(payment.getSubscription().getId(), payment);
             }
             
             Map<String, Object> response = new HashMap<>();
@@ -94,9 +94,9 @@ public class PaymentController {
             // Process payment callback
             Payment payment = vnPayService.processPaymentCallback(params);
             
-            // If payment successful, activate subscription
+            // If payment successful, activate subscription and send emails
             if (payment.getStatus().toString().equals("SUCCESS")) {
-                subscriptionService.activateSubscription(payment.getSubscription().getId());
+                subscriptionService.activateSubscription(payment.getSubscription().getId(), payment);
             }
             
             Map<String, String> response = new HashMap<>();
