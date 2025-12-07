@@ -1,0 +1,425 @@
+# ============================================
+# CINEMATE BACKEND - CI/CD PIPELINE
+# ============================================
+# Workflow này sẽ:
+# 1. Build và push Docker images lên Docker Hub
+# 2. SSH vào server và deploy bằng docker compose
+# 3. Đảm bảo luôn pull image mới nhất (không bị cache)
+# ============================================
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      services:
+        description: 'Services to deploy (comma-separated, or "all")'
+        required: false
+        default: 'all'
+        type: string
+
+env:
+  DOCKER_REGISTRY: docker.io
+  DOCKER_NAMESPACE: kuniquoc24/cinemate
+
+jobs:
+  # ==========================================
+  # DETECT CHANGES - Xác định services cần build
+  # ==========================================
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      gateway: ${{ steps.changes.outputs.gateway }}
+      auth-service: ${{ steps.changes.outputs.auth-service }}
+      movie-service: ${{ steps.changes.outputs.movie-service }}
+      customer-service: ${{ steps.changes.outputs.customer-service }}
+      streaming-signaling: ${{ steps.changes.outputs.streaming-signaling }}
+      streaming-seeder: ${{ steps.changes.outputs.streaming-seeder }}
+      interaction-recommender: ${{ steps.changes.outputs.interaction-recommender }}
+      # payment-service: ${{ steps.changes.outputs.payment-service }}  # Tạm thời disable
+      shared-kernel: ${{ steps.changes.outputs.shared-kernel }}
+      any-service: ${{ steps.changes.outputs.any-service }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check for changes
+        id: changes
+        run: |
+          # Nếu là workflow_dispatch với input cụ thể
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            SERVICES="${{ github.event.inputs.services }}"
+            if [ "$SERVICES" == "all" ]; then
+              echo "gateway=true" >> $GITHUB_OUTPUT
+              echo "auth-service=true" >> $GITHUB_OUTPUT
+              echo "movie-service=true" >> $GITHUB_OUTPUT
+              echo "customer-service=true" >> $GITHUB_OUTPUT
+              echo "streaming-signaling=true" >> $GITHUB_OUTPUT
+              echo "streaming-seeder=true" >> $GITHUB_OUTPUT
+              echo "interaction-recommender=true" >> $GITHUB_OUTPUT
+              # echo "payment-service=true" >> $GITHUB_OUTPUT  # Tạm thời disable
+              echo "shared-kernel=true" >> $GITHUB_OUTPUT
+              echo "any-service=true" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          fi
+
+          # Detect changes based on git diff
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only HEAD)
+          
+          # Helper function
+          check_changes() {
+            echo "$CHANGED_FILES" | grep -q "^src/$1/" && echo "true" || echo "false"
+          }
+          
+          GATEWAY=$(check_changes "gateway")
+          AUTH=$(check_changes "auth-service")
+          MOVIE=$(check_changes "movie-service")
+          CUSTOMER=$(check_changes "customer-service")
+          SIGNALING=$(check_changes "streaming-signaling")
+          SEEDER=$(check_changes "streaming-seeder")
+          INTERACTION=$(check_changes "interaction-recommender-service")
+          PAYMENT=$(check_changes "payment-service")
+          SHARED=$(check_changes "shared-kernel")
+          
+          # Nếu shared-kernel thay đổi, rebuild tất cả Java services
+          if [ "$SHARED" == "true" ]; then
+            GATEWAY="true"
+            AUTH="true"
+            MOVIE="true"
+            CUSTOMER="true"
+            SIGNALING="true"
+            SEEDER="true"
+            # PAYMENT="true"  # Tạm thời disable
+          fi
+          
+          echo "gateway=$GATEWAY" >> $GITHUB_OUTPUT
+          echo "auth-service=$AUTH" >> $GITHUB_OUTPUT
+          echo "movie-service=$MOVIE" >> $GITHUB_OUTPUT
+          echo "customer-service=$CUSTOMER" >> $GITHUB_OUTPUT
+          echo "streaming-signaling=$SIGNALING" >> $GITHUB_OUTPUT
+          echo "streaming-seeder=$SEEDER" >> $GITHUB_OUTPUT
+          echo "interaction-recommender=$INTERACTION" >> $GITHUB_OUTPUT
+          # echo "payment-service=$PAYMENT" >> $GITHUB_OUTPUT  # Tạm thời disable
+          echo "shared-kernel=$SHARED" >> $GITHUB_OUTPUT
+          
+          # Check if any service changed
+          if [ "$GATEWAY" == "true" ] || [ "$AUTH" == "true" ] || [ "$MOVIE" == "true" ] || \
+             [ "$CUSTOMER" == "true" ] || [ "$SIGNALING" == "true" ] || [ "$SEEDER" == "true" ] || \
+             [ "$INTERACTION" == "true" ]; then  # payment-service tạm thời disable
+            echo "any-service=true" >> $GITHUB_OUTPUT
+          else
+            echo "any-service=false" >> $GITHUB_OUTPUT
+          fi
+
+  # ==========================================
+  # BUILD & PUSH - Java Services
+  # ==========================================
+  build-java-services:
+    name: Build Java Services
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.any-service == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: gateway
+            dockerfile: ./src/gateway/Dockerfile
+            context: ./src
+            enabled: ${{ needs.detect-changes.outputs.gateway }}
+          - service: auth-service
+            dockerfile: ./src/auth-service/Dockerfile
+            context: ./src
+            enabled: ${{ needs.detect-changes.outputs.auth-service }}
+          - service: movie-service
+            dockerfile: ./src/movie-service/Dockerfile
+            context: ./src
+            enabled: ${{ needs.detect-changes.outputs.movie-service }}
+          - service: customer-service
+            dockerfile: ./src/customer-service/Dockerfile
+            context: ./src
+            enabled: ${{ needs.detect-changes.outputs.customer-service }}
+          - service: streaming-signaling
+            dockerfile: ./src/streaming-signaling/Dockerfile
+            context: ./src
+            enabled: ${{ needs.detect-changes.outputs.streaming-signaling }}
+          - service: streaming-seeder
+            dockerfile: ./src/streaming-seeder/Dockerfile
+            context: ./src
+            enabled: ${{ needs.detect-changes.outputs.streaming-seeder }}
+          # payment-service tạm thời disable
+          # - service: payment-service
+          #   dockerfile: ./src/payment-service/Dockerfile
+          #   context: ./src
+          #   enabled: ${{ needs.detect-changes.outputs.payment-service }}
+    steps:
+      - name: Skip if not changed
+        if: matrix.enabled != 'true'
+        run: echo "Skipping ${{ matrix.service }} - no changes detected"
+
+      - name: Checkout code
+        if: matrix.enabled == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        if: matrix.enabled == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        if: matrix.enabled == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Generate image metadata
+        if: matrix.enabled == 'true'
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_NAMESPACE }}/${{ matrix.service }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=,format=short
+            type=raw,value={{date 'YYYYMMDD-HHmmss'}}
+
+      - name: Build and push
+        if: matrix.enabled == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Đảm bảo không cache layer cuối cùng
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            GIT_SHA=${{ github.sha }}
+
+  # ==========================================
+  # BUILD & PUSH - Python Services (Interaction Recommender)
+  # ==========================================
+  build-python-services:
+    name: Build Python Services
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.interaction-recommender == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Generate image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_NAMESPACE }}/interaction-recommender
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=,format=short
+            type=raw,value={{date 'YYYYMMDD-HHmmss'}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./src/interaction-recommender-service
+          file: ./src/interaction-recommender-service/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            GIT_SHA=${{ github.sha }}
+
+  # ==========================================
+  # DEPLOY - Deploy to Server
+  # ==========================================
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+    needs: [detect-changes, build-java-services, build-python-services]
+    # Chạy deploy nếu có ít nhất 1 job build thành công
+    if: |
+      always() && 
+      needs.detect-changes.outputs.any-service == 'true' &&
+      (needs.build-java-services.result == 'success' || needs.build-java-services.result == 'skipped') &&
+      (needs.build-python-services.result == 'success' || needs.build-python-services.result == 'skipped')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create env files content
+        id: env-files
+        run: |
+          # Tạo nội dung cho các file env từ secrets
+          mkdir -p env_files
+          
+          echo "${{ secrets.ENV_AUTH_SERVICE }}" > env_files/auth-service.env
+          echo "${{ secrets.ENV_CUSTOMER_SERVICE }}" > env_files/customer-service.env
+          echo "${{ secrets.ENV_GATEWAY }}" > env_files/gateway.env
+          echo "${{ secrets.ENV_INTERACTION_RECOMMENDER }}" > env_files/interaction-recommender.env
+          echo "${{ secrets.ENV_MOVIE_SERVICE }}" > env_files/movie-service.env
+          echo "${{ secrets.ENV_PAYMENT_SERVICE }}" > env_files/payment-service.env
+          echo "${{ secrets.ENV_STREAMING_SEEDER }}" > env_files/streaming-seeder.env
+          echo "${{ secrets.ENV_STREAMING_SIGNALING }}" > env_files/streaming-signaling.env
+          
+          # Tạo file .env chính cho docker-compose
+          cat << EOF > env_files/.env
+          # Database credentials
+          AUTH_POSTGRES_USER=${{ secrets.AUTH_POSTGRES_USER }}
+          AUTH_POSTGRES_PASSWORD=${{ secrets.AUTH_POSTGRES_PASSWORD }}
+          MOVIE_POSTGRES_USER=${{ secrets.MOVIE_POSTGRES_USER }}
+          MOVIE_POSTGRES_PASSWORD=${{ secrets.MOVIE_POSTGRES_PASSWORD }}
+          CUSTOMER_POSTGRES_USER=${{ secrets.CUSTOMER_POSTGRES_USER }}
+          CUSTOMER_POSTGRES_PASSWORD=${{ secrets.CUSTOMER_POSTGRES_PASSWORD }}
+          INTERACTION_POSTGRES_USER=${{ secrets.INTERACTION_POSTGRES_USER }}
+          INTERACTION_POSTGRES_PASSWORD=${{ secrets.INTERACTION_POSTGRES_PASSWORD }}
+          PAYMENT_POSTGRES_USER=${{ secrets.PAYMENT_POSTGRES_USER }}
+          PAYMENT_POSTGRES_PASSWORD=${{ secrets.PAYMENT_POSTGRES_PASSWORD }}
+          
+          # MinIO credentials
+          MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }}
+          MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY }}
+          EOF
+
+      - name: Copy files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: ${{ secrets.SERVER_SSH_PORT || 22 }}
+          source: "docker-compose.yml,env_files/*"
+          target: ${{ secrets.DEPLOY_PATH }}
+          overwrite: true
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: ${{ secrets.SERVER_SSH_PORT || 22 }}
+          script: |
+            set -e
+            
+            DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+            cd "$DEPLOY_PATH"
+            
+            echo "=========================================="
+            echo "🚀 Starting deployment..."
+            echo "=========================================="
+            
+            # Di chuyển env files vào đúng vị trí
+            mkdir -p env
+            mv env_files/*.env env/ 2>/dev/null || true
+            mv env_files/.env . 2>/dev/null || true
+            rm -rf env_files
+            
+            # Login vào Docker Hub
+            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+            
+            echo "=========================================="
+            echo "📥 Pulling latest images..."
+            echo "=========================================="
+            
+            # Pull images mới nhất với --pull always để đảm bảo không bị cache
+            # Sử dụng docker compose pull với --ignore-pull-failures để không fail nếu 1 image lỗi
+            docker compose pull --ignore-pull-failures
+            
+            echo "=========================================="
+            echo "🔄 Stopping old containers..."
+            echo "=========================================="
+            
+            # Stop và remove containers cũ
+            docker compose down --remove-orphans || true
+            
+            echo "=========================================="
+            echo "🧹 Cleaning up old images..."
+            echo "=========================================="
+            
+            # Xóa các dangling images để tiết kiệm dung lượng
+            docker image prune -f || true
+            
+            echo "=========================================="
+            echo "🚀 Starting new containers..."
+            echo "=========================================="
+            
+            # Start containers mới với --pull always để đảm bảo sử dụng image mới nhất
+            docker compose up -d --force-recreate --pull always
+            
+            echo "=========================================="
+            echo "⏳ Waiting for services to be healthy..."
+            echo "=========================================="
+            
+            # Đợi 30 giây cho services khởi động
+            sleep 30
+            
+            # Kiểm tra trạng thái containers
+            docker compose ps
+            
+            echo "=========================================="
+            echo "✅ Deployment completed!"
+            echo "=========================================="
+
+      - name: Health check
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: ${{ secrets.SERVER_SSH_PORT || 22 }}
+          script: |
+            DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+            cd "$DEPLOY_PATH"
+            
+            echo "=========================================="
+            echo "🏥 Running health checks..."
+            echo "=========================================="
+            
+            # Kiểm tra các services
+            SERVICES=("gateway:8080" "auth-service:8080" "movie-service:8080" "customer-service:8080" "streaming-signaling:8081" "streaming-seeder:8082" "payment-service:8080")
+            
+            for SERVICE in "${SERVICES[@]}"; do
+              NAME="${SERVICE%%:*}"
+              PORT="${SERVICE##*:}"
+              
+              if curl -sf "http://localhost:$PORT/actuator/health" > /dev/null 2>&1; then
+                echo "✅ $NAME is healthy"
+              else
+                echo "⚠️  $NAME health check failed (may still be starting)"
+              fi
+            done
+            
+            # Kiểm tra interaction-recommender
+            if curl -sf "http://localhost:8088/health" > /dev/null 2>&1; then
+              echo "✅ interaction-recommender is healthy"
+            else
+              echo "⚠️  interaction-recommender health check failed (may still be starting)"
+            fi
+            
+            echo "=========================================="
+            echo "📊 Container status:"
+            echo "=========================================="
+            docker compose ps
