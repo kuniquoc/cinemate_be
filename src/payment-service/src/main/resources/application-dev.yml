@@ -21,8 +21,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${DEV_APP_EMAIL}
-    password: ${DEV_APP_PASSWORD}
+    username: giabao7112004@gmail.com
+    password: jsit bkwt ncpk gioj
     properties:
       mail:
         smtp:
@@ -50,5 +50,5 @@ vnpay:
   url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
   tmn-code: 1HFIAMAT
   hash-secret: CADXA3EU1ARGTN6ZDVVDEVGTZWDEDSSB
-  return-url: https://d5e2025a0f1e.ngrok-free.app/api/payments/vnpay-return
-  ipn-url: https://d5e2025a0f1e.ngrok-free.app/api/payments/vnpay-ipn
+  return-url: https://985e02b7dbd5.ngrok-free.app/api/payments/vnpay-return
+  ipn-url: https://985e02b7dbd5.ngrok-free.app/api/payments/vnpay-ipn

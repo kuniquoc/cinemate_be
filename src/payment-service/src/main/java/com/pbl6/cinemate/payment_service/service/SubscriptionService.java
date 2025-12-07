@@ -2,7 +2,9 @@ package com.pbl6.cinemate.payment_service.service;
 
 import com.pbl6.cinemate.payment_service.dto.request.CreateSubscriptionRequest;
 import com.pbl6.cinemate.payment_service.dto.response.SubscriptionResponse;
+import com.pbl6.cinemate.payment_service.email.PaymentEmailService;
 import com.pbl6.cinemate.payment_service.entity.FamilyMember;
+import com.pbl6.cinemate.payment_service.entity.Payment;
 import com.pbl6.cinemate.payment_service.entity.Subscription;
 import com.pbl6.cinemate.payment_service.entity.SubscriptionPlan;
 import com.pbl6.cinemate.payment_service.enums.SubscriptionStatus;
@@ -31,6 +33,7 @@ public class SubscriptionService {
     private final SubscriptionPlanService planService;
     private final ModelMapper modelMapper;
     private final FamilyMemberRepository familyMemberRepository;
+    private final PaymentEmailService paymentEmailService;
     
     @Transactional
     public SubscriptionResponse createSubscription(CreateSubscriptionRequest request) {
@@ -57,7 +60,7 @@ public class SubscriptionService {
     }
     
     @Transactional
-    public SubscriptionResponse activateSubscription(UUID subscriptionId) {
+    public SubscriptionResponse activateSubscription(UUID subscriptionId, Payment payment) {
         Subscription subscription = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Subscription", "id", subscriptionId));
         
@@ -83,6 +86,9 @@ public class SubscriptionService {
             familyMember.setJoinedAt(now);
             familyMemberRepository.save(familyMember);
         }
+        
+        // Send activation emails
+        sendActivationEmails(updatedSubscription, payment);
         
         return mapToResponse(updatedSubscription);
     }
@@ -164,5 +170,41 @@ public class SubscriptionService {
         SubscriptionResponse response = modelMapper.map(subscription, SubscriptionResponse.class);
         response.setPlan(modelMapper.map(subscription.getPlan(), com.pbl6.cinemate.payment_service.dto.response.SubscriptionPlanResponse.class));
         return response;
+    }
+    
+    /**
+     * Send payment success and subscription activated emails
+     * Email failure will not break the transaction
+     */
+    private void sendActivationEmails(Subscription subscription, Payment payment) {
+        try {
+            // Use email from payment (captured at payment creation time)
+            String recipientEmail = payment.getUserEmail();
+            String recipientName = payment.getUserEmail(); // Use email as name
+            
+            log.info("Sending activation emails to: {}", recipientEmail);
+            
+            // Send payment success email
+            paymentEmailService.sendPaymentSuccessEmail(
+                    recipientEmail,
+                    recipientName,
+                    payment,
+                    subscription.getPlan()
+            );
+            
+            // Send subscription activated email
+            paymentEmailService.sendSubscriptionActivatedEmail(
+                    recipientEmail,
+                    recipientName,
+                    subscription
+            );
+            
+            log.info("Activation emails sent successfully for subscription: {}", subscription.getId());
+            
+        } catch (Exception e) {
+            log.error("Failed to send activation emails for subscription {}: {}", 
+                    subscription.getId(), e.getMessage(), e);
+            // Don't throw exception - email failure shouldn't break subscription activation
+        }
     }
 }

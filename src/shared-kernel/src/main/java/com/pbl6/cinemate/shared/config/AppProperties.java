@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 public class AppProperties {
     private final Auth auth = new Auth();
     private final Admin admin = new Admin();
+    private final Email email = new Email();
 
     public Auth getAuth() {
         return auth;
@@ -18,6 +19,10 @@ public class AppProperties {
 
     public Admin getAdmin() {
         return admin;
+    }
+
+    public Email getEmail() {
+        return email;
     }
 
     @Getter
@@ -36,5 +41,12 @@ public class AppProperties {
         private String password;
         private String firstName;
         private String lastName;
+    }
+
+    @Getter
+    @Setter
+    public static class Email {
+        private String from;
+        private String fromName;
     }
 }

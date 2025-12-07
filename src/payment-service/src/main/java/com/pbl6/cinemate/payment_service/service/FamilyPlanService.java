@@ -1,5 +1,6 @@
 package com.pbl6.cinemate.payment_service.service;
 
+import com.pbl6.cinemate.payment_service.email.FamilyInvitationEmailService;
 import com.pbl6.cinemate.payment_service.entity.*;
 import com.pbl6.cinemate.payment_service.enums.InvitationMode;
 import com.pbl6.cinemate.payment_service.enums.InvitationStatus;
@@ -9,6 +10,7 @@ import com.pbl6.cinemate.payment_service.exception.SubscriptionException;
 import com.pbl6.cinemate.payment_service.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,9 +28,20 @@ public class FamilyPlanService {
     private final FamilyInvitationRepository invitationRepository;
     private final ParentControlRepository parentControlRepository;
     private final SubscriptionPlanRepository subscriptionPlanRepository;
+    private final FamilyInvitationEmailService emailService;
+    
+    @Value("${app.frontend.url:http://localhost:3000}")
+    private String frontendUrl;
     
     @Transactional
-    public FamilyInvitation createInvitation(UUID subscriptionId, UUID ownerId, InvitationMode mode) {
+    public FamilyInvitation createInvitation(
+            UUID subscriptionId, 
+            UUID ownerId, 
+            InvitationMode mode,
+            String inviterName,
+            String recipientEmail,
+            Boolean sendEmail) {
+        
         // Verify subscription exists and is family plan
         Subscription subscription = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Subscription not found"));
@@ -64,7 +77,29 @@ public class FamilyPlanService {
         invitation.setInvitedBy(ownerId);
         invitation.setExpiresAt(LocalDateTime.now().plusDays(7));
         
-        return invitationRepository.save(invitation);
+        FamilyInvitation savedInvitation = invitationRepository.save(invitation);
+        
+        // Send email if requested
+        if (sendEmail != null && sendEmail && recipientEmail != null && !recipientEmail.isEmpty()) {
+            String invitationLink = frontendUrl + "/family/join?token=" + token;
+            emailService.sendInvitationEmail(
+                    inviterName,
+                    recipientEmail,
+                    invitationLink,
+                    mode,
+                    savedInvitation.getExpiresAt()
+            );
+        }
+        
+        return savedInvitation;
+    }
+    
+    /**
+     * Legacy method for backward compatibility
+     */
+    @Transactional
+    public FamilyInvitation createInvitation(UUID subscriptionId, UUID ownerId, InvitationMode mode) {
+        return createInvitation(subscriptionId, ownerId, mode, null, null, false);
     }
     
     @Transactional

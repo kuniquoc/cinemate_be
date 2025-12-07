@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Family Plan Invitation</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 600px;
+        margin: 20px auto;
+        background-color: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #ffffff;
+        padding: 30px 20px;
+        text-align: center;
+      }
+      .header h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 600;
+      }
+      .content {
+        padding: 40px 30px;
+      }
+      .button {
+        display: inline-block;
+        padding: 14px 32px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #ffffff !important;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: 600;
+        margin: 20px 0;
+        text-align: center;
+      }
+      .button:hover {
+        opacity: 0.9;
+      }
+      .footer {
+        background-color: #f8f9fa;
+        padding: 20px;
+        text-align: center;
+        font-size: 12px;
+        color: #6c757d;
+        border-top: 1px solid #e9ecef;
+      }
+      .info-box {
+        background-color: #f8f9fa;
+        border-left: 4px solid #667eea;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+      }
+      .text-center {
+        text-align: center;
+      }
+      .text-muted {
+        color: #6c757d;
+        font-size: 14px;
+      }
+      .benefits {
+        margin: 20px 0;
+      }
+      .benefit-item {
+        padding: 10px 0;
+        display: flex;
+        align-items: center;
+      }
+      .benefit-item::before {
+        content: "✓";
+        color: #667eea;
+        font-weight: bold;
+        font-size: 18px;
+        margin-right: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🎬 Cinemate</h1>
+      </div>
+      <div class="content">
+        <h2>You've Been Invited to Join a Family Plan!</h2>
+
+        <p>Hello!</p>
+
+        <p>
+          <strong th:text="${inviterName}">Inviter Name</strong> has invited you
+          to join their Cinemate Family Plan.
+        </p>
+
+        <div class="benefits">
+          <h3>What you'll get:</h3>
+          <div class="benefit-item">
+            Access to thousands of movies and shows
+          </div>
+          <div class="benefit-item">
+            Stream on up to 4 devices simultaneously
+          </div>
+          <div class="benefit-item">HD and 4K quality content</div>
+          <div class="benefit-item">
+            Personalized watchlists and recommendations
+          </div>
+        </div>
+
+        <div class="text-center">
+          <a th:href="${invitationLink}" class="button">Accept Invitation</a>
+        </div>
+
+        <div class="info-box">
+          <p>
+            <strong>⏰ Important:</strong> This invitation will expire on
+            <strong th:text="${#temporals.format(expiresAt, 'MMMM dd, yyyy')}"
+              >expiry date</strong
+            >.
+          </p>
+        </div>
+
+        <p class="text-muted">
+          If you have any questions, please contact our support team.<br />
+          If you didn't expect this invitation, you can safely ignore this
+          email.
+        </p>
+      </div>
+      <div class="footer">
+        <p>© 2025 Cinemate. All rights reserved.</p>
+        <p class="text-muted">
+          This email was sent to <span th:text="${recipientEmail}"></span>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
