@@ -101,6 +101,12 @@
             <version>${springdoc.version}</version>
         </dependency>
 
+        <!-- OpenFeign for external service calls -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
