@@ -35,10 +35,28 @@ async_session_factory = async_sessionmaker(
 
 
 async def init_db() -> None:
-    """Initialize database tables"""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    logger.info("Database tables initialized")
+    """Initialize database tables with retry logic"""
+    import asyncio
+    
+    retry_count = settings.db_retry_count
+    retry_delay = settings.db_retry_delay
+    
+    for attempt in range(retry_count):
+        try:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            logger.info("Database tables initialized")
+            return
+        except Exception as e:
+            if attempt < retry_count - 1:
+                logger.warning(
+                    f"Database connection attempt {attempt + 1}/{retry_count} failed: {e}. "
+                    f"Retrying in {retry_delay} seconds..."
+                )
+                await asyncio.sleep(retry_delay)
+            else:
+                logger.error(f"Failed to connect to database after {retry_count} attempts: {e}")
+                raise
 
 
 async def close_db() -> None:

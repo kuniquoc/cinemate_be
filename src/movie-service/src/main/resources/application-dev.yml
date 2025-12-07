@@ -42,4 +42,3 @@ minio:
   secret-key: ${MINIO_SECRET_KEY:minioadmin}
   movie-bucket: ${MINIO_MOVIE_BUCKET:${MINIO_BUCKET_NAME:movies}}
   image-bucket: ${MINIO_IMAGE_BUCKET:${MINIO_BUCKET_NAME:images}}
-  public-host: ${MINIO_PUBLIC_HOST:http://localhost:9000}

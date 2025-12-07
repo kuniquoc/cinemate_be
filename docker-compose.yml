@@ -1,355 +1,458 @@
+# ============================================
+# CINEMATE BACKEND - DOCKER COMPOSE (PRODUCTION)
+# ============================================
+# Usage: docker compose up -d
+# Pull latest images: docker compose pull
+# Enable payment: docker compose --profile payment up -d
+# ============================================
+
+x-common: &common
+  restart: unless-stopped
+  networks:
+    - cinemate-network
+
+x-healthcheck-defaults: &healthcheck-defaults
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s
+
 services:
+  # ==========================================
+  # GATEWAY
+  # ==========================================
   gateway:
-    build:
-      context: ./src
-      dockerfile: ./gateway/Dockerfile
+    image: kuniquoc24/cinemate/gateway:${GATEWAY_VERSION:-latest}
     container_name: cinemate-gateway
-    restart: unless-stopped
+    <<: *common
     ports:
       - "8080:8080"
-    environment:
-      SPRING_PROFILES_ACTIVE: prod
-      MOVIE_SERVICE_URL: http://movie-service:8080
-      AUTH_SERVICE_URL: http://auth-service:8585
-      CUSTOMER_SERVICE_URL: http://customer-service:8080
-      FRONTEND_URL: ${WEB_URL:-localhost:3000}
-      ADMIN_URL: ${ADMIN_URL:-https://admin.cinemate.com}
-    networks:
-      - cinemate-network
+    env_file:
+      - ./env/gateway.env
+    depends_on:
+      auth-service:
+        condition: service_started
+      movie-service:
+        condition: service_started
+      customer-service:
+        condition: service_started
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
 
-  minio:
-    image: minio/minio:latest
-    container_name: cinemate-minio
+  # ==========================================
+  # AUTH SERVICE
+  # ==========================================
+  auth-service:
+    image: kuniquoc24/cinemate/auth-service:${AUTH_SERVICE_VERSION:-latest}
+    container_name: cinemate-auth-service
+    <<: *common
+    ports:
+      - "8085:8085"
+    env_file:
+      - ./env/auth-service.env
+    depends_on:
+      auth-postgres:
+        condition: service_healthy
+      cinemate-redis:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD", "curl", "-f", "http://localhost:8085/actuator/health" ]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  auth-postgres:
+    image: postgres:15-alpine
+    container_name: cinemate-auth-postgres
+    <<: *common
     environment:
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      POSTGRES_USER: ${AUTH_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${AUTH_POSTGRES_PASSWORD}
+      POSTGRES_DB: auth_db
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - auth-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD-SHELL", "pg_isready -U ${AUTH_POSTGRES_USER:-auth_user} -d auth_db" ]
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  # ==========================================
+  # MOVIE SERVICE
+  # ==========================================
+  movie-service:
+    image: kuniquoc24/cinemate/movie-service:${MOVIE_SERVICE_VERSION:-latest}
+    container_name: cinemate-movie-service
+    <<: *common
+    ports:
+      - "8081:8080"
+    env_file:
+      - ./env/movie-service.env
+    depends_on:
+      movie-postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  movie-postgres:
+    image: postgres:15-alpine
+    container_name: cinemate-movie-postgres
+    <<: *common
+    environment:
+      POSTGRES_USER: ${MOVIE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${MOVIE_POSTGRES_PASSWORD}
+      POSTGRES_DB: movie_db
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - movie-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD-SHELL", "pg_isready -U ${MOVIE_POSTGRES_USER:-movie_user} -d movie_db" ]
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  # ==========================================
+  # CUSTOMER SERVICE
+  # ==========================================
+  customer-service:
+    image: kuniquoc24/cinemate/customer-service:${CUSTOMER_SERVICE_VERSION:-latest}
+    container_name: cinemate-customer-service
+    <<: *common
+    ports:
+      - "8082:8080"
+    env_file:
+      - ./env/customer-service.env
+    depends_on:
+      customer-postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  customer-postgres:
+    image: postgres:15-alpine
+    container_name: cinemate-customer-postgres
+    <<: *common
+    environment:
+      POSTGRES_USER: ${CUSTOMER_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${CUSTOMER_POSTGRES_PASSWORD}
+      POSTGRES_DB: customer_db
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - customer-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD-SHELL", "pg_isready -U ${CUSTOMER_POSTGRES_USER:-customer_user} -d customer_db" ]
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  # ==========================================
+  # STREAMING SERVICES
+  # ==========================================
+  streaming-signaling:
+    image: kuniquoc24/cinemate/streaming-signaling:${STREAMING_SIGNALING_VERSION:-latest}
+    container_name: cinemate-streaming-signaling
+    <<: *common
+    ports:
+      - "8083:8080"
+    env_file:
+      - ./env/streaming-signaling.env
+    depends_on:
+      cinemate-redis:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  streaming-seeder:
+    image: kuniquoc24/cinemate/streaming-seeder:${STREAMING_SEEDER_VERSION:-latest}
+    container_name: cinemate-streaming-seeder
+    <<: *common
+    ports:
+      - "8084:8080"
+    env_file:
+      - ./env/streaming-seeder.env
+    volumes:
+      - streaming-seeder-cache:/var/cinemate/cache
+    depends_on:
+      cinemate-redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # ==========================================
+  # INTERACTION RECOMMENDER SERVICE
+  # ==========================================
+  interaction-recommender:
+    image: kuniquoc24/cinemate/interaction-recommender:${INTERACTION_RECOMMENDER_VERSION:-latest}
+    container_name: cinemate-interaction-recommender
+    <<: *common
+    ports:
+      - "8088:8000"
+    env_file:
+      - ./env/interaction-recommender.env
+    volumes:
+      - interaction-recommender-models:/app/models
+    depends_on:
+      interaction-postgres:
+        condition: service_healthy
+      cinemate-redis:
+        condition: service_healthy
+      cinemate-broker:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  interaction-postgres:
+    image: postgres:15-alpine
+    container_name: cinemate-interaction-postgres
+    <<: *common
+    environment:
+      POSTGRES_USER: ${INTERACTION_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${INTERACTION_POSTGRES_PASSWORD}
+      POSTGRES_DB: interaction_db
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - interaction-postgres-data:/var/lib/postgresql/data
+      - ./src/interaction-recommender-service/scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql:ro
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD-SHELL", "pg_isready -U ${INTERACTION_POSTGRES_USER:-admin} -d interaction_db" ]
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  # ==========================================
+  # PAYMENT SERVICE (use --profile payment to enable)
+  # ==========================================
+  payment-service:
+    image: kuniquoc24/cinemate/payment-service:${PAYMENT_SERVICE_VERSION:-latest}
+    container_name: cinemate-payment-service
+    <<: *common
+    ports:
+      - "8086:8086"
+    env_file:
+      - ./env/payment-service.env
+    depends_on:
+      payment-postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD", "curl", "-f", "http://localhost:8086/actuator/health" ]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    profiles:
+      - payment
+
+  payment-postgres:
+    image: postgres:15-alpine
+    container_name: cinemate-payment-postgres
+    <<: *common
+    environment:
+      POSTGRES_USER: ${PAYMENT_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${PAYMENT_POSTGRES_PASSWORD}
+      POSTGRES_DB: cinemate_payment
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - payment-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD-SHELL", "pg_isready -U ${PAYMENT_POSTGRES_USER:-postgres} -d cinemate_payment" ]
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    profiles:
+      - payment
+
+  # ==========================================
+  # INFRASTRUCTURE - REDIS
+  # ==========================================
+  cinemate-redis:
+    image: redis:7.2-alpine
+    container_name: cinemate-redis
+    <<: *common
+    volumes:
+      - cinemate-redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD", "redis-cli", "ping" ]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # ==========================================
+  # INFRASTRUCTURE - MINIO
+  # ==========================================
+  minio:
+    image: minio/minio:RELEASE.2024-01-01T16-36-33Z
+    container_name: cinemate-minio
+    <<: *common
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     command: server /data --console-address ":9001"
     ports:
       - "9000:9000"
       - "9001:9001"
     volumes:
       - minio-data:/data
-    networks:
-      - cinemate-network
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD", "mc", "ready", "local" ]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
 
-  cinemate-redis:
-    image: redis:7.2
-    container_name: cinemate-redis
-    restart: unless-stopped
-    ports:
-      - "${REDIS_HOST_PORT}:${REDIS_PORT}"
-    volumes:
-      - cinemate-redis-data:/data
-    networks:
-      - cinemate-network
-
-  #region auth service
-  auth-service:
-    build:
-      context: ./src
-      dockerfile: ./auth-service/Dockerfile
-    container_name: cinemate-auth-service
-    restart: unless-stopped
-    ports:
-      - "${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}"
-    environment:
-      SPRING_PROFILES_ACTIVE: prod
-
-      # Database
-      AUTH_DATASOURCE_URL: jdbc:postgresql://auth-postgres:${AUTH_POSTGRES_PORT}/${AUTH_POSTGRES_DB}
-      AUTH_DATASOURCE_USERNAME: ${AUTH_POSTGRES_USER}
-      AUTH_DATASOURCE_PASSWORD: ${AUTH_POSTGRES_PASSWORD}
-      AUTH_SERVICE_PORT: ${AUTH_SERVICE_PORT}
-
-      # KAFKA
-      CINEMATE_BROKER_PORT: ${CINEMATE_BROKER_PORT}
-
-      SMTP_EMAIL: ${SMTP_EMAIL}
-      SMTP_APP_PASSWORD: ${SMTP_APP_PASSWORD}
-
-      # Redis
-      AUTH_REDIS_HOST: ${REDIS_HOST}
-      AUTH_REDIS_PORT: ${REDIS_PORT}
-
-      # JWT / Admin
-      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
-      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
-      AUTH_ADMIN_EMAIL: ${AUTH_ADMIN_EMAIL}
-      AUTH_ADMIN_PASSWORD: ${AUTH_ADMIN_PASSWORD}
-      AUTH_ADMIN_FIRST_NAME: ${AUTH_ADMIN_FIRST_NAME}
-      AUTH_ADMIN_LAST_NAME: ${AUTH_ADMIN_LAST_NAME}
-
-      # Web URL
-      WEB_URL: ${WEB_URL}
-    depends_on:
-      - auth-postgres
-      - cinemate-redis
-    networks:
-      - cinemate-network
-
-  auth-postgres:
-    image: postgres:latest
-    container_name: cinemate-auth-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${AUTH_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${AUTH_POSTGRES_PASSWORD}
-      POSTGRES_DB: ${AUTH_POSTGRES_DB}
-    ports:
-      - "${AUTH_POSTGRES_HOST_PORT}:${AUTH_POSTGRES_PORT}"
-    volumes:
-      - auth-postgres-data:/var/lib/postgresql/data
-    networks:
-      - cinemate-network
-  #endregion
-
-  #region kafka
+  # ==========================================
+  # INFRASTRUCTURE - KAFKA
+  # ==========================================
   cinemate-zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: cinemate-zookeeper
     hostname: cinemate-zookeeper
-    ports:
-      - "${CINEMATE_ZOOKEEPER_HOST_PORT}:${CINEMATE_ZOOKEEPER_PORT}"
+    <<: *common
     environment:
-      ZOOKEEPER_CLIENT_PORT: ${CINEMATE_ZOOKEEPER_PORT}
+      ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     volumes:
       - cinemate-zookeeper-data:/var/lib/zookeeper/data
-    networks:
-      - cinemate-network
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok" ]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
 
   cinemate-broker:
     image: confluentinc/cp-kafka:7.5.0
     container_name: cinemate-broker
-    #    hostname: cinemate-broker
+    <<: *common
     depends_on:
-      - cinemate-zookeeper
-    ports:
-      - "${CINEMATE_BROKER_HOST_PORT}:${CINEMATE_BROKER_HOST_PORT}"
+      cinemate-zookeeper:
+        condition: service_healthy
     environment:
-      KAFKA_BROKER_ID: 2
-      KAFKA_ZOOKEEPER_CONNECT: 'cinemate-zookeeper:${CINEMATE_ZOOKEEPER_PORT}'
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://cinemate-broker:${CINEMATE_BROKER_PORT}, PLAINTEXT_HOST://localhost:${CINEMATE_BROKER_HOST_PORT}
-      KAFKA_LISTENERS: PLAINTEXT_HOST://0.0.0.0:${CINEMATE_BROKER_HOST_PORT},PLAINTEXT://0.0.0.0:${CINEMATE_BROKER_PORT}
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT_HOST:PLAINTEXT,PLAINTEXT:PLAINTEXT
-
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: cinemate-zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://cinemate-broker:29092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_RETENTION_BYTES: 1073741824
     volumes:
       - cinemate-kafka-data:/var/lib/kafka/data
-    networks:
-      - cinemate-network
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:29092" ]
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
 
-  cinemate-kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    container_name: cinemate-kafka-ui
-    hostname: cinemate-kafka-ui
-    depends_on:
-      - cinemate-zookeeper
-      - cinemate-broker
-    ports:
-      - "${CINEMATE_KAFKA_UI_HOST_PORT}:${CINEMATE_KAFKA_UI_PORT}"
-    environment:
-      KAFKA_CLUSTERS_0_NAME: cinemate
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: cinemate-broker:${CINEMATE_BROKER_PORT}
-      KAFKA_CLUSTERS_0_ZOOKEEPER: cinemate-zookeeper:${CINEMATE_ZOOKEEPER_PORT}
-      DYNAMIC_CONFIG_ENABLED: 'true'
-    networks:
-      - cinemate-network
-  #endregion
-
-  #region streaming services
-  streaming-signaling:
-    build:
-      context: ./src
-      dockerfile: ./streaming-signaling/Dockerfile
-    container_name: cinemate-streaming-signaling
-    restart: unless-stopped
-    ports:
-      - "8083:8080"
-    environment:
-      SERVER_PORT: 8080
-      REDIS_HOST: cinemate-redis
-      REDIS_PORT: ${REDIS_PORT}
-      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
-      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
-    depends_on:
-      - cinemate-redis
-    networks:
-      - cinemate-network
-
-  streaming-seeder:
-    build:
-      context: ./src
-      dockerfile: ./streaming-seeder/Dockerfile
-    container_name: cinemate-streaming-seeder
-    restart: unless-stopped
-    ports:
-      - "8084:8080"
-    environment:
-      SERVER_PORT: 8080
-      REDIS_HOST: cinemate-redis
-      REDIS_PORT: ${REDIS_PORT}
-      SEEDER_CACHE_PATH: /var/cinemate/cache
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
-      MINIO_ENDPOINT: http://minio:9000
-      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
-      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
-    volumes:
-      - streaming-seeder-cache:/var/cinemate/cache
-    depends_on:
-      - cinemate-redis
-    networks:
-      - cinemate-network
-  #endregion
-
-  #region movie service
-  movie-service:
-    build:
-      context: ./src
-      dockerfile: ./movie-service/Dockerfile
-    container_name: cinemate-movie-service
-    env_file:
-      - .env
-    environment:
-      - SPRING_PROFILES_ACTIVE=prod
-      - ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}
-      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
-    depends_on:
-      - movie-db
-      - minio
-    ports:
-      - "${MOVIE_SERVICE_PORT:-8081}:8080"
-    networks:
-      - cinemate-network
-
-  movie-db:
-    image: postgres:latest
-    container_name: cinemate-movie-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: movie_db
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
-    volumes:
-      - movie-db-data:/var/lib/postgresql/data
-    networks:
-      - cinemate-network
-  #endregion
-
-  #region customer service
-  customer-service:
-    build:
-      context: ./src
-      dockerfile: ./customer-service/Dockerfile
-    container_name: customer-service
-    restart: unless-stopped
-    ports:
-      - "${CUSTOMER_SERVICE_HOST_PORT}:${CUSTOMER_SERVICE_PORT}"
-    environment:
-      SPRING_PROFILES_ACTIVE: prod
-    env_file:
-      - .env
-    depends_on:
-      - customer-postgres
-    networks:
-      - cinemate-network
-
-  customer-postgres:
-    image: postgres:15
-    container_name: customer-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${CUSTOMER_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${CUSTOMER_POSTGRES_PASSWORD}
-      POSTGRES_DB: ${CUSTOMER_POSTGRES_DB}
-      TZ: Asia/Ho_Chi_Minh
-    ports:
-      - "${CUSTOMER_POSTGRES_HOST_PORT}:${CUSTOMER_POSTGRES_PORT}"
-    volumes:
-      - customer-postgres-data:/var/lib/postgresql/data
-    networks:
-      - cinemate-network
-  #endregion
-
-  cinemate-postgres-payment:
-    image: postgres:15
-    container_name: cinemate-postgres-payment
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: cinemate_payment
-      TZ: Asia/Ho_Chi_Minh
-    ports:
-      - "5832:5432" # host port: container port
-    volumes:
-      - cinemate-postgres-payment-data:/var/lib/postgresql/data
-    networks:
-      - cinemate-network
-
-  #region interaction-recommender-service
-  interaction-recommender-service:
-    build:
-      context: ./src/interaction-recommender-service
-      dockerfile: Dockerfile
-    container_name: cinemate-interaction-recommender
-    restart: unless-stopped
-    ports:
-      - "8090:8000"
-    environment:
-      DATABASE_URL: postgresql+asyncpg://admin:admin@interaction-db:5432/interaction_db
-      REDIS_URL: redis://cinemate-redis:6379
-      KAFKA_BOOTSTRAP_SERVERS: cinemate-broker:${CINEMATE_BROKER_PORT}
-      MODEL_PATH: /app/models/recommender.pkl
-      MODEL_VERSION: v1.0.0
-      ENABLE_CONSUMERS: "true"
-      ENABLE_KAFKA: "true"
-      ENABLE_FEATURE_EXTRACTION: "true"
-      DEBUG: "false"
-    volumes:
-      - interaction-recommender-models:/app/models
-    depends_on:
-      - interaction-db
-      - cinemate-redis
-      - cinemate-broker
-    networks:
-      - cinemate-network
-
-  interaction-db:
-    image: postgres:15
-    container_name: cinemate-interaction-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: interaction_db
-      TZ: Asia/Ho_Chi_Minh
-    ports:
-      - "5433:5432"
-    volumes:
-      - interaction-db-data:/var/lib/postgresql/data
-      - ./src/interaction-recommender-service/scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
-    networks:
-      - cinemate-network
-  #endregion
-
+# ==========================================
+# VOLUMES
+# ==========================================
 volumes:
-  minio-data:
-  movie-db-data:
   auth-postgres-data:
+  movie-postgres-data:
   customer-postgres-data:
+  interaction-postgres-data:
+  payment-postgres-data:
   cinemate-redis-data:
   cinemate-zookeeper-data:
   cinemate-kafka-data:
+  minio-data:
   streaming-seeder-cache:
-  cinemate-postgres-payment-data:
-  interaction-db-data:
   interaction-recommender-models:
 
-
+    # ==========================================
+    # NETWORKS
+    # ==========================================
 networks:
   cinemate-network:
     driver: bridge

@@ -1,0 +1,191 @@
+name: Build Single Service
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to build'
+        required: true
+        type: choice
+        options:
+          - gateway
+          - auth-service
+          - movie-service
+          - customer-service
+          - streaming-signaling
+          - streaming-seeder
+          - interaction-recommender
+          # - payment-service  # Tạm thời disable
+      deploy_after_build:
+        description: 'Deploy after build'
+        required: false
+        default: true
+        type: boolean
+
+env:
+  DOCKER_NAMESPACE: kuniquoc24/cinemate
+
+jobs:
+  build:
+    name: Build ${{ github.event.inputs.service }}
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set build context
+        id: context
+        run: |
+          SERVICE="${{ github.event.inputs.service }}"
+          
+          if [ "$SERVICE" == "interaction-recommender" ]; then
+            echo "context=./src/interaction-recommender-service" >> $GITHUB_OUTPUT
+            echo "dockerfile=./src/interaction-recommender-service/Dockerfile" >> $GITHUB_OUTPUT
+          else
+            echo "context=./src" >> $GITHUB_OUTPUT
+            echo "dockerfile=./src/${SERVICE}/Dockerfile" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Generate image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_NAMESPACE }}/${{ github.event.inputs.service }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=,format=short
+            type=raw,value={{date 'YYYYMMDD-HHmmss'}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ steps.context.outputs.context }}
+          file: ${{ steps.context.outputs.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          no-cache: true
+          build-args: |
+            BUILD_DATE=${{ github.run_id }}
+            GIT_SHA=${{ github.sha }}
+
+      - name: Output image info
+        run: |
+          echo "✅ Built and pushed: ${{ env.DOCKER_NAMESPACE }}/${{ github.event.inputs.service }}"
+          echo "Tags: ${{ steps.meta.outputs.tags }}"
+
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event.inputs.deploy_after_build == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create env files
+        run: |
+          mkdir -p env_files
+          echo "${{ secrets.ENV_AUTH_SERVICE }}" > env_files/auth-service.env
+          echo "${{ secrets.ENV_CUSTOMER_SERVICE }}" > env_files/customer-service.env
+          echo "${{ secrets.ENV_GATEWAY }}" > env_files/gateway.env
+          echo "${{ secrets.ENV_INTERACTION_RECOMMENDER }}" > env_files/interaction-recommender.env
+          echo "${{ secrets.ENV_MOVIE_SERVICE }}" > env_files/movie-service.env
+          echo "${{ secrets.ENV_PAYMENT_SERVICE }}" > env_files/payment-service.env
+          echo "${{ secrets.ENV_STREAMING_SEEDER }}" > env_files/streaming-seeder.env
+          echo "${{ secrets.ENV_STREAMING_SIGNALING }}" > env_files/streaming-signaling.env
+          
+          cat << 'EOF' > env_files/.env
+          AUTH_POSTGRES_USER=${{ secrets.AUTH_POSTGRES_USER }}
+          AUTH_POSTGRES_PASSWORD=${{ secrets.AUTH_POSTGRES_PASSWORD }}
+          MOVIE_POSTGRES_USER=${{ secrets.MOVIE_POSTGRES_USER }}
+          MOVIE_POSTGRES_PASSWORD=${{ secrets.MOVIE_POSTGRES_PASSWORD }}
+          CUSTOMER_POSTGRES_USER=${{ secrets.CUSTOMER_POSTGRES_USER }}
+          CUSTOMER_POSTGRES_PASSWORD=${{ secrets.CUSTOMER_POSTGRES_PASSWORD }}
+          INTERACTION_POSTGRES_USER=${{ secrets.INTERACTION_POSTGRES_USER }}
+          INTERACTION_POSTGRES_PASSWORD=${{ secrets.INTERACTION_POSTGRES_PASSWORD }}
+          PAYMENT_POSTGRES_USER=${{ secrets.PAYMENT_POSTGRES_USER }}
+          PAYMENT_POSTGRES_PASSWORD=${{ secrets.PAYMENT_POSTGRES_PASSWORD }}
+          MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }}
+          MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY }}
+          EOF
+
+      - name: Copy files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: ${{ secrets.SERVER_SSH_PORT || 22 }}
+          source: "docker-compose.yml,env_files/*"
+          target: ${{ secrets.DEPLOY_PATH }}
+          overwrite: true
+
+      - name: Deploy service
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          SERVICE: ${{ github.event.inputs.service }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: ${{ secrets.SERVER_SSH_PORT || 22 }}
+          envs: SERVICE
+          script: |
+            set -e
+            
+            DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+            cd "$DEPLOY_PATH"
+            
+            echo "=========================================="
+            echo "🚀 Deploying service: $SERVICE"
+            echo "=========================================="
+            
+            # Setup env files
+            mkdir -p env
+            mv env_files/*.env env/ 2>/dev/null || true
+            mv env_files/.env . 2>/dev/null || true
+            rm -rf env_files
+            
+            # Docker login
+            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+            
+            # Map service name to container name
+            case "$SERVICE" in
+              "interaction-recommender")
+                CONTAINER_NAME="interaction-recommender"
+                ;;
+              *)
+                CONTAINER_NAME="$SERVICE"
+                ;;
+            esac
+            
+            echo "📥 Pulling latest image for $CONTAINER_NAME..."
+            docker compose pull $CONTAINER_NAME
+            
+            echo "🔄 Recreating container..."
+            docker compose up -d --force-recreate --pull always $CONTAINER_NAME
+            
+            # Cleanup
+            docker image prune -f || true
+            
+            echo "⏳ Waiting for service to start..."
+            sleep 15
+            
+            echo "📊 Container status:"
+            docker compose ps $CONTAINER_NAME
+            
+            echo "=========================================="
+            echo "✅ Service $SERVICE deployed successfully!"
+            echo "=========================================="
