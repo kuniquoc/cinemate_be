@@ -28,3 +28,8 @@ app:
     access-key: minioadmin
     secret-key: minioadmin
     bucket-name: images
+
+# Movie Service
+movie:
+  service:
+    url: http://localhost:8080
