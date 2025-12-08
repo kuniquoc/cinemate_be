@@ -30,3 +30,8 @@ app:
     access-key: ${MINIO_ACCESS_KEY}
     secret-key: ${MINIO_SECRET_KEY}
     bucket-name: ${MINIO_BUCKET_NAME:images}
+
+# Movie Service
+movie:
+  service:
+    url: http://movie-service:8080

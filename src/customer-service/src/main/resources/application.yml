@@ -21,3 +21,8 @@ management:
       show-details: when-authorized
       probes:
         enabled: true
+
+# Movie Service Configuration
+movie:
+  service:
+    url: ${MOVIE_SERVICE_URL:http://movie-service:8080}
