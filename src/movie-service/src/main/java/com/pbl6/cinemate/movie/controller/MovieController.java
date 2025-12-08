@@ -9,6 +9,8 @@ import com.pbl6.cinemate.movie.service.ReviewService;
 import com.pbl6.cinemate.movie.service.impl.ReviewServiceImpl;
 import com.pbl6.cinemate.shared.dto.general.PaginatedResponse;
 import com.pbl6.cinemate.shared.dto.general.ResponseData;
+import com.pbl6.cinemate.shared.security.CurrentUser;
+import com.pbl6.cinemate.shared.security.UserPrincipal;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -82,13 +84,15 @@ public class MovieController {
                                 httpServletRequest.getMethod()));
         }
 
-        @Operation(summary = "Get movie detail", description = "Get detailed information about a movie including title, description, and available qualities")
+        @Operation(summary = "Get movie detail", description = "Get detailed information about a movie including title, description, and available qualities. If user is authenticated, includes last watched position.")
         @GetMapping("/{id}")
         public ResponseEntity<ResponseData> info(
                         @Parameter(description = "Movie ID") @NonNull @PathVariable UUID id,
+                        @CurrentUser UserPrincipal userPrincipal,
                         HttpServletRequest httpServletRequest) {
 
-                MovieInfoResponse response = movieService.getMovieInfo(id);
+                UUID customerId = userPrincipal != null ? userPrincipal.getId() : null;
+                MovieInfoResponse response = movieService.getMovieInfo(id, customerId);
 
                 return ResponseEntity.ok(ResponseData.success(
                                 response,
@@ -363,13 +367,12 @@ public class MovieController {
         @Operation(summary = "Get or search movies with pagination and sorting", description = "Retrieve a paginated and sorted list of movies. Optionally provide a keyword to search across title, description, country, actors, and categories")
         @GetMapping
         public ResponseEntity<ResponseData> getMovies(
-                        @Parameter(description = "Optional search keyword") 
-                        @RequestParam(name = "keyword", required = false) String keyword,
+                        @Parameter(description = "Optional search keyword") @RequestParam(name = "keyword", required = false) String keyword,
                         @RequestParam(name = "page", defaultValue = "1") int page,
-                        @RequestParam(name = "size",defaultValue = "10") int size,
-                        @RequestParam(name = "sortBy",defaultValue = "title") String sortBy,
-                        @RequestParam(name = "sortDirection",defaultValue = "asc") @NonNull String sortDirection,
-                        @Parameter(description = "User role (ADMIN or USER) - TODO: Replace with actual authentication") @RequestParam(name = "userRole",defaultValue = "USER") String userRole,
+                        @RequestParam(name = "size", defaultValue = "10") int size,
+                        @RequestParam(name = "sortBy", defaultValue = "title") String sortBy,
+                        @RequestParam(name = "sortDirection", defaultValue = "asc") @NonNull String sortDirection,
+                        @Parameter(description = "User role (ADMIN or USER) - TODO: Replace with actual authentication") @RequestParam(name = "userRole", defaultValue = "USER") String userRole,
                         HttpServletRequest httpServletRequest) {
 
                 PaginatedResponse<MovieResponse> data = movieService.getMovies(keyword, page - 1, size, sortBy,

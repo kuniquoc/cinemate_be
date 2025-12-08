@@ -5,7 +5,6 @@
 #   Start all services:     docker compose -f docker-compose.dev.yml up -d
 #   Build and start:        docker compose -f docker-compose.dev.yml up -d --build
 #   Build specific service: docker compose -f docker-compose.dev.yml build <service-name>
-#   Start with payment:     docker compose -f docker-compose.dev.yml --profile payment up -d
 #   View logs:              docker compose -f docker-compose.dev.yml logs -f <service-name>
 #   Stop all:               docker compose -f docker-compose.dev.yml down
 #   Stop and remove volumes: docker compose -f docker-compose.dev.yml down -v
