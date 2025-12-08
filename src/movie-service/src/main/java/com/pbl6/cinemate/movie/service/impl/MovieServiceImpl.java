@@ -10,6 +10,7 @@ import com.pbl6.cinemate.movie.event.MovieCreatedEvent;
 import com.pbl6.cinemate.movie.repository.*;
 import com.pbl6.cinemate.movie.service.MinioStorageService;
 import com.pbl6.cinemate.movie.service.MovieService;
+import com.pbl6.cinemate.movie.service.WatchHistoryService;
 import com.pbl6.cinemate.movie.util.MovieUtils;
 import com.pbl6.cinemate.shared.dto.general.PaginatedResponse;
 import com.pbl6.cinemate.shared.exception.BadRequestException;
@@ -18,6 +19,7 @@ import com.pbl6.cinemate.shared.exception.NotFoundException;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -42,6 +44,7 @@ public class MovieServiceImpl implements MovieService {
     private final ActorRepository actorRepository;
     private final DirectorRepository directorRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final WatchHistoryService watchHistoryService;
 
     @Value("${minio.movie-bucket:}")
     private String movieBucket;
@@ -50,7 +53,7 @@ public class MovieServiceImpl implements MovieService {
             CategoryRepository categoryRepository, MovieCategoryRepository movieCategoryRepository,
             MovieActorRepository movieActorRepository, MovieDirectorRepository movieDirectorRepository,
             ActorRepository actorRepository, DirectorRepository directorRepository,
-            ApplicationEventPublisher eventPublisher) {
+            ApplicationEventPublisher eventPublisher, @Lazy WatchHistoryService watchHistoryService) {
         this.minio = minio;
         this.repo = repo;
         this.categoryRepository = categoryRepository;
@@ -60,6 +63,7 @@ public class MovieServiceImpl implements MovieService {
         this.actorRepository = actorRepository;
         this.directorRepository = directorRepository;
         this.eventPublisher = eventPublisher;
+        this.watchHistoryService = watchHistoryService;
     }
 
     @Override
@@ -95,7 +99,7 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public MovieInfoResponse getMovieInfo(@NonNull UUID movieId) {
+    public MovieInfoResponse getMovieInfo(@NonNull UUID movieId, UUID customerId) {
         Movie movie = repo.findById(movieId)
                 .orElseThrow(() -> new NotFoundException("Movie not found with id: " + movieId));
 
@@ -132,7 +136,10 @@ public class MovieServiceImpl implements MovieService {
                         .build())
                 .toList();
 
-        return MovieUtils.mapToMovieInfoResponse(movie, actors, directors, categories);
+        // Get last watched position if customer is logged in
+        Long lastWatchedPosition = watchHistoryService.getLastWatchedPosition(movieId, customerId);
+
+        return MovieUtils.mapToMovieInfoResponse(movie, actors, directors, categories, lastWatchedPosition);
     }
 
     @Override

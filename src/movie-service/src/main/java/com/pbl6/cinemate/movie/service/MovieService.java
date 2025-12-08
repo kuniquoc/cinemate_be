@@ -17,7 +17,7 @@ public interface MovieService {
 
     MovieStatusResponse getMovieStatus(@NonNull UUID movieId);
 
-    MovieInfoResponse getMovieInfo(@NonNull UUID movieId);
+    MovieInfoResponse getMovieInfo(@NonNull UUID movieId, UUID customerId);
 
     List<MovieResponse> getAllMovies();
 
