@@ -26,4 +26,9 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
     Optional<Subscription> findActiveSubscriptionByUserId(@Param("userId") UUID userId);
 
     boolean existsByUserIdAndStatus(UUID userId, SubscriptionStatus status);
+
+    /**
+     * Count subscriptions by status
+     */
+    long countByStatus(SubscriptionStatus status);
 }

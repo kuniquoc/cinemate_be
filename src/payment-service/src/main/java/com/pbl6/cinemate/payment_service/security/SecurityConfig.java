@@ -25,7 +25,8 @@ public class SecurityConfig {
                         "/api/payments/vnpay-return",
                         "/api/payments/vnpay-ipn",
                         "/api/subscription-plans/**",
-                        "/actuator/health"
+                        "/actuator/health",
+                        "/api/internal/**"
         };
         // allow actuator health checks without auth
         // (Docker healthchecks call /actuator/health)
