@@ -12,9 +12,6 @@ import java.util.UUID;
 @AllArgsConstructor
 public class CreateSubscriptionRequest {
     
-    @NotNull(message = "User ID is required")
-    private UUID userId;
-    
     @NotNull(message = "Plan ID is required")
     private UUID planId;
     

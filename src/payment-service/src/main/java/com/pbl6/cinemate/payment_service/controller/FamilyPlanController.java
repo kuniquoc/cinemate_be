@@ -11,6 +11,8 @@ import com.pbl6.cinemate.payment_service.entity.FamilyMember;
 import com.pbl6.cinemate.payment_service.entity.ParentControl;
 import com.pbl6.cinemate.payment_service.service.FamilyPlanService;
 import com.pbl6.cinemate.shared.dto.general.ResponseData;
+import com.pbl6.cinemate.shared.security.CurrentUser;
+import com.pbl6.cinemate.shared.security.UserPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,12 +39,12 @@ public class FamilyPlanController {
     @PostMapping("/invitations")
     public ResponseEntity<ResponseData> createInvitation(
             @Valid @RequestBody CreateInvitationRequest request,
-            @RequestParam(name = "userId") UUID userId,
+            @CurrentUser UserPrincipal userPrincipal,
             HttpServletRequest httpRequest) {
         
         FamilyInvitation invitation = familyPlanService.createInvitation(
                 request.getSubscriptionId(),
-                userId,
+                userPrincipal.getId(),
                 request.getMode(),
                 request.getInviterName(),
                 request.getRecipientEmail(),
@@ -61,12 +63,12 @@ public class FamilyPlanController {
     @PostMapping("/invitations/accept")
     public ResponseEntity<ResponseData> acceptInvitation(
             @Valid @RequestBody AcceptInvitationRequest request,
-            @RequestParam(name = "userId") UUID userId,
+            @CurrentUser UserPrincipal userPrincipal,
             HttpServletRequest httpRequest) {
         
         FamilyMember member = familyPlanService.acceptInvitation(
                 request.getInvitationToken(),
-                userId
+                userPrincipal.getId()
         );
         
         FamilyMemberResponse response = modelMapper.map(member, FamilyMemberResponse.class);
@@ -116,10 +118,10 @@ public class FamilyPlanController {
     public ResponseEntity<ResponseData> removeMember(
             @PathVariable UUID subscriptionId,
             @PathVariable UUID memberUserId,
-            @RequestParam(name = "ownerId") UUID ownerId,
+            @CurrentUser UserPrincipal userPrincipal,
             HttpServletRequest httpRequest) {
         
-        familyPlanService.removeMember(subscriptionId, ownerId, memberUserId);
+        familyPlanService.removeMember(subscriptionId, userPrincipal.getId(), memberUserId);
         
         return ResponseEntity.ok(ResponseData.success(
                 "Member removed successfully",
@@ -130,10 +132,10 @@ public class FamilyPlanController {
     @DeleteMapping("/invitations/{invitationId}")
     public ResponseEntity<ResponseData> cancelInvitation(
             @PathVariable UUID invitationId,
-            @RequestParam(name = "userId") UUID userId,
+            @CurrentUser UserPrincipal userPrincipal,
             HttpServletRequest httpRequest) {
         
-        familyPlanService.cancelInvitation(invitationId, userId);
+        familyPlanService.cancelInvitation(invitationId, userPrincipal.getId());
         
         return ResponseEntity.ok(ResponseData.success(
                 "Invitation cancelled successfully",
@@ -143,11 +145,11 @@ public class FamilyPlanController {
     
     @GetMapping("/parent-control")
     public ResponseEntity<ResponseData> getParentControl(
-            @RequestParam(name = "parentId") UUID parentId,
+            @CurrentUser UserPrincipal userPrincipal,
             @RequestParam(name = "kidId") UUID kidId,
             HttpServletRequest httpRequest) {
         
-        ParentControl control = familyPlanService.getParentControl(parentId, kidId);
+        ParentControl control = familyPlanService.getParentControl(userPrincipal.getId(), kidId);
         ParentControlResponse response = toParentControlResponse(control);
         
         return ResponseEntity.ok(ResponseData.success(
@@ -159,13 +161,13 @@ public class FamilyPlanController {
     
     @PutMapping("/parent-control")
     public ResponseEntity<ResponseData> updateParentControl(
-            @RequestParam(name = "parentId") UUID parentId,
+            @CurrentUser UserPrincipal userPrincipal,
             @RequestParam(name = "kidId") UUID kidId,
             @Valid @RequestBody UpdateParentControlRequest request,
             HttpServletRequest httpRequest) {
         
         ParentControl control = familyPlanService.updateParentControl(
-                parentId,
+                userPrincipal.getId(),
                 kidId,
                 request.getBlockedCategories(),
                 request.getWatchTimeLimitMinutes()
@@ -182,10 +184,10 @@ public class FamilyPlanController {
     
     @GetMapping("/parent-control/kids")
     public ResponseEntity<ResponseData> getKidsForParent(
-            @RequestParam(name = "parentId") UUID parentId,
+            @CurrentUser UserPrincipal userPrincipal,
             HttpServletRequest httpRequest) {
         
-        List<ParentControl> controls = familyPlanService.getKidsForParent(parentId);
+        List<ParentControl> controls = familyPlanService.getKidsForParent(userPrincipal.getId());
         List<ParentControlResponse> responses = controls.stream()
                 .map(this::toParentControlResponse)
                 .collect(Collectors.toList());
