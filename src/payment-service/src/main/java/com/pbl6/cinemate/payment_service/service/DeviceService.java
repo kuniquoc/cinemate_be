@@ -29,10 +29,10 @@ public class DeviceService {
     private static final int MAX_DEVICES = 4;
     
     @Transactional
-    public DeviceResponse registerDevice(RegisterDeviceRequest request) {
+    public DeviceResponse registerDevice(RegisterDeviceRequest request, UUID userId) {
         // Check if device already exists for this user
         Optional<Device> existingDevice = deviceRepository.findByUserIdAndDeviceId(
-                request.getUserId(), 
+                userId, 
                 request.getDeviceId()
         );
         
@@ -48,17 +48,17 @@ public class DeviceService {
             device.setIsActive(true);
             
             Device updatedDevice = deviceRepository.save(device);
-            log.info("Updated existing device: {} for user: {}", device.getId(), request.getUserId());
+            log.info("Updated existing device: {} for user: {}", device.getId(), userId);
             
             return modelMapper.map(updatedDevice, DeviceResponse.class);
         }
         
         // Check device limit
-        verifyDeviceLimit(request.getUserId());
+        verifyDeviceLimit(userId);
         
-        // Create new device
+        // Create new device with server-controlled userId
         Device device = new Device();
-        device.setUserId(request.getUserId());
+        device.setUserId(userId);
         device.setDeviceName(request.getDeviceName());
         device.setDeviceType(request.getDeviceType());
         device.setDeviceId(request.getDeviceId());
@@ -68,7 +68,7 @@ public class DeviceService {
         device.setIsActive(true);
         
         Device savedDevice = deviceRepository.save(device);
-        log.info("Registered new device: {} for user: {}", savedDevice.getId(), request.getUserId());
+        log.info("Registered new device: {} for user: {}", savedDevice.getId(), userId);
         
         return modelMapper.map(savedDevice, DeviceResponse.class);
     }
