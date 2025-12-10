@@ -32,23 +32,25 @@ import java.util.Objects;
 public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtUtils jwtUtils;
 
-
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
-                                    @NonNull HttpServletResponse response,
-                                    @NonNull FilterChain filterChain)
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain)
             throws ServletException, IOException {
 
         String token = parseJwt(request);
 
         try {
             if (StringUtils.hasText(token)) {
-                Claims claims = jwtUtils.verifyToken(token, false);       
+                Claims claims = jwtUtils.verifyToken(token, false);
                 String userId = claims.get("user_id", String.class);
                 String username = claims.get("username", String.class);
                 String role = claims.get("role", String.class);
                 List<String> permissions = claims.get("permissions", List.class);
-                UserDetails userDetails = UserPrincipal.createUserPrincipal(userId, username, null, role, permissions);
+                String firstName = claims.get("first_name", String.class);
+                String lastName = claims.get("last_name", String.class);
+                UserDetails userDetails = UserPrincipal.createUserPrincipal(userId, username, null, role, permissions,
+                        firstName, lastName);
 
                 var authentication = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
@@ -67,13 +69,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             log.error("Internal error for {} {}: {}", request.getMethod(), request.getRequestURL(), ex.getMessage());
             writeErrorResponse(request, response,
                     HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                    new ErrorResponse("INTERNAL",  "Internal server error"));
+                    new ErrorResponse("INTERNAL", "Internal server error"));
         }
     }
 
     private void writeErrorResponse(HttpServletRequest reques, HttpServletResponse response,
-                                    int status,
-                                    ErrorResponse error) throws IOException {
+            int status,
+            ErrorResponse error) throws IOException {
         response.setStatus(status);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");

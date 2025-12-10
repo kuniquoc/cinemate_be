@@ -17,33 +17,48 @@ public class UserPrincipal implements UserDetails {
     private UUID id;
     private String email;
     private String password;
+    @Getter
     private String role;
     private List<String> permissions;
     private Boolean enabled;
+    @Getter
+    private String firstName;
+    @Getter
+    private String lastName;
 
-    public static UserPrincipal createUserPrincipal(String userId, String username, 
-        String password, String role, List<String> permissions) {
+    public static UserPrincipal createUserPrincipal(String userId, String username,
+            String password, String role, List<String> permissions) {
+        return createUserPrincipal(userId, username, password, role, permissions, null, null);
+    }
+
+    public static UserPrincipal createUserPrincipal(String userId, String username,
+            String password, String role, List<String> permissions, String firstName, String lastName) {
         return UserPrincipal.builder()
                 .id(UUID.fromString(userId))
                 .email(username)
                 .password(password)
-                .role(role) // chỉ 1 role
+                .role(role)
                 .permissions(permissions)
                 .enabled(true)
+                .firstName(firstName)
+                .lastName(lastName)
                 .build();
     }
 
+    public String getFullName() {
+        if (firstName == null && lastName == null)
+            return null;
+        return ((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "")).trim();
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // Bắt buộc có role với prefix ROLE_
-        List<GrantedAuthority> authorities =
-                new ArrayList<>(List.of(new SimpleGrantedAuthority(role)));
+        List<GrantedAuthority> authorities = new ArrayList<>(List.of(new SimpleGrantedAuthority(role)));
 
         // Thêm tất cả permission của role (nếu có)
         if (permissions != null) {
-            permissions.forEach(permission ->
-                    authorities.add(new SimpleGrantedAuthority(permission)));
+            permissions.forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission)));
         }
 
         return authorities;
