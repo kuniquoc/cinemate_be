@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.UUID;
 
 public interface ReviewService {
-    ReviewResponse createReview(UUID movieId, UUID customerId, ReviewCreationRequest request);
+    ReviewResponse createReview(UUID movieId, UUID customerId, ReviewCreationRequest request, String userName,
+            String userAvatar);
 
     List<ReviewResponse> getAllReviews();
 

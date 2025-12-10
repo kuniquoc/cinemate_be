@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -38,8 +39,8 @@ public class CategoryController {
                 return ResponseEntity.ok(responseData);
         }
 
-        // TO DO: only admin can create, update, delete category
         @PostMapping
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<ResponseData> createCategory(
                         @Valid @RequestBody CategoryRequest categoryRequest, HttpServletRequest request) {
                 ResponseData responseData = ResponseData.success(categoryService.createCategory(categoryRequest),
@@ -51,6 +52,7 @@ public class CategoryController {
         }
 
         @PutMapping("/{id}")
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<ResponseData> updateCategory(
                         @PathVariable UUID id,
                         @Valid @RequestBody CategoryRequest categoryRequest, HttpServletRequest request) {
@@ -62,6 +64,7 @@ public class CategoryController {
         }
 
         @DeleteMapping("/{id}")
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<ResponseData> deleteCategory(@PathVariable UUID id, HttpServletRequest request) {
                 categoryService.deleteCategory(id);
                 ResponseData responseData = ResponseData.success(
@@ -72,6 +75,7 @@ public class CategoryController {
         }
 
         @PostMapping("/{categoryId}/movies/{movieId}")
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<ResponseData> addMovieToCategory(@PathVariable UUID categoryId,
                         @PathVariable UUID movieId,
                         HttpServletRequest request) {
@@ -84,6 +88,7 @@ public class CategoryController {
         }
 
         @DeleteMapping("/{categoryId}/movies/{movieId}")
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<ResponseData> removeMovieFromCategory(@PathVariable UUID categoryId,
                         @PathVariable UUID movieId,
                         HttpServletRequest request) {
