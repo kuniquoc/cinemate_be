@@ -9,6 +9,8 @@ import com.pbl6.cinemate.payment_service.service.SubscriptionService;
 import com.pbl6.cinemate.payment_service.service.VNPayService;
 import com.pbl6.cinemate.payment_service.util.VNPayUtil;
 import com.pbl6.cinemate.shared.dto.general.ResponseData;
+import com.pbl6.cinemate.shared.security.CurrentUser;
+import com.pbl6.cinemate.shared.security.UserPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,10 +36,15 @@ public class PaymentController {
     @PostMapping("/create-url")
     public ResponseEntity<ResponseData> createPaymentUrl(
             @Valid @RequestBody CreatePaymentRequest request,
+            @CurrentUser UserPrincipal userPrincipal,
             HttpServletRequest httpRequest) {
         
-        // Create payment record
-        Payment payment = paymentService.createPayment(request);
+        // Extract userId and userEmail from authenticated user
+        UUID userId = userPrincipal.getId();
+        String userEmail = userPrincipal.getUsername();
+        
+        // Create payment record with server-controlled userId and userEmail
+        Payment payment = paymentService.createPayment(request, userId, userEmail);
         
         // Get IP address
         String ipAddress = VNPayUtil.getIpAddress(
@@ -122,11 +129,11 @@ public class PaymentController {
         }
     }
     
-    @GetMapping("/history/{userId}")
+    @GetMapping("/history")
     public ResponseEntity<ResponseData> getPaymentHistory(
-            @PathVariable UUID userId,
+            @CurrentUser UserPrincipal userPrincipal,
             HttpServletRequest httpRequest) {
-        List<PaymentResponse> history = paymentService.getPaymentHistory(userId);
+        List<PaymentResponse> history = paymentService.getPaymentHistory(userPrincipal.getId());
         return ResponseEntity.ok(ResponseData.success(
                 history,
                 "Payment history retrieved successfully",

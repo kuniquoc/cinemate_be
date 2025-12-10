@@ -1,8 +1,6 @@
 package com.pbl6.cinemate.payment_service.dto.request;
 
 import com.pbl6.cinemate.payment_service.enums.PaymentMethod;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
@@ -16,13 +14,6 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreatePaymentRequest {
-    
-    @NotNull(message = "User ID is required")
-    private UUID userId;
-    
-    @NotBlank(message = "User email is required")
-    @Email(message = "Invalid email format")
-    private String userEmail;
     
     @NotNull(message = "Subscription ID is required")
     private UUID subscriptionId;

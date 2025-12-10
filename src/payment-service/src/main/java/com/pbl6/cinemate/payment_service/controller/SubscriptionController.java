@@ -2,8 +2,12 @@ package com.pbl6.cinemate.payment_service.controller;
 
 import com.pbl6.cinemate.payment_service.dto.request.CreateSubscriptionRequest;
 import com.pbl6.cinemate.payment_service.dto.response.SubscriptionResponse;
+import com.pbl6.cinemate.payment_service.dto.response.SubscriptionWithPaymentResponse;
 import com.pbl6.cinemate.payment_service.service.SubscriptionService;
+import com.pbl6.cinemate.payment_service.util.VNPayUtil;
 import com.pbl6.cinemate.shared.dto.general.ResponseData;
+import com.pbl6.cinemate.shared.security.CurrentUser;
+import com.pbl6.cinemate.shared.security.UserPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,20 +27,35 @@ public class SubscriptionController {
     @PostMapping
     public ResponseEntity<ResponseData> createSubscription(
             @Valid @RequestBody CreateSubscriptionRequest request,
+            @CurrentUser UserPrincipal userPrincipal,
             HttpServletRequest httpRequest) {
-        SubscriptionResponse subscription = subscriptionService.createSubscription(request);
+        
+        // Extract IP address from request
+        String ipAddress = VNPayUtil.getIpAddress(
+            httpRequest.getHeader("X-Forwarded-For"),
+            httpRequest.getRemoteAddr()
+        );
+        
+        // Get userId and email from authenticated user
+        UUID userId = userPrincipal.getId();
+        String userEmail = userPrincipal.getUsername(); // Returns email
+        
+        // Create subscription with auto-generated payment URL
+        SubscriptionWithPaymentResponse response = subscriptionService.createSubscriptionWithPayment(
+            request, userId, userEmail, ipAddress);
+        
         return ResponseEntity.ok(ResponseData.success(
-                subscription,
-                "Subscription created successfully",
+                response,
+                "Subscription and payment URL created successfully",
                 httpRequest.getRequestURI(),
                 httpRequest.getMethod()));
     }
     
-    @GetMapping("/current/{userId}")
+    @GetMapping("/current")
     public ResponseEntity<ResponseData> getCurrentSubscription(
-            @PathVariable UUID userId,
+            @CurrentUser UserPrincipal userPrincipal,
             HttpServletRequest httpRequest) {
-        SubscriptionResponse subscription = subscriptionService.getCurrentSubscription(userId);
+        SubscriptionResponse subscription = subscriptionService.getCurrentSubscription(userPrincipal.getId());
         return ResponseEntity.ok(ResponseData.success(
                 subscription,
                 "Current subscription retrieved successfully",
@@ -44,11 +63,11 @@ public class SubscriptionController {
                 httpRequest.getMethod()));
     }
     
-    @GetMapping("/history/{userId}")
+    @GetMapping("/history")
     public ResponseEntity<ResponseData> getSubscriptionHistory(
-            @PathVariable UUID userId,
+            @CurrentUser UserPrincipal userPrincipal,
             HttpServletRequest httpRequest) {
-        List<SubscriptionResponse> history = subscriptionService.getSubscriptionHistory(userId);
+        List<SubscriptionResponse> history = subscriptionService.getSubscriptionHistory(userPrincipal.getId());
         return ResponseEntity.ok(ResponseData.success(
                 history,
                 "Subscription history retrieved successfully",
@@ -59,9 +78,9 @@ public class SubscriptionController {
     @PutMapping("/{subscriptionId}/cancel")
     public ResponseEntity<ResponseData> cancelSubscription(
             @PathVariable UUID subscriptionId,
-            @RequestParam(name = "userId") UUID userId,
+            @CurrentUser UserPrincipal userPrincipal,
             HttpServletRequest httpRequest) {
-        SubscriptionResponse subscription = subscriptionService.cancelSubscription(subscriptionId, userId);
+        SubscriptionResponse subscription = subscriptionService.cancelSubscription(subscriptionId, userPrincipal.getId());
         return ResponseEntity.ok(ResponseData.success(
                 subscription,
                 "Subscription cancelled successfully",
@@ -71,10 +90,10 @@ public class SubscriptionController {
     
     @PostMapping("/renew")
     public ResponseEntity<ResponseData> renewSubscription(
-            @RequestParam(name = "userId") UUID userId,
+            @CurrentUser UserPrincipal userPrincipal,
             @RequestParam(name = "planId") UUID planId,
             HttpServletRequest httpRequest) {
-        SubscriptionResponse subscription = subscriptionService.renewSubscription(userId, planId);
+        SubscriptionResponse subscription = subscriptionService.renewSubscription(userPrincipal.getId(), planId);
         return ResponseEntity.ok(ResponseData.success(
                 subscription,
                 "Subscription renewed successfully",

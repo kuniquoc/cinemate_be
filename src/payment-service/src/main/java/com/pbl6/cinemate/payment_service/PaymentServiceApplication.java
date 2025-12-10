@@ -5,15 +5,23 @@ import java.util.TimeZone;
 import org.modelmapper.ModelMapper;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {
+		"com.pbl6.cinemate.payment_service",
+		"com.pbl6.cinemate.shared"
+})
 @EnableScheduling
 @ComponentScan(basePackages = {
 	"com.pbl6.cinemate.payment_service",
 	"com.pbl6.cinemate.shared"
+})
+@ConfigurationPropertiesScan(basePackages = {
+		"com.pbl6.cinemate.payment_service",
+		"com.pbl6.cinemate.shared"
 })
 public class PaymentServiceApplication {
 

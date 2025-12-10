@@ -30,15 +30,15 @@ public class PaymentService {
     private final ModelMapper modelMapper;
     
     @Transactional
-    public Payment createPayment(CreatePaymentRequest request) {
+    public Payment createPayment(CreatePaymentRequest request, UUID userId, String userEmail) {
         // Verify subscription exists
         Subscription subscription = subscriptionRepository.findById(request.getSubscriptionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Subscription", "id", request.getSubscriptionId()));
         
-        // Create payment entity
+        // Create payment entity with server-controlled userId and userEmail
         Payment payment = new Payment();
-        payment.setUserId(request.getUserId());
-        payment.setUserEmail(request.getUserEmail());
+        payment.setUserId(userId);
+        payment.setUserEmail(userEmail);
         payment.setSubscription(subscription);
         // Note: In production, use exact amount. For sandbox testing, you may need to vary amounts
         // to avoid VNPay's duplicate transaction detection
@@ -57,7 +57,7 @@ public class PaymentService {
         payment.setVnpOrderInfo(baseOrderInfo + " - " + vnpTxnRef);
         
         Payment savedPayment = paymentRepository.save(payment);
-        log.info("Created payment with ID: {} for user: {}", savedPayment.getId(), request.getUserId());
+        log.info("Created payment with ID: {} for user: {}", savedPayment.getId(), userId);
         
         return savedPayment;
     }

@@ -8,15 +8,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ContentAccessRequest {
-    
-    @NotNull(message = "User ID is required")
-    private UUID userId;
     
     @NotEmpty(message = "Movie categories are required")
     private List<String> movieCategories;

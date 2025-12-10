@@ -1,12 +1,17 @@
 package com.pbl6.cinemate.payment_service.service;
 
+import com.pbl6.cinemate.payment_service.dto.request.CreatePaymentRequest;
 import com.pbl6.cinemate.payment_service.dto.request.CreateSubscriptionRequest;
+import com.pbl6.cinemate.payment_service.dto.response.PaymentUrlResponse;
+import com.pbl6.cinemate.payment_service.dto.response.SubscriptionPlanResponse;
 import com.pbl6.cinemate.payment_service.dto.response.SubscriptionResponse;
+import com.pbl6.cinemate.payment_service.dto.response.SubscriptionWithPaymentResponse;
 import com.pbl6.cinemate.payment_service.email.PaymentEmailService;
 import com.pbl6.cinemate.payment_service.entity.FamilyMember;
 import com.pbl6.cinemate.payment_service.entity.Payment;
 import com.pbl6.cinemate.payment_service.entity.Subscription;
 import com.pbl6.cinemate.payment_service.entity.SubscriptionPlan;
+import com.pbl6.cinemate.payment_service.enums.PaymentMethod;
 import com.pbl6.cinemate.payment_service.enums.SubscriptionStatus;
 import com.pbl6.cinemate.payment_service.exception.ResourceNotFoundException;
 import com.pbl6.cinemate.payment_service.exception.SubscriptionException;
@@ -19,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,14 +37,16 @@ public class SubscriptionService {
     
     private final SubscriptionRepository subscriptionRepository;
     private final SubscriptionPlanService planService;
+    private final PaymentService paymentService;
+    private final VNPayService vnPayService;
     private final ModelMapper modelMapper;
     private final FamilyMemberRepository familyMemberRepository;
     private final PaymentEmailService paymentEmailService;
     
     @Transactional
-    public SubscriptionResponse createSubscription(CreateSubscriptionRequest request) {
+    public SubscriptionResponse createSubscription(CreateSubscriptionRequest request, UUID userId) {
         // Check if user already has an active subscription
-        Optional<Subscription> existingSubscription = subscriptionRepository.findActiveSubscriptionByUserId(request.getUserId());
+        Optional<Subscription> existingSubscription = subscriptionRepository.findActiveSubscriptionByUserId(userId);
         if (existingSubscription.isPresent()) {
             throw new SubscriptionException("User already has an active subscription");
         }
@@ -46,17 +54,84 @@ public class SubscriptionService {
         // Get subscription plan
         SubscriptionPlan plan = planService.getPlanEntityById(request.getPlanId());
         
-        // Create subscription
+        // Create subscription with server-controlled userId
         Subscription subscription = new Subscription();
-        subscription.setUserId(request.getUserId());
+        subscription.setUserId(userId);
         subscription.setPlan(plan);
         subscription.setStatus(SubscriptionStatus.PENDING);
         subscription.setAutoRenew(request.getAutoRenew());
         
         Subscription savedSubscription = subscriptionRepository.save(subscription);
-        log.info("Created subscription with ID: {} for user: {}", savedSubscription.getId(), request.getUserId());
+        log.info("Created subscription with ID: {} for user: {}", savedSubscription.getId(), userId);
         
         return mapToResponse(savedSubscription);
+    }
+    
+    /**
+     * Create subscription and automatically generate payment URL
+     * This is the recommended method as it ensures amount and email are server-side controlled
+     */
+    @Transactional
+    public SubscriptionWithPaymentResponse createSubscriptionWithPayment(
+            CreateSubscriptionRequest request,
+            UUID userId,
+            String userEmail,
+            String ipAddress) {
+        
+        // Check if user already has an active subscription
+        Optional<Subscription> existingSubscription = 
+            subscriptionRepository.findActiveSubscriptionByUserId(userId);
+        if (existingSubscription.isPresent()) {
+            throw new SubscriptionException("User already has an active subscription");
+        }
+        
+        // Get subscription plan
+        SubscriptionPlan plan = planService.getPlanEntityById(request.getPlanId());
+        
+        // Create subscription with server-controlled userId
+        Subscription subscription = new Subscription();
+        subscription.setUserId(userId);
+        subscription.setPlan(plan);
+        subscription.setStatus(SubscriptionStatus.PENDING);
+        subscription.setAutoRenew(request.getAutoRenew());
+        Subscription savedSubscription = subscriptionRepository.save(subscription);
+        
+        log.info("Created subscription with ID: {} for user: {}", 
+            savedSubscription.getId(), userId);
+        
+        // Create payment request internally (server-side controlled)
+        CreatePaymentRequest paymentRequest = new CreatePaymentRequest();
+        paymentRequest.setSubscriptionId(savedSubscription.getId());
+        paymentRequest.setAmount(plan.getPrice());  // Amount from server-side plan
+        paymentRequest.setPaymentMethod(PaymentMethod.VNPAY);
+        paymentRequest.setOrderInfo(plan.getName() + " plan for " + 
+            LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMMM yyyy")));
+        
+        // Create payment entity with server-controlled userId and userEmail
+        Payment payment = paymentService.createPayment(paymentRequest, userId, userEmail);
+        log.info("Created payment with ID: {} for subscription: {}", 
+            payment.getId(), savedSubscription.getId());
+        
+        // Generate VNPay payment URL
+        PaymentUrlResponse paymentUrl = vnPayService.createPaymentUrl(payment, ipAddress);
+        
+        // Map plan to response
+        SubscriptionPlanResponse planResponse = modelMapper.map(plan, SubscriptionPlanResponse.class);
+        
+        // Build combined response
+        return SubscriptionWithPaymentResponse.builder()
+            .subscriptionId(savedSubscription.getId())
+            .userId(savedSubscription.getUserId())
+            .plan(planResponse)
+            .status(savedSubscription.getStatus())
+            .autoRenew(savedSubscription.getAutoRenew())
+            .createdAt(savedSubscription.getCreatedAt())
+            .paymentId(payment.getId())
+            .paymentUrl(paymentUrl.getPaymentUrl())
+            .vnpTxnRef(paymentUrl.getVnpTxnRef())
+            .amount(plan.getPrice())
+            .message("Subscription created successfully. Please complete payment to activate.")
+            .build();
     }
     
     @Transactional
@@ -126,11 +201,10 @@ public class SubscriptionService {
         
         // Create new subscription
         CreateSubscriptionRequest request = new CreateSubscriptionRequest();
-        request.setUserId(userId);
         request.setPlanId(planId);
         request.setAutoRenew(true);
         
-        return createSubscription(request);
+        return createSubscription(request, userId);
     }
     
     @Transactional(readOnly = true)
