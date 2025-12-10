@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.pbl6.cinemate.movie.dto.request.DirectorCreationRequest;
@@ -29,8 +30,9 @@ public class DirectorController {
         this.directorService = directorService;
     }
 
-    @Operation(summary = "Create director", description = "Create a new director with the provided information")
+    @Operation(summary = "Create director", description = "Create a new director with the provided information (Admin only)")
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseData> createDirector(
             @Valid @RequestBody DirectorCreationRequest request,
             HttpServletRequest httpServletRequest) {
@@ -72,8 +74,9 @@ public class DirectorController {
                 httpServletRequest.getMethod()));
     }
 
-    @Operation(summary = "Update director", description = "Update an existing director's information")
+    @Operation(summary = "Update director", description = "Update an existing director's information (Admin only)")
     @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseData> updateDirector(
             @Parameter(description = "Director ID") @PathVariable UUID id,
             @Valid @RequestBody DirectorUpdateRequest request,
@@ -88,8 +91,9 @@ public class DirectorController {
                 httpServletRequest.getMethod()));
     }
 
-    @Operation(summary = "Delete director", description = "Delete a director by their ID")
+    @Operation(summary = "Delete director", description = "Delete a director by their ID (Admin only)")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseData> deleteDirector(
             @Parameter(description = "Director ID") @PathVariable UUID id,
             HttpServletRequest httpServletRequest) {

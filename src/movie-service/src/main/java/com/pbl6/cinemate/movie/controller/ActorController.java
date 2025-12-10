@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.pbl6.cinemate.movie.dto.request.ActorCreationRequest;
@@ -29,8 +30,9 @@ public class ActorController {
         this.actorService = actorService;
     }
 
-    @Operation(summary = "Create actor", description = "Create a new actor with the provided information")
+    @Operation(summary = "Create actor", description = "Create a new actor with the provided information (Admin only)")
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseData> createActor(
             @Valid @RequestBody ActorCreationRequest request,
             HttpServletRequest httpServletRequest) {
@@ -72,8 +74,9 @@ public class ActorController {
                 httpServletRequest.getMethod()));
     }
 
-    @Operation(summary = "Update actor", description = "Update an existing actor's information")
+    @Operation(summary = "Update actor", description = "Update an existing actor's information (Admin only)")
     @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseData> updateActor(
             @Parameter(description = "Actor ID") @PathVariable UUID id,
             @Valid @RequestBody ActorUpdateRequest request,
@@ -88,8 +91,9 @@ public class ActorController {
                 httpServletRequest.getMethod()));
     }
 
-    @Operation(summary = "Delete actor", description = "Delete an actor by their ID")
+    @Operation(summary = "Delete actor", description = "Delete an actor by their ID (Admin only)")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseData> deleteActor(
             @Parameter(description = "Actor ID") @PathVariable UUID id,
             HttpServletRequest httpServletRequest) {

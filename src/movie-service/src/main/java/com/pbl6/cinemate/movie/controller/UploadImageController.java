@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -21,11 +22,12 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/upload-image")
 @RequiredArgsConstructor
 @Tag(name = "Image Upload", description = "Upload poster or thumbnail images to MinIO storage")
+@PreAuthorize("hasRole('ADMIN')")
 public class UploadImageController {
 
     private final ImageUploadService imageUploadService;
 
-    @Operation(summary = "Upload image", description = "Upload an image file and receive its publicly accessible URL")
+    @Operation(summary = "Upload image", description = "Upload an image file and receive its publicly accessible URL (Admin only)")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseData> uploadImage(
             @Parameter(description = "Image file to upload") @RequestPart("file") MultipartFile file,
