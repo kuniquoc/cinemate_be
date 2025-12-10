@@ -120,6 +120,12 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
+        <!-- Shared Kernel -->
+        <dependency>
+            <groupId>com.pbl6.cinemate</groupId>
+            <artifactId>shared-kernel</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
