@@ -23,19 +23,27 @@ import java.util.UUID;
 public class JwtUtils {
     private final AppProperties appProperties;
 
-    public String generateToken(String userId, String username, String role, List<String> permissions, 
-                                    boolean isRefreshToken) {
+    public String generateToken(String userId, String username, String role, List<String> permissions,
+            boolean isRefreshToken) {
+        return generateToken(userId, username, role, permissions, isRefreshToken, null, null);
+    }
+
+    public String generateToken(String userId, String username, String role, List<String> permissions,
+            boolean isRefreshToken, String firstName, String lastName) {
         return Jwts.builder().setSubject(UUID.randomUUID().toString())
                 .claim("user_id", userId)
                 .claim("username", username)
                 .claim("role", role)
                 .claim("permissions", permissions)
+                .claim("first_name", firstName)
+                .claim("last_name", lastName)
                 .setIssuedAt(new Date())
                 .setExpiration(isRefreshToken
                         ? new Date(new Date().getTime() + appProperties.getAuth().getRefreshTokenExpirationMsec())
                         : new Date(new Date().getTime() + appProperties.getAuth().getAccessTokenExpirationMsec()))
                 .signWith(isRefreshToken ? getRefreshTokenSecretKey() : getAccessTokenSecretKey(),
-                        SignatureAlgorithm.HS512).compact();
+                        SignatureAlgorithm.HS512)
+                .compact();
     }
 
     public String generateToken(UserPrincipal userPrincipal, boolean isRefreshToken) {
@@ -49,12 +57,15 @@ public class JwtUtils {
                 .claim("permissions", userPrincipal.getAuthorities().stream()
                         .skip(1)
                         .map(role -> role.getAuthority()).toList())
+                .claim("first_name", userPrincipal.getFirstName())
+                .claim("last_name", userPrincipal.getLastName())
                 .setIssuedAt(new Date())
                 .setExpiration(isRefreshToken
                         ? new Date(new Date().getTime() + appProperties.getAuth().getRefreshTokenExpirationMsec())
                         : new Date(new Date().getTime() + appProperties.getAuth().getAccessTokenExpirationMsec()))
                 .signWith(isRefreshToken ? getRefreshTokenSecretKey() : getAccessTokenSecretKey(),
-                        SignatureAlgorithm.HS512).compact();
+                        SignatureAlgorithm.HS512)
+                .compact();
     }
 
     public String refreshToken(Claims claims) {
@@ -63,10 +74,13 @@ public class JwtUtils {
                 .claim("username", claims.get("username", String.class))
                 .claim("role", claims.get("role", String.class))
                 .claim("permissions", claims.get("permissions", List.class))
+                .claim("first_name", claims.get("first_name", String.class))
+                .claim("last_name", claims.get("last_name", String.class))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(new Date().getTime() + appProperties.getAuth().getAccessTokenExpirationMsec()))
                 .signWith(getAccessTokenSecretKey(),
-                        SignatureAlgorithm.HS512).compact();
+                        SignatureAlgorithm.HS512)
+                .compact();
     }
 
     private Key getAccessTokenSecretKey() {
@@ -76,7 +90,6 @@ public class JwtUtils {
     private Key getRefreshTokenSecretKey() {
         return Keys.hmacShaKeyFor(Base64.getDecoder().decode(appProperties.getAuth().getRefreshTokenSecret()));
     }
-
 
     public Claims verifyToken(String token, boolean isRefreshToken) {
         try {
