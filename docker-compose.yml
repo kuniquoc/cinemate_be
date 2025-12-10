@@ -378,51 +378,44 @@ services:
           memory: 256M
 
   # ==========================================
-  # INFRASTRUCTURE - KAFKA
+  # INFRASTRUCTURE - KAFKA (KRaft Mode)
   # ==========================================
-  cinemate-zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.0
-    container_name: cinemate-zookeeper
-    hostname: cinemate-zookeeper
-    <<: *common
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    volumes:
-      - cinemate-zookeeper-data:/var/lib/zookeeper/data
-    healthcheck:
-      <<: *healthcheck-defaults
-      test: [ "CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok" ]
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-        reservations:
-          memory: 256M
-
   cinemate-broker:
-    image: confluentinc/cp-kafka:7.5.0
+    image: confluentinc/cp-kafka:8.1.1
     container_name: cinemate-broker
+    hostname: cinemate-broker
     <<: *common
-    depends_on:
-      cinemate-zookeeper:
-        condition: service_healthy
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: cinemate-zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://cinemate-broker:29092
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      # KRaft Mode Configuration
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@cinemate-broker:29093'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+      # Listener Configuration
+      KAFKA_LISTENERS: 'PLAINTEXT://cinemate-broker:29092,CONTROLLER://cinemate-broker:29093'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://cinemate-broker:29092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      # Storage Configuration
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data'
+      # Single-Broker Settings
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      # Topic Settings
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
       KAFKA_LOG_RETENTION_HOURS: 168
       KAFKA_LOG_RETENTION_BYTES: 1073741824
     volumes:
       - cinemate-kafka-data:/var/lib/kafka/data
     healthcheck:
-      <<: *healthcheck-defaults
       test: [ "CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:29092" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     deploy:
       resources:
         limits:
@@ -440,7 +433,6 @@ volumes:
   interaction-postgres-data:
   payment-postgres-data:
   cinemate-redis-data:
-  cinemate-zookeeper-data:
   cinemate-kafka-data:
   minio-data:
   streaming-seeder-cache:
