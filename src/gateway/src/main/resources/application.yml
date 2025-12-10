@@ -20,6 +20,24 @@ spring:
                 uri: http://localhost:8081
                 predicates:
                   - Path=/api/upload/**
+              
+              # Movie Category Routes
+              - id: category-service
+                uri: http://localhost:8081
+                predicates:
+                  - Path=/api/categories/**
+              
+              # Actor Routes  
+              - id: actor-service
+                uri: http://localhost:8081
+                predicates:
+                  - Path=/api/actors/**
+              
+              # Director Routes
+              - id: director-service
+                uri: http://localhost:8081
+                predicates:
+                  - Path=/api/directors/**
 
               # Auth Service Routes  
               - id: auth-service
@@ -32,6 +50,18 @@ spring:
                 uri: http://localhost:8083
                 predicates:
                   - Path=/api/customers/**
+              
+              # Payment Service Routes
+              - id: payment-service
+                uri: http://localhost:8084
+                predicates:
+                  - Path=/api/payments/**, /api/subscriptions/**
+              
+              # Interaction Recommender Service Routes
+              - id: interaction-recommender-service
+                uri: http://localhost:8085
+                predicates:
+                  - Path=/api/events/**, /api/recommendations/**
 
             # Global CORS configuration
             globalcors:
@@ -52,6 +82,36 @@ spring:
                   allowCredentials: true
                   maxAge: 3600
 
+# JWT Configuration for gateway validation
+# Only validates signature + expiry, full auth is done by backend services
+jwt:
+  secret: ${JWT_SECRET:your-super-secure-256-bit-secret-key-here-for-hs256-algorithm-minimum-32-chars}
+  whitelist-paths:
+    # Auth endpoints (login, register, etc.)
+    - /api/auth/**
+    # Public movie listing/search
+    - /api/movies
+    - /api/movies/all
+    - /api/movies/top-ten
+    - /api/movies/{id}
+    - /api/movies/{id}/status
+    - /api/movies/{id}/process-status
+    # Public category listing
+    - /api/categories
+    - /api/categories/**
+    # Public actor listing
+    - /api/actors
+    - /api/actors/**
+    # Public director listing
+    - /api/directors
+    - /api/directors/**
+    # Movie reviews (read-only public)
+    - /api/movies/*/reviews
+    - /api/movies/*/reviews/average-rating
+    - /api/movies/*/reviews/count
+    # Actuator endpoints
+    - /actuator/**
+
 # Management endpoints for health checks
 management:
   endpoints:
@@ -66,5 +126,6 @@ management:
 logging:
   level:
     '[org.springframework.cloud.gateway]': DEBUG
+    '[com.pbl6.cinemate.gateway]': DEBUG
     '[reactor.netty]': INFO
     '[root]': INFO

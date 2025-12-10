@@ -39,6 +39,22 @@ spring:
               filters:
                 - RewritePath=/api/v1/(?<segment>.*), /api/$\{segment}
 
+            # Payment Service Routes (Production)
+            - id: payment-service-prod
+              uri: ${PAYMENT_SERVICE_URL:http://payment-service:8080}
+              predicates:
+                - Path=/api/v1/payments/**,/api/v1/subscriptions/**
+              filters:
+                - RewritePath=/api/v1/(?<segment>.*), /api/$\{segment}
+
+            # Interaction Recommender Routes (Production)
+            - id: interaction-recommender-prod
+              uri: ${INTERACTION_RECOMMENDER_URL:http://interaction-recommender:8080}
+              predicates:
+                - Path=/api/v1/events/**,/api/v1/recommendations/**
+              filters:
+                - RewritePath=/api/v1/(?<segment>.*), /api/$\{segment}
+
             # Streaming Signaling Routes (WebSocket)
             - id: streaming-signaling-prod
               uri: ${STREAMING_SIGNALING_URL:ws://streaming-signaling:8080}
@@ -78,6 +94,35 @@ spring:
                 allowCredentials: true
                 maxAge: 3600
 
+# JWT Configuration for gateway validation (Production)
+jwt:
+  secret: ${JWT_SECRET}
+  whitelist-paths:
+    # Auth endpoints
+    - /api/v1/auth/**
+    # Public movie endpoints
+    - /api/v1/movies
+    - /api/v1/movies/all
+    - /api/v1/movies/top-ten
+    - /api/v1/movies/{id}
+    - /api/v1/movies/{id}/status
+    - /api/v1/movies/{id}/process-status
+    # Public category listing
+    - /api/v1/categories
+    - /api/v1/categories/**
+    # Public actor listing
+    - /api/v1/actors
+    - /api/v1/actors/**
+    # Public director listing
+    - /api/v1/directors
+    - /api/v1/directors/**
+    # Movie reviews (read-only public)
+    - /api/v1/movies/*/reviews
+    - /api/v1/movies/*/reviews/average-rating
+    - /api/v1/movies/*/reviews/count
+    # Actuator endpoints (restricted)
+    - /actuator/health
+    - /actuator/info
 
 # Management endpoints for production
 management:
@@ -93,6 +138,7 @@ management:
 logging:
   level:
     '[org.springframework.cloud.gateway]': INFO
+    '[com.pbl6.cinemate.gateway]': INFO
     '[reactor.netty]': WARN
     '[root]': INFO
   pattern:
