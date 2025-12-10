@@ -7,6 +7,7 @@ import com.pbl6.microservices.customer_service.event.kafka.UserRegisteredEvent;
 import com.pbl6.microservices.customer_service.exception.NotFoundException;
 import com.pbl6.microservices.customer_service.mapper.CustomerMapper;
 import com.pbl6.microservices.customer_service.payload.request.UpdateProfileRequest;
+import com.pbl6.microservices.customer_service.payload.response.CustomerInfoResponse;
 import com.pbl6.microservices.customer_service.payload.response.CustomerResponse;
 import com.pbl6.microservices.customer_service.repository.CustomerRepository;
 import com.pbl6.microservices.customer_service.service.CustomerService;
@@ -34,13 +35,18 @@ public class CustomerServiceImpl implements CustomerService {
         Customer customer = customerRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.USER_NOT_FOUND));
 
-        if (request.getFirstName() != null) customer.setFirstName(request.getFirstName());
-        if (request.getLastName() != null) customer.setLastName(request.getLastName());
-        if (request.getAvatarUrl() != null) customer.setAvatarUrl(request.getAvatarUrl());
-        if (request.getDateOfBirth() != null) customer.setDateOfBirth(request.getDateOfBirth());
-        if (request.getGender() != null) customer.setGender(Gender.valueOf(request.getGender()));
-        if (request.getDisplayLang() != null) customer.setDisplayLang(request.getDisplayLang());
-
+        if (request.getFirstName() != null)
+            customer.setFirstName(request.getFirstName());
+        if (request.getLastName() != null)
+            customer.setLastName(request.getLastName());
+        if (request.getAvatarUrl() != null)
+            customer.setAvatarUrl(request.getAvatarUrl());
+        if (request.getDateOfBirth() != null)
+            customer.setDateOfBirth(request.getDateOfBirth());
+        if (request.getGender() != null)
+            customer.setGender(Gender.valueOf(request.getGender()));
+        if (request.getDisplayLang() != null)
+            customer.setDisplayLang(request.getDisplayLang());
 
         return CustomerMapper.toResponse(customerRepository.save(customer));
     }
@@ -52,7 +58,18 @@ public class CustomerServiceImpl implements CustomerService {
 
         customer.setFirstName(userRegisteredEvent.getFirstName());
         customer.setLastName(userRegisteredEvent.getLastName());
-        
+
         customerRepository.save(customer);
+    }
+
+    @Override
+    public CustomerInfoResponse getCustomerInfo(UUID accountId) {
+        Customer customer = customerRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.USER_NOT_FOUND));
+        return CustomerInfoResponse.builder()
+                .firstName(customer.getFirstName())
+                .lastName(customer.getLastName())
+                .avatarUrl(customer.getAvatarUrl())
+                .build();
     }
 }
