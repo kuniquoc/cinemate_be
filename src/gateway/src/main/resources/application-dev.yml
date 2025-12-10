@@ -14,32 +14,54 @@ spring:
                 uri: http://localhost:8081
                 predicates:
                   - Path=/api/movies/**
-                filters:
-                  - StripPrefix=1
                   
               # Movie File Upload Routes (Development)
               - id: movie-upload-dev
                 uri: http://localhost:8081
                 predicates:
                   - Path=/api/upload/**
-                filters:
-                  - StripPrefix=1
+              
+              # Movie Category Routes (Development)
+              - id: category-service-dev
+                uri: http://localhost:8081
+                predicates:
+                  - Path=/api/categories/**
+              
+              # Actor Routes (Development)
+              - id: actor-service-dev
+                uri: http://localhost:8081
+                predicates:
+                  - Path=/api/actors/**
+              
+              # Director Routes (Development)
+              - id: director-service-dev
+                uri: http://localhost:8081
+                predicates:
+                  - Path=/api/directors/**
 
               # Auth Service Routes (Development)
               - id: auth-service-dev
                 uri: http://localhost:8082
                 predicates:
                   - Path=/api/auth/**
-                filters:
-                  - StripPrefix=1
 
               # Customer Service Routes (Development)
               - id: customer-service-dev
                 uri: http://localhost:8083
                 predicates:
                   - Path=/api/customers/**
-                filters:
-                  - StripPrefix=1
+              
+              # Payment Service Routes (Development)
+              - id: payment-service-dev
+                uri: http://localhost:8084
+                predicates:
+                  - Path=/api/payments/**, /api/subscriptions/**
+              
+              # Interaction Recommender Service Routes (Development)
+              - id: interaction-recommender-service-dev
+                uri: http://localhost:8085
+                predicates:
+                  - Path=/api/events/**, /api/recommendations/**
 
             # Global CORS configuration for development
             globalcors:
@@ -63,6 +85,36 @@ spring:
                   allowCredentials: true
                   maxAge: 3600
 
+# JWT Configuration for gateway validation (Development)
+# Uses same secret as auth-service
+jwt:
+  secret: ${JWT_SECRET:your-super-secure-256-bit-secret-key-here-for-hs256-algorithm-minimum-32-chars}
+  whitelist-paths:
+    # Auth endpoints (login, register, etc.)
+    - /api/auth/**
+    # Public movie listing/search
+    - /api/movies
+    - /api/movies/all
+    - /api/movies/top-ten
+    - /api/movies/{id}
+    - /api/movies/{id}/status
+    - /api/movies/{id}/process-status
+    # Public category listing
+    - /api/categories
+    - /api/categories/**
+    # Public actor listing
+    - /api/actors
+    - /api/actors/**
+    # Public director listing
+    - /api/directors
+    - /api/directors/**
+    # Movie reviews (read-only public)
+    - /api/movies/*/reviews
+    - /api/movies/*/reviews/average-rating
+    - /api/movies/*/reviews/count
+    # Actuator endpoints
+    - /actuator/**
+
 # Management endpoints
 management:
   endpoints:
@@ -78,6 +130,7 @@ logging:
   level:
     '[org.springframework.cloud.gateway]': DEBUG
     '[org.springframework.web]': DEBUG
+    '[com.pbl6.cinemate.gateway]': DEBUG
     '[reactor.netty]': INFO
     root: INFO
   pattern:
