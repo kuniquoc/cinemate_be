@@ -16,6 +16,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/movies/chunk-upload")
 @RequiredArgsConstructor
 @Tag(name = "Chunk Upload", description = "Chunked file upload for large video files")
+@PreAuthorize("hasRole('ADMIN')")
 public class ChunkUploadController {
 
         private final ChunkUploadService chunkUploadService;

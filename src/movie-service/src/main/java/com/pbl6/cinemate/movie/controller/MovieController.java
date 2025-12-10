@@ -1,5 +1,6 @@
 package com.pbl6.cinemate.movie.controller;
 
+import com.pbl6.cinemate.movie.client.CustomerClient;
 import com.pbl6.cinemate.movie.dto.request.*;
 import com.pbl6.cinemate.movie.dto.response.*;
 import com.pbl6.cinemate.movie.service.MovieActorService;
@@ -17,8 +18,10 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,18 +31,22 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/movies")
 @Tag(name = "Movie Management", description = "Movie management including upload, information retrieval, actors, directors and reviews")
+@Slf4j
 public class MovieController {
         private final MovieService movieService;
         private final MovieActorService movieActorService;
         private final MovieDirectorService movieDirectorService;
         private final ReviewService reviewService;
+        private final CustomerClient customerClient;
 
         public MovieController(MovieService movieService, MovieActorService movieActorService,
-                        MovieDirectorService movieDirectorService, ReviewServiceImpl reviewService) {
+                        MovieDirectorService movieDirectorService, ReviewServiceImpl reviewService,
+                        CustomerClient customerClient) {
                 this.movieService = movieService;
                 this.movieActorService = movieActorService;
                 this.movieDirectorService = movieDirectorService;
                 this.reviewService = reviewService;
+                this.customerClient = customerClient;
         }
 
         @Operation(summary = "Get movie status", description = "Get the processing status and available qualities of a movie")
@@ -102,9 +109,9 @@ public class MovieController {
         }
 
         // Movie-Actor nested endpoints
-        // TODO: secure these endpoints to admin only
-        @Operation(summary = "Add actors to movie", description = "Add a list of actors to a specific movie")
+        @Operation(summary = "Add actors to movie", description = "Add a list of actors to a specific movie (Admin only)")
         @PostMapping("/{movieId}/actors")
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<ResponseData> addActorsToMovie(
                         @Parameter(description = "Movie ID") @PathVariable UUID movieId,
                         @Valid @RequestBody MovieActorRequest request,
@@ -134,9 +141,9 @@ public class MovieController {
                                 httpServletRequest.getMethod()));
         }
 
-        // TODO: admin only
-        @Operation(summary = "Update movie actors", description = "Replace all actors for a specific movie with the provided list")
+        @Operation(summary = "Update movie actors", description = "Replace all actors for a specific movie with the provided list (Admin only)")
         @PutMapping("/{movieId}/actors")
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<ResponseData> updateMovieActors(
                         @Parameter(description = "Movie ID") @PathVariable UUID movieId,
                         @Valid @RequestBody MovieActorRequest request,
@@ -152,9 +159,9 @@ public class MovieController {
         }
 
         // Movie-Director nested endpoints
-        // TODO: secure these endpoints to admin only
-        @Operation(summary = "Add directors to movie", description = "Add a list of directors to a specific movie")
+        @Operation(summary = "Add directors to movie", description = "Add a list of directors to a specific movie (Admin only)")
         @PostMapping("/{movieId}/directors")
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<ResponseData> addDirectorsToMovie(
                         @Parameter(description = "Movie ID") @PathVariable UUID movieId,
                         @Valid @RequestBody MovieDirectorRequest request,
@@ -184,9 +191,9 @@ public class MovieController {
                                 httpServletRequest.getMethod()));
         }
 
-        // TODO: admin only
-        @Operation(summary = "Update movie directors", description = "Replace all directors for a specific movie with the provided list")
+        @Operation(summary = "Update movie directors", description = "Replace all directors for a specific movie with the provided list (Admin only)")
         @PutMapping("/{movieId}/directors")
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<ResponseData> updateMovieDirectors(
                         @Parameter(description = "Movie ID") @PathVariable UUID movieId,
                         @Valid @RequestBody MovieDirectorRequest request,
@@ -202,15 +209,38 @@ public class MovieController {
         }
 
         // Movie-Review nested endpoints
-        // TODO: get customer id from JWT token instead of payload
-        @Operation(summary = "Create review for movie", description = "Create a new review for a specific movie by a customer")
+        @Operation(summary = "Create review for movie", description = "Create a new review for a specific movie by authenticated user")
         @PostMapping("/{movieId}/reviews")
+        @PreAuthorize("isAuthenticated()")
         public ResponseEntity<ResponseData> createReviewForMovie(
                         @Parameter(description = "Movie ID") @PathVariable UUID movieId,
+                        @CurrentUser UserPrincipal userPrincipal,
                         @Valid @RequestBody ReviewCreationRequest request,
                         HttpServletRequest httpServletRequest) {
 
-                ReviewResponse response = reviewService.createReview(movieId, request.userId(), request);
+                // Get user display name from JWT claims
+                String userName = userPrincipal.getFullName();
+                if (userName == null || userName.isBlank()) {
+                        userName = userPrincipal.getUsername(); // fallback to email
+                }
+
+                // Get avatar from customer-service (with circuit breaker fallback)
+                String userAvatar = null;
+                try {
+                        var customerInfo = customerClient.getCustomerInfo(userPrincipal.getId());
+                        if (customerInfo != null) {
+                                userAvatar = customerInfo.getAvatarUrl();
+                                // Use customer name if JWT name is null
+                                if ((userName == null || userName.isBlank()) && customerInfo.getFullName() != null) {
+                                        userName = customerInfo.getFullName();
+                                }
+                        }
+                } catch (Exception e) {
+                        log.warn("Failed to get customer info for user {}: {}", userPrincipal.getId(), e.getMessage());
+                }
+
+                ReviewResponse response = reviewService.createReview(movieId, userPrincipal.getId(), request, userName,
+                                userAvatar);
 
                 return ResponseEntity.ok(ResponseData.success(
                                 response,
@@ -234,17 +264,17 @@ public class MovieController {
                                 httpServletRequest.getMethod()));
         }
 
-        // TODO: only review owner can update
-        // TODO: get customer id from JWT token instead of payload
         @Operation(summary = "Update review for movie", description = "Update an existing review for a movie (only by the review owner)")
         @PutMapping("/{movieId}/reviews/{reviewId}")
+        @PreAuthorize("isAuthenticated()")
         public ResponseEntity<ResponseData> updateReviewForMovie(
                         @Parameter(description = "Movie ID") @PathVariable UUID movieId,
                         @Parameter(description = "Review ID") @PathVariable UUID reviewId,
+                        @CurrentUser UserPrincipal userPrincipal,
                         @Valid @RequestBody ReviewUpdateRequest request,
                         HttpServletRequest httpServletRequest) {
 
-                ReviewResponse response = reviewService.updateReview(reviewId, request.userId(), request);
+                ReviewResponse response = reviewService.updateReview(reviewId, userPrincipal.getId(), request);
 
                 return ResponseEntity.ok(ResponseData.success(
                                 response,
@@ -253,16 +283,16 @@ public class MovieController {
                                 httpServletRequest.getMethod()));
         }
 
-        // TODO: get customer id from JWT token instead of request param
         @Operation(summary = "Delete review for movie", description = "Delete a review for a movie (only by the review owner)")
         @DeleteMapping("/{movieId}/reviews/{reviewId}")
+        @PreAuthorize("isAuthenticated()")
         public ResponseEntity<ResponseData> deleteReviewForMovie(
                         @Parameter(description = "Movie ID") @PathVariable UUID movieId,
                         @Parameter(description = "Review ID") @PathVariable UUID reviewId,
-                        @RequestParam(name = "userId") UUID userId,
+                        @CurrentUser UserPrincipal userPrincipal,
                         HttpServletRequest httpServletRequest) {
 
-                reviewService.deleteReview(reviewId, userId);
+                reviewService.deleteReview(reviewId, userPrincipal.getId());
 
                 return ResponseEntity.ok(ResponseData.success(
                                 null,
@@ -301,8 +331,9 @@ public class MovieController {
                                 httpServletRequest.getMethod()));
         }
 
-        @Operation(summary = "Create a new movie", description = "Create a new movie with the provided details")
+        @Operation(summary = "Create a new movie", description = "Create a new movie with the provided details (Admin only)")
         @PostMapping
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<ResponseData> createMovie(
                         @Valid @RequestBody MovieRequest movieRequest,
                         HttpServletRequest httpServletRequest) {
@@ -316,8 +347,9 @@ public class MovieController {
                                 httpServletRequest.getMethod()));
         }
 
-        @Operation(summary = "Update an existing movie", description = "Update movie details by ID")
+        @Operation(summary = "Update an existing movie", description = "Update movie details by ID (Admin only)")
         @PutMapping("/{movieId}")
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<ResponseData> updateMovie(
                         @NonNull @PathVariable UUID movieId,
                         @Valid @RequestBody MovieRequest movieRequest,
@@ -332,8 +364,9 @@ public class MovieController {
                                 httpServletRequest.getMethod()));
         }
 
-        @Operation(summary = "Update movie status", description = "Update movie publication status (PRIVATE or PUBLIC only). Cannot change to DRAFT - upload a new movie instead.")
+        @Operation(summary = "Update movie status", description = "Update movie publication status (PRIVATE or PUBLIC only). Cannot change to DRAFT - upload a new movie instead. (Admin only)")
         @PatchMapping("/{movieId}/status")
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<ResponseData> updateMovieStatus(
                         @NonNull @PathVariable UUID movieId,
                         @Valid @RequestBody UpdateMovieStatusRequest request,
@@ -350,8 +383,9 @@ public class MovieController {
                                 httpServletRequest.getMethod()));
         }
 
-        @Operation(summary = "Delete a movie", description = "Delete a movie by ID")
+        @Operation(summary = "Delete a movie", description = "Delete a movie by ID (Admin only)")
         @DeleteMapping("/{movieId}")
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<ResponseData> deleteMovie(
                         @NonNull @PathVariable UUID movieId,
                         HttpServletRequest httpServletRequest) {
@@ -364,7 +398,7 @@ public class MovieController {
                                 httpServletRequest.getMethod()));
         }
 
-        @Operation(summary = "Get or search movies with pagination and sorting", description = "Retrieve a paginated and sorted list of movies. Optionally provide a keyword to search across title, description, country, actors, and categories")
+        @Operation(summary = "Get or search movies with pagination and sorting", description = "Retrieve a paginated and sorted list of movies. Optionally provide a keyword to search across title, description, country, actors, and categories. Admin users can see all movies including DRAFT and PRIVATE status.")
         @GetMapping
         public ResponseEntity<ResponseData> getMovies(
                         @Parameter(description = "Optional search keyword") @RequestParam(name = "keyword", required = false) String keyword,
@@ -372,8 +406,13 @@ public class MovieController {
                         @RequestParam(name = "size", defaultValue = "10") int size,
                         @RequestParam(name = "sortBy", defaultValue = "title") String sortBy,
                         @RequestParam(name = "sortDirection", defaultValue = "asc") @NonNull String sortDirection,
-                        @Parameter(description = "User role (ADMIN or USER) - TODO: Replace with actual authentication") @RequestParam(name = "userRole", defaultValue = "USER") String userRole,
+                        @CurrentUser UserPrincipal userPrincipal,
                         HttpServletRequest httpServletRequest) {
+
+                // Determine user role from JWT - admin can see all movies, regular users only
+                // see PUBLIC
+                String userRole = (userPrincipal != null && userPrincipal.getRole() != null
+                                && userPrincipal.getRole().equalsIgnoreCase("ADMIN")) ? "ADMIN" : "USER";
 
                 PaginatedResponse<MovieResponse> data = movieService.getMovies(keyword, page - 1, size, sortBy,
                                 sortDirection, userRole);

@@ -31,7 +31,8 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Transactional
     @Override
-    public ReviewResponse createReview(UUID movieId, UUID customerId, ReviewCreationRequest request) {
+    public ReviewResponse createReview(UUID movieId, UUID customerId, ReviewCreationRequest request, String userName,
+            String userAvatar) {
         log.info("Creating review for movie ID: {} by customer ID: {}", movieId, customerId);
 
         // Validate movie exists
@@ -45,10 +46,8 @@ public class ReviewServiceImpl implements ReviewService {
             throw new BadRequestException("Customer has already reviewed this movie");
         }
 
-        // TODO: validate customer id exists in customer service
-
         Review review = new Review(movie, customerId, request.content(), request.stars(),
-                request.userName(), request.userAvatar());
+                userName, userAvatar);
         Review savedReview = reviewRepository.save(review);
 
         return mapToReviewResponse(savedReview);
