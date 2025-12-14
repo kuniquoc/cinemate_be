@@ -38,26 +38,26 @@ A FastAPI-based service for tracking user interactions and providing movie recom
 
 ### Events
 
-- `POST /events/watch` - Track watch event
-- `POST /events/search` - Track search event
-- `POST /events/rating` - Track rating event
-- `POST /events/favorite` - Track favorite event
+- `POST /api/v1/events/watch` - Track watch event
+- `POST /api/v1/events/search` - Track search event
+- `POST /api/v1/events/rating` - Track rating event
+- `POST /api/v1/events/favorite` - Track favorite event
 
 ### Recommendations
 
-- `GET /recommend/{user_id}` - Get personalized recommendations
-- `GET /features/{user_id}` - Get user features
-- `POST /features/{user_id}/refresh` - Refresh user features
+- `GET /api/v1/recommend/{user_id}` - Get personalized recommendations
+- `GET /api/v1/features/{user_id}` - Get user features
+- `POST /api/v1/features/{user_id}/refresh` - Refresh user features
 
 ### Feedback
 
-- `POST /feedback` - Submit recommendation feedback
+- `POST /api/v1/feedback` - Submit recommendation feedback
 
 ### System
 
-- `GET /health` - Full health check
-- `GET /health/live` - Liveness probe
-- `GET /health/ready` - Readiness probe
+- `GET /api/v1/health` - Full health check
+- `GET /api/v1/health/live` - Liveness probe
+- `GET /api/v1/health/ready` - Readiness probe
 - `GET /model/info` - Model information
 - `POST /model/reload` - Reload model
 
@@ -115,7 +115,7 @@ docker run -p 8090:8000 interaction-recommender-service
 ## Configuration
 
 | Variable                  | Description                  | Default                                                               |
-|---------------------------|------------------------------|-----------------------------------------------------------------------|
+| ------------------------- | ---------------------------- | --------------------------------------------------------------------- |
 | `DATABASE_URL`            | PostgreSQL connection string | `postgresql+asyncpg://admin:admin@interaction-db:5432/interaction_db` |
 | `REDIS_URL`               | Redis connection string      | `redis://cinemate-redis:6379`                                         |
 | `KAFKA_BOOTSTRAP_SERVERS` | Kafka brokers                | `cinemate-broker:9092`                                                |
@@ -126,7 +126,7 @@ docker run -p 8090:8000 interaction-recommender-service
 ## Kafka Topics
 
 | Topic                    | Producer     | Consumer                    | Purpose           |
-|--------------------------|--------------|-----------------------------|-------------------|
+| ------------------------ | ------------ | --------------------------- | ----------------- |
 | `interaction_events`     | This service | This service + offline jobs | Raw events        |
 | `processed_features`     | This service | Offline training            | Computed features |
 | `model_feedback`         | This service | Offline training            | User feedback     |

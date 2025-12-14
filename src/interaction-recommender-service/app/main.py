@@ -159,11 +159,11 @@ app = FastAPI(
     
     ## API Groups
     
-    * `/events/*` - Track user interaction events
-    * `/recommend/{user_id}` - Get personalized recommendations
-    * `/features/{user_id}` - Get/refresh user features
-    * `/feedback` - Submit recommendation feedback
-    * `/health` - Health checks and system status
+    * `/api/v1/events/*` - Track user interaction events
+    * `/api/v1/recommend/{user_id}` - Get personalized recommendations
+    * `/api/v1/features/{user_id}` - Get/refresh user features
+    * `/api/v1/feedback` - Submit recommendation feedback
+    * `/api/v1/health` - Health checks and system status
     """,
     version=settings.app_version,
     docs_url="/docs",

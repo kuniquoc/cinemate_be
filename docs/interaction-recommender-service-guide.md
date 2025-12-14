@@ -34,36 +34,36 @@ The `interaction-recommender-service` is a Python/FastAPI service that handles u
 
 ### Event Tracking
 
-| Endpoint           | Method | Description          |
-| ------------------ | ------ | -------------------- |
-| `/events/watch`    | POST   | Track watch event    |
-| `/events/search`   | POST   | Track search event   |
-| `/events/rating`   | POST   | Track rating event   |
-| `/events/favorite` | POST   | Track favorite event |
+| Endpoint                  | Method | Description          |
+| ------------------------- | ------ | -------------------- |
+| `/api/v1/events/watch`    | POST   | Track watch event    |
+| `/api/v1/events/search`   | POST   | Track search event   |
+| `/api/v1/events/rating`   | POST   | Track rating event   |
+| `/api/v1/events/favorite` | POST   | Track favorite event |
 
 ### Recommendations
 
-| Endpoint                      | Method | Description                      |
-| ----------------------------- | ------ | -------------------------------- |
-| `/recommend/{user_id}`        | GET    | Get personalized recommendations |
-| `/features/{user_id}`         | GET    | Get user features                |
-| `/features/{user_id}/refresh` | POST   | Refresh user features            |
+| Endpoint                             | Method | Description                      |
+| ------------------------------------ | ------ | -------------------------------- |
+| `/api/v1/recommend/{user_id}`        | GET    | Get personalized recommendations |
+| `/api/v1/features/{user_id}`         | GET    | Get user features                |
+| `/api/v1/features/{user_id}/refresh` | POST   | Refresh user features            |
 
 ### Feedback
 
-| Endpoint    | Method | Description                    |
-| ----------- | ------ | ------------------------------ |
-| `/feedback` | POST   | Submit recommendation feedback |
+| Endpoint           | Method | Description                    |
+| ------------------ | ------ | ------------------------------ |
+| `/api/v1/feedback` | POST   | Submit recommendation feedback |
 
 ### System
 
-| Endpoint        | Method | Description       |
-| --------------- | ------ | ----------------- |
-| `/health`       | GET    | Full health check |
-| `/health/live`  | GET    | Liveness probe    |
-| `/health/ready` | GET    | Readiness probe   |
-| `/model/info`   | GET    | Model information |
-| `/model/reload` | POST   | Reload model      |
+| Endpoint               | Method | Description       |
+| ---------------------- | ------ | ----------------- |
+| `/api/v1/health`       | GET    | Full health check |
+| `/api/v1/health/live`  | GET    | Liveness probe    |
+| `/api/v1/health/ready` | GET    | Readiness probe   |
+| `/api/v1/model/info`   | GET    | Model information |
+| `/api/v1/model/reload` | POST   | Reload model      |
 
 ## Integration with movie-service
 

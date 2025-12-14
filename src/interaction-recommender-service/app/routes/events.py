@@ -19,7 +19,7 @@ from app.schemas import (
     EventResponse
 )
 
-router = APIRouter(prefix="/events", tags=["Events"])
+router = APIRouter(prefix="/api/v1/events", tags=["Events"])
 
 
 def get_event_service() -> EventService:

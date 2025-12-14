@@ -13,17 +13,7 @@ spring:
             - id: movie-service-prod
               uri: ${MOVIE_SERVICE_URL:http://movie-service:8080}
               predicates:
-                - Path=/api/v1/movies/**,/api/v1/actors/**,/api/v1/categories/**, /api/v1/directors/**
-              filters:
-                - RewritePath=/api/v1/(?<segment>.*), /api/$\{segment}
-            
-            # Movie File Upload Routes (Production)
-            - id: movie-upload-prod
-              uri: ${MOVIE_SERVICE_URL:http://movie-service:8080}
-              predicates:
-                - Path=/api/v1/upload-image/**,/api/v1/upload-video/**
-              filters:
-                - RewritePath=/api/v1/(?<segment>.*), /api/$\{segment}
+                - Path=/api/v1/movies/**,/api/v1/actors/**,/api/v1/categories/**,/api/v1/directors/**,/api/v1/recommendations/**,/api/v1/upload-image/**,/api/v1/upload-video/**
 
             # Auth Service Routes (Production)
             - id: auth-service-prod
@@ -36,24 +26,18 @@ spring:
               uri: ${CUSTOMER_SERVICE_URL:http://customer-service:8080}
               predicates:
                 - Path=/api/v1/customers/**
-              filters:
-                - RewritePath=/api/v1/(?<segment>.*), /api/$\{segment}
 
             # Payment Service Routes (Production)
             - id: payment-service-prod
               uri: ${PAYMENT_SERVICE_URL:http://payment-service:8080}
               predicates:
-                - Path=/api/v1/payments/**,/api/v1/subscriptions/**
-              filters:
-                - RewritePath=/api/v1/(?<segment>.*), /api/$\{segment}
+                - Path=/api/v1/payments/**,/api/v1/subscriptions/**,/api/v1/devices/**,/api/v1/family-plans/**,/api/v1/content-access/**,/api/v1/subscription-plans/**
 
             # Interaction Recommender Routes (Production)
             - id: interaction-recommender-prod
               uri: ${INTERACTION_RECOMMENDER_URL:http://interaction-recommender:8080}
               predicates:
-                - Path=/api/v1/events/**,/api/v1/recommendations/**
-              filters:
-                - RewritePath=/api/v1/(?<segment>.*), /api/$\{segment}
+                - Path=/api/v1/events/**,/api/v1/recommendations/**,/api/v1/features/**,/api/v1/feedback/**,/api/v1/health/**
 
             # Streaming Signaling Routes (WebSocket)
             - id: streaming-signaling-prod
@@ -66,8 +50,6 @@ spring:
               uri: ${STREAMING_SEEDER_URL:http://streaming-seeder:8080}
               predicates:
                 - Path=/api/v1/streams/**
-              filters:
-                - RewritePath=/api/v1/(?<segment>.*), /api/$\{segment}
 
           globalcors:
             cors-configurations:
