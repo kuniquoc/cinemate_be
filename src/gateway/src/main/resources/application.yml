@@ -27,36 +27,6 @@ spring:
                 allowCredentials: true
                 maxAge: 3600
 
-# JWT Configuration for gateway validation
-# Only validates signature + expiry, full auth is done by backend services
-jwt:
-  secret: ${JWT_SECRET:your-super-secure-256-bit-secret-key-here-for-hs256-algorithm-minimum-32-chars}
-  whitelist-paths:
-    # Auth endpoints (login, register, etc.)
-    - /api/v1/auth/**
-    # Public movie listing/search
-    - /api/v1/movies
-    - /api/v1/movies/all
-    - /api/v1/movies/top-ten
-    - /api/v1/movies/{id}
-    - /api/v1/movies/{id}/status
-    - /api/v1/movies/{id}/process-status
-    # Public category listing
-    - /api/v1/categories
-    - /api/v1/categories/**
-    # Public actor listing
-    - /api/v1/actors
-    - /api/v1/actors/**
-    # Public director listing
-    - /api/v1/directors
-    - /api/v1/directors/**
-    # Movie reviews (read-only public)
-    - /api/v1/movies/*/reviews
-    - /api/v1/movies/*/reviews/average-rating
-    - /api/v1/movies/*/reviews/count
-    # Actuator endpoints
-    - /actuator/**
-
 # Management endpoints for health checks
 management:
   endpoints:
