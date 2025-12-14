@@ -1,5 +1,6 @@
 package com.pbl6.microservices.customer_service.controller;
 
+import com.pbl6.microservices.customer_service.client.dto.MovieDetailResponse;
 import com.pbl6.microservices.customer_service.constants.FeedbackMessage;
 import com.pbl6.microservices.customer_service.payload.general.PageMeta;
 import com.pbl6.microservices.customer_service.payload.general.ResponseData;
@@ -75,7 +76,7 @@ public class CustomerController {
                                                      @RequestParam(value = "page", defaultValue = "1") int page,
                                                      @RequestParam(value = "limit", defaultValue = "10") int limit,
                                                      HttpServletRequest httpRequest) {
-        Page<FavoriteResponse> favoritePage = favoriteService.getFavorites(userPrincipal.getUserId(), page, limit);
+        Page<MovieDetailResponse> favoritePage = favoriteService.getFavorites(userPrincipal.getUserId(), page, limit);
         
         PageMeta pageMeta = PageMeta.builder()
                 .limit(limit)
