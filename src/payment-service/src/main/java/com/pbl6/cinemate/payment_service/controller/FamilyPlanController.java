@@ -1,9 +1,13 @@
 package com.pbl6.cinemate.payment_service.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pbl6.cinemate.payment_service.client.MovieServiceClient;
+import com.pbl6.cinemate.payment_service.dto.CategoryDto;
 import com.pbl6.cinemate.payment_service.dto.request.AcceptInvitationRequest;
 import com.pbl6.cinemate.payment_service.dto.request.CreateInvitationRequest;
 import com.pbl6.cinemate.payment_service.dto.request.UpdateParentControlRequest;
 import com.pbl6.cinemate.payment_service.dto.response.FamilyInvitationResponse;
+import com.pbl6.cinemate.payment_service.dto.response.FamilyMemberDetailResponse;
 import com.pbl6.cinemate.payment_service.dto.response.FamilyMemberResponse;
 import com.pbl6.cinemate.payment_service.dto.response.ParentControlResponse;
 import com.pbl6.cinemate.payment_service.entity.FamilyInvitation;
@@ -16,15 +20,20 @@ import com.pbl6.cinemate.shared.security.UserPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/family-plans")
 @RequiredArgsConstructor
@@ -32,6 +41,8 @@ public class FamilyPlanController {
     
     private final FamilyPlanService familyPlanService;
     private final ModelMapper modelMapper;
+    private final MovieServiceClient movieServiceClient;
+    private final ObjectMapper objectMapper;
     
     @Value("${app.frontend.url:http://localhost:3000}")
     private String frontendUrl;
@@ -43,10 +54,9 @@ public class FamilyPlanController {
             HttpServletRequest httpRequest) {
         
         FamilyInvitation invitation = familyPlanService.createInvitation(
-                request.getSubscriptionId(),
                 userPrincipal.getId(),
                 request.getMode(),
-                request.getInviterName(),
+                userPrincipal.getUsername(),
                 request.getRecipientEmail(),
                 request.getSendEmail()
         );
@@ -76,6 +86,20 @@ public class FamilyPlanController {
         return ResponseEntity.ok(ResponseData.success(
                 response,
                 "Invitation accepted successfully",
+                httpRequest.getRequestURI(),
+                httpRequest.getMethod()));
+    }
+    
+    @GetMapping("/members")
+    public ResponseEntity<ResponseData> getMyFamilyMembers(
+            @CurrentUser UserPrincipal userPrincipal,
+            HttpServletRequest httpRequest) {
+        
+        List<FamilyMemberDetailResponse> members = familyPlanService.getCurrentUserFamilyMembers(userPrincipal.getId());
+        
+        return ResponseEntity.ok(ResponseData.success(
+                members,
+                "Family members retrieved successfully",
                 httpRequest.getRequestURI(),
                 httpRequest.getMethod()));
     }
@@ -114,14 +138,13 @@ public class FamilyPlanController {
                 httpRequest.getMethod()));
     }
     
-    @DeleteMapping("/subscriptions/{subscriptionId}/members/{memberUserId}")
+    @DeleteMapping("/members/{memberUserId}")
     public ResponseEntity<ResponseData> removeMember(
-            @PathVariable UUID subscriptionId,
             @PathVariable UUID memberUserId,
             @CurrentUser UserPrincipal userPrincipal,
             HttpServletRequest httpRequest) {
         
-        familyPlanService.removeMember(subscriptionId, userPrincipal.getId(), memberUserId);
+        familyPlanService.removeMember(userPrincipal.getId(), memberUserId);
         
         return ResponseEntity.ok(ResponseData.success(
                 "Member removed successfully",
@@ -169,7 +192,7 @@ public class FamilyPlanController {
         ParentControl control = familyPlanService.updateParentControl(
                 userPrincipal.getId(),
                 kidId,
-                request.getBlockedCategories(),
+                request.getBlockedCategoryIds(),
                 request.getWatchTimeLimitMinutes()
         );
         
@@ -206,13 +229,52 @@ public class FamilyPlanController {
     }
     
     private ParentControlResponse toParentControlResponse(ParentControl control) {
-        ParentControlResponse response = modelMapper.map(control, ParentControlResponse.class);
-        // Convert comma-separated string to list
-        if (control.getBlockedCategories() != null && !control.getBlockedCategories().isEmpty()) {
-            response.setBlockedCategories(List.of(control.getBlockedCategories().split(",")));
+        // Manually build response instead of using ModelMapper to avoid field type conflicts
+        ParentControlResponse response = new ParentControlResponse();
+        response.setId(control.getId());
+        response.setParentId(control.getParentId());
+        response.setKidId(control.getKidId());
+        response.setSubscriptionId(control.getSubscription().getId());
+        response.setWatchTimeLimitMinutes(control.getWatchTimeLimitMinutes());
+        response.setCreatedAt(control.getCreatedAt());
+        response.setUpdatedAt(control.getUpdatedAt());
+        
+        // Convert comma-separated UUID string to List<CategoryDto>
+        List<CategoryDto> categoryDtos = new ArrayList<>();
+        String blockedCats = control.getBlockedCategories();
+        log.info("toParentControlResponse - blockedCategories from DB: '{}'", blockedCats);
+        
+        if (blockedCats != null && !blockedCats.isEmpty()) {
+            String[] categoryIdStrings = blockedCats.split(",");
+            log.info("Split into {} category IDs", categoryIdStrings.length);
+            for (String idString : categoryIdStrings) {
+                try {
+                    UUID categoryId = UUID.fromString(idString.trim());
+                    
+                    // Fetch from movie-service which returns ResponseData wrapper
+                    ResponseData responseData = movieServiceClient.getCategoryById(categoryId);
+                    
+                    // Extract the category data from the wrapper
+                    if (responseData != null && responseData.getData() != null) {
+                        // Convert the data (LinkedHashMap) to CategoryDto
+                        Map<String, Object> dataMap = (Map<String, Object>) responseData.getData();
+                        CategoryDto categoryDto = CategoryDto.builder()
+                                .id(UUID.fromString(dataMap.get("id").toString()))
+                                .name((String) dataMap.get("name"))
+                                .build();
+                        categoryDtos.add(categoryDto);
+                        log.info("Successfully added category: {}", categoryDto.getName());
+                    } else {
+                        log.warn("ResponseData or data is null for category {}", categoryId);
+                    }
+                } catch (Exception e) {
+                    log.error("Failed to fetch category {}: {}", idString, e.getMessage(), e);
+                }
+            }
         } else {
-            response.setBlockedCategories(List.of());
+            log.warn("blockedCategories is null or empty!");
         }
+        response.setBlockedCategories(categoryDtos);
         return response;
     }
 }

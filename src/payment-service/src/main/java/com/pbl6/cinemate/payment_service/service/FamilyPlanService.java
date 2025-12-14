@@ -1,5 +1,7 @@
 package com.pbl6.cinemate.payment_service.service;
 
+import com.pbl6.cinemate.payment_service.client.AuthServiceClient;
+import com.pbl6.cinemate.payment_service.dto.response.FamilyMemberDetailResponse;
 import com.pbl6.cinemate.payment_service.email.FamilyInvitationEmailService;
 import com.pbl6.cinemate.payment_service.entity.*;
 import com.pbl6.cinemate.payment_service.enums.InvitationMode;
@@ -8,6 +10,7 @@ import com.pbl6.cinemate.payment_service.exception.DeviceLimitException;
 import com.pbl6.cinemate.payment_service.exception.ResourceNotFoundException;
 import com.pbl6.cinemate.payment_service.exception.SubscriptionException;
 import com.pbl6.cinemate.payment_service.repository.*;
+import com.pbl6.cinemate.shared.dto.general.ResponseData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,7 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -29,37 +34,43 @@ public class FamilyPlanService {
     private final ParentControlRepository parentControlRepository;
     private final SubscriptionPlanRepository subscriptionPlanRepository;
     private final FamilyInvitationEmailService emailService;
+    private final AuthServiceClient authServiceClient;
     
     @Value("${app.frontend.url:http://localhost:3000}")
     private String frontendUrl;
     
     @Transactional
     public FamilyInvitation createInvitation(
-            UUID subscriptionId, 
-            UUID ownerId, 
+            UUID userId, 
             InvitationMode mode,
-            String inviterName,
+            String inviterEmail,
             String recipientEmail,
             Boolean sendEmail) {
         
-        // Verify subscription exists and is family plan
-        Subscription subscription = subscriptionRepository.findById(subscriptionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Subscription not found"));
+        // Find user's active subscription
+        Subscription subscription = subscriptionRepository.findActiveSubscriptionByUserId(userId)
+                .orElseThrow(() -> new SubscriptionException(
+                    "You don't have an active subscription. Please subscribe to a family plan first"));
         
+        // Verify subscription is a family plan
         if (!subscription.getPlan().getIsFamilyPlan()) {
-            throw new SubscriptionException("This is not a family plan subscription");
+            throw new SubscriptionException(
+                "Your current subscription is not a family plan. Please upgrade to family plan to invite members");
         }
         
-        // Verify user is the owner
-        FamilyMember owner = familyMemberRepository.findBySubscriptionIdAndUserId(subscriptionId, ownerId)
-                .orElseThrow(() -> new SubscriptionException("User is not a member of this subscription"));
+        // Verify user is registered as a family member
+        FamilyMember familyMember = familyMemberRepository.findBySubscriptionIdAndUserId(subscription.getId(), userId)
+                .orElseThrow(() -> new SubscriptionException(
+                    "You are not registered as a member of this family plan. Please contact support"));
         
-        if (!owner.getIsOwner()) {
-            throw new SubscriptionException("Only the plan owner can create invitations");
+        // Verify user is the owner
+        if (!familyMember.getIsOwner()) {
+            throw new SubscriptionException(
+                "Only the family plan owner can send invitations. Please ask the owner to invite new members");
         }
         
         // Check if subscription has available slots
-        Long currentMembers = familyMemberRepository.countBySubscriptionId(subscriptionId);
+        Long currentMembers = familyMemberRepository.countBySubscriptionId(subscription.getId());
         Integer maxMembers = subscription.getPlan().getMaxMembers();
         
         if (currentMembers >= maxMembers) {
@@ -74,7 +85,7 @@ public class FamilyPlanService {
         invitation.setInvitationToken(token);
         invitation.setMode(mode);
         invitation.setStatus(InvitationStatus.PENDING);
-        invitation.setInvitedBy(ownerId);
+        invitation.setInvitedBy(userId);
         invitation.setExpiresAt(LocalDateTime.now().plusDays(7));
         
         FamilyInvitation savedInvitation = invitationRepository.save(invitation);
@@ -83,7 +94,7 @@ public class FamilyPlanService {
         if (sendEmail != null && sendEmail && recipientEmail != null && !recipientEmail.isEmpty()) {
             String invitationLink = frontendUrl + "/family/join?token=" + token;
             emailService.sendInvitationEmail(
-                    inviterName,
+                    inviterEmail,
                     recipientEmail,
                     invitationLink,
                     mode,
@@ -93,15 +104,7 @@ public class FamilyPlanService {
         
         return savedInvitation;
     }
-    
-    /**
-     * Legacy method for backward compatibility
-     */
-    @Transactional
-    public FamilyInvitation createInvitation(UUID subscriptionId, UUID ownerId, InvitationMode mode) {
-        return createInvitation(subscriptionId, ownerId, mode, null, null, false);
-    }
-    
+
     @Transactional
     public FamilyMember acceptInvitation(String token, UUID userId) {
         // Find invitation
@@ -147,7 +150,6 @@ public class FamilyPlanService {
             parentControl.setParentId(invitation.getInvitedBy());
             parentControl.setKidId(userId);
             parentControl.setSubscription(subscription);
-            parentControl.setBlockedCategories("Horror,Thriller,Adult"); // Default blocked categories
             parentControlRepository.save(parentControl);
         }
         
@@ -169,25 +171,34 @@ public class FamilyPlanService {
     }
     
     @Transactional
-    public void removeMember(UUID subscriptionId, UUID ownerId, UUID memberUserId) {
-        // Verify owner
-        FamilyMember owner = familyMemberRepository.findBySubscriptionIdAndUserId(subscriptionId, ownerId)
+    public void removeMember(UUID ownerId, UUID memberUserId) {
+        // Find owner's active subscription
+        Subscription subscription = subscriptionRepository.findActiveSubscriptionByUserId(ownerId)
+                .orElseThrow(() -> new SubscriptionException("You don't have an active subscription"));
+        
+        // Verify user is the owner of the subscription
+        FamilyMember owner = familyMemberRepository.findBySubscriptionIdAndUserId(subscription.getId(), ownerId)
                 .orElseThrow(() -> new SubscriptionException("User is not a member of this subscription"));
         
         if (!owner.getIsOwner()) {
             throw new SubscriptionException("Only the plan owner can remove members");
         }
         
+        // Prevent removing self
+        if (ownerId.equals(memberUserId)) {
+            throw new SubscriptionException("Cannot remove yourself from the family plan");
+        }
+        
         // Find and remove member
-        FamilyMember member = familyMemberRepository.findBySubscriptionIdAndUserId(subscriptionId, memberUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("Member not found"));
+        FamilyMember member = familyMemberRepository.findBySubscriptionIdAndUserId(subscription.getId(), memberUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Member not found in your family plan"));
         
         if (member.getIsOwner()) {
             throw new SubscriptionException("Cannot remove the plan owner");
         }
         
         // Remove parent control records if exists
-        parentControlRepository.findByKidIdAndSubscriptionId(memberUserId, subscriptionId)
+        parentControlRepository.findByKidIdAndSubscriptionId(memberUserId, subscription.getId())
                 .ifPresent(parentControlRepository::delete);
         
         familyMemberRepository.delete(member);
@@ -212,12 +223,17 @@ public class FamilyPlanService {
     }
     
     @Transactional
-    public ParentControl updateParentControl(UUID parentId, UUID kidId, List<String> blockedCategories, Integer watchTimeLimit) {
+    public ParentControl updateParentControl(UUID parentId, UUID kidId, List<UUID> blockedCategoryIds, Integer watchTimeLimit) {
         ParentControl control = parentControlRepository.findByParentIdAndKidId(parentId, kidId)
                 .orElseThrow(() -> new ResourceNotFoundException("Parent control not found"));
         
-        if (blockedCategories != null) {
-            control.setBlockedCategories(String.join(",", blockedCategories));
+        if (blockedCategoryIds != null) {
+            // Convert UUIDs to comma-separated string
+            String categoryIdsString = blockedCategoryIds.stream()
+                    .map(UUID::toString)
+                    .collect(java.util.stream.Collectors.joining(","));
+            log.info("Setting blocked categories for parent {} kid {}: {}", parentId, kidId, categoryIdsString);
+            control.setBlockedCategories(categoryIdsString);
         }
         
         if (watchTimeLimit != null) {
@@ -229,5 +245,53 @@ public class FamilyPlanService {
     
     public List<ParentControl> getKidsForParent(UUID parentId) {
         return parentControlRepository.findByParentId(parentId);
+    }
+    
+    public List<FamilyMemberDetailResponse> getCurrentUserFamilyMembers(UUID userId) {
+        // Find user's active subscription
+        Subscription subscription = subscriptionRepository.findActiveSubscriptionByUserId(userId)
+                .orElseThrow(() -> new SubscriptionException("You don't have an active subscription"));
+        
+        // Verify subscription is a family plan
+        if (!subscription.getPlan().getIsFamilyPlan()) {
+            throw new SubscriptionException("Your current subscription is not a family plan");
+        }
+        
+        // Verify user is a member of this family plan
+        familyMemberRepository.findBySubscriptionIdAndUserId(subscription.getId(), userId)
+                .orElseThrow(() -> new SubscriptionException("You are not a member of this family plan"));
+        
+        // Get all family members
+        List<FamilyMember> members = familyMemberRepository.findBySubscriptionId(subscription.getId());
+        
+        // Build detailed responses
+        List<FamilyMemberDetailResponse> responses = new ArrayList<>();
+        for (FamilyMember member : members) {
+            String email = "N/A";
+            try {
+                ResponseData response = authServiceClient.getEmailByUserId(member.getUserId());
+                if (response != null && response.getData() != null) {
+                    Map<String, Object> emailData = (Map<String, Object>) response.getData();
+                    email = (String) emailData.get("email");
+                }
+            } catch (Exception e) {
+                log.error("Failed to fetch email for user {}: {}", member.getUserId(), e.getMessage());
+            }
+            
+            boolean isKid = parentControlRepository.existsByKidId(member.getUserId());
+            
+            FamilyMemberDetailResponse detailResponse = FamilyMemberDetailResponse.builder()
+                    .id(member.getId())
+                    .userId(member.getUserId())
+                    .email(email)
+                    .isOwner(member.getIsOwner())
+                    .isKid(isKid)
+                    .joinedAt(member.getJoinedAt())
+                    .build();
+            
+            responses.add(detailResponse);
+        }
+        
+        return responses;
     }
 }

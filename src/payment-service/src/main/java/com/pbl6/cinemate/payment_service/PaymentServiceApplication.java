@@ -6,6 +6,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -15,6 +16,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 		"com.pbl6.cinemate.shared"
 })
 @EnableScheduling
+@EnableFeignClients
 @ComponentScan(basePackages = {
 	"com.pbl6.cinemate.payment_service",
 	"com.pbl6.cinemate.shared"

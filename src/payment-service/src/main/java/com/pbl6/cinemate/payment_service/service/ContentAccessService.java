@@ -29,11 +29,11 @@ public class ContentAccessService {
     
     public ContentAccessResponse checkContentAccess(
             UUID userId, 
-            List<String> movieCategories, 
+            List<UUID> movieCategoryIds, 
             Integer currentWatchTimeMinutes) {
         
-        log.info("Checking content access for user: {}, categories: {}, watchTime: {}", 
-                userId, movieCategories, currentWatchTimeMinutes);
+        log.info("Checking content access for user: {}, categoryIds: {}, watchTime: {}", 
+                userId, movieCategoryIds, currentWatchTimeMinutes);
         
         Subscription subscription;
         
@@ -87,7 +87,7 @@ public class ContentAccessService {
         log.info("User {} is a kid with parental controls - applying restrictions", userId);
         ParentControl control = parentControls.get(0);
         
-        return applyParentalControls(control, movieCategories, currentWatchTimeMinutes, userId);
+        return applyParentalControls(control, movieCategoryIds, currentWatchTimeMinutes, userId);
     }
     
     /**
@@ -95,21 +95,21 @@ public class ContentAccessService {
      */
     private ContentAccessResponse applyParentalControls(
             ParentControl control,
-            List<String> movieCategories,
+            List<UUID> movieCategoryIds,
             Integer currentWatchTimeMinutes,
             UUID userId) {
         
-        List<String> blockedCategories = parseBlockedCategories(control.getBlockedCategories());
+        List<UUID> blockedCategoryIds = parseBlockedCategoryIds(control.getBlockedCategories());
         
         // Check if any movie category is blocked
-        for (String movieCategory : movieCategories) {
-            if (isCategoryBlocked(movieCategory, blockedCategories)) {
-                log.warn("Content blocked for kid {}: category '{}' is restricted", userId, movieCategory);
+        for (UUID categoryId : movieCategoryIds) {
+            if (isCategoryIdBlocked(categoryId, blockedCategoryIds)) {
+                log.warn("Content blocked for kid {}: category '{}' is restricted", userId, categoryId);
                 return ContentAccessResponse.builder()
                         .allowed(false)
-                        .reason(String.format("Content restricted by parent: %s is blocked", movieCategory))
+                        .reason(String.format("Content restricted by parent: category %s is blocked", categoryId))
                         .isKid(true)
-                        .blockedCategories(blockedCategories)
+                        .blockedCategoryIds(blockedCategoryIds)
                         .remainingWatchTimeMinutes(calculateRemainingTime(control, currentWatchTimeMinutes))
                         .build();
             }
@@ -126,7 +126,7 @@ public class ContentAccessService {
                     .reason(String.format("Daily watch time limit reached (%d/%d minutes)", 
                             currentWatchTimeMinutes, watchTimeLimit))
                     .isKid(true)
-                    .blockedCategories(blockedCategories)
+                    .blockedCategoryIds(blockedCategoryIds)
                     .remainingWatchTimeMinutes(0)
                     .build();
         }
@@ -136,7 +136,7 @@ public class ContentAccessService {
         return ContentAccessResponse.builder()
                 .allowed(true)
                 .isKid(true)
-                .blockedCategories(blockedCategories)
+                .blockedCategoryIds(blockedCategoryIds)
                 .remainingWatchTimeMinutes(calculateRemainingTime(control, currentWatchTimeMinutes))
                 .build();
     }
@@ -163,24 +163,24 @@ public class ContentAccessService {
     }
     
     /**
-     * Parse comma-separated blocked categories string into a list
+     * Parse comma-separated blocked category UUIDs string into a list
      */
-    private List<String> parseBlockedCategories(String blockedCategoriesStr) {
+    private List<UUID> parseBlockedCategoryIds(String blockedCategoriesStr) {
         if (blockedCategoriesStr == null || blockedCategoriesStr.trim().isEmpty()) {
             return List.of();
         }
         return Arrays.stream(blockedCategoriesStr.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
+                .map(UUID::fromString)
                 .collect(Collectors.toList());
     }
     
     /**
-     * Check if a movie category is in the blocked list (case-insensitive)
+     * Check if a movie category UUID is in the blocked list
      */
-    private boolean isCategoryBlocked(String movieCategory, List<String> blockedCategories) {
-        return blockedCategories.stream()
-                .anyMatch(blocked -> blocked.equalsIgnoreCase(movieCategory.trim()));
+    private boolean isCategoryIdBlocked(UUID categoryId, List<UUID> blockedCategoryIds) {
+        return blockedCategoryIds.contains(categoryId);
     }
     
     /**

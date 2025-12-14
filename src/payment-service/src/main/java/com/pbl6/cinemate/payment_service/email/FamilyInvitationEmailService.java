@@ -22,14 +22,14 @@ public class FamilyInvitationEmailService {
     /**
      * Send invitation email to a family member
      * 
-     * @param inviterName Name of the person sending the invitation
+     * @param inviterEmail Email of the person sending the invitation
      * @param recipientEmail Email address of the recipient
      * @param invitationLink Full invitation link to accept
      * @param mode ADULT or KID mode
      * @param expiresAt Expiration date of the invitation
      */
     public void sendInvitationEmail(
-            String inviterName, 
+            String inviterEmail, 
             String recipientEmail, 
             String invitationLink,
             InvitationMode mode,
@@ -49,11 +49,11 @@ public class FamilyInvitationEmailService {
             if (mode == InvitationMode.KID) {
                 templateName = "email/family-invitation-kid";
                 subject = "You're Invited to Join Cinemate Family Plan! 🎬";
-                variables.put("parentName", inviterName);
+                variables.put("parentName", inviterEmail);
             } else {
                 templateName = "email/family-invitation-adult";
-                subject = "Join " + inviterName + "'s Cinemate Family Plan";
-                variables.put("inviterName", inviterName);
+                subject = "Join " + inviterEmail + "'s Cinemate Family Plan";
+                variables.put("inviterName", inviterEmail);
             }
             
             // Build and send email request

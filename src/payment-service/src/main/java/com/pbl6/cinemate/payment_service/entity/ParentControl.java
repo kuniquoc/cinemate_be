@@ -30,7 +30,7 @@ public class ParentControl {
     private Subscription subscription;
     
     @Column(name = "blocked_categories", columnDefinition = "TEXT")
-    private String blockedCategories; // Comma-separated list of category names to block
+    private String blockedCategories; // Comma-separated list of category UUIDs to block
     
     @Column(name = "watch_time_limit_minutes")
     private Integer watchTimeLimitMinutes;
