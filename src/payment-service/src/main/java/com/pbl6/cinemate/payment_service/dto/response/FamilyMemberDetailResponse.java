@@ -5,22 +5,18 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class ContentAccessResponse {
-    
-    private Boolean allowed;
-    
-    private String reason;
-    
+public class FamilyMemberDetailResponse {
+    private UUID id;
+    private UUID userId;
+    private String email;
+    private Boolean isOwner;
     private Boolean isKid;
-    
-    private Integer remainingWatchTimeMinutes;
-    
-    private List<UUID> blockedCategoryIds;
+    private LocalDateTime joinedAt;
 }

@@ -20,4 +20,6 @@ public interface ParentControlRepository extends JpaRepository<ParentControl, UU
     Optional<ParentControl> findByKidIdAndSubscriptionId(UUID kidId, UUID subscriptionId);
     
     boolean existsByParentIdAndKidId(UUID parentId, UUID kidId);
+    
+    boolean existsByKidId(UUID kidId);
 }

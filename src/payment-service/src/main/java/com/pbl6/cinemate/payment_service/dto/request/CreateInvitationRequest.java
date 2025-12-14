@@ -11,14 +11,8 @@ import java.util.UUID;
 @Data
 public class CreateInvitationRequest {
     
-    @NotNull(message = "Subscription ID is required")
-    private UUID subscriptionId;
-    
     @NotNull(message = "Invitation mode is required")
     private InvitationMode mode;
-    
-    @NotBlank(message = "Inviter name is required")
-    private String inviterName;
     
     @NotBlank(message = "Recipient email is required")
     @Email(message = "Invalid email format")

@@ -3,6 +3,7 @@ package com.pbl6.cinemate.auth_service.service;
 import com.pbl6.cinemate.auth_service.payload.request.AdminResetPasswordRequest;
 import com.pbl6.cinemate.auth_service.payload.request.CreateAccountRequest;
 import com.pbl6.cinemate.auth_service.payload.request.UpdateAccountRequest;
+import com.pbl6.cinemate.auth_service.payload.response.UserEmailResponse;
 import com.pbl6.cinemate.auth_service.payload.response.UserResponse;
 
 import java.util.List;
@@ -12,6 +13,8 @@ public interface AccountService {
     UserResponse createAccount(CreateAccountRequest request);
 
     UserResponse getAccountById(UUID accountId);
+    
+    UserEmailResponse getEmailByUserId(UUID userId);
 
     List<UserResponse> getAllAccounts();
 

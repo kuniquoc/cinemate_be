@@ -58,6 +58,10 @@ app:
   frontend:
     url: ${FRONTEND_URL:http://localhost:3000}
 
+movie:
+  service:
+    url: ${MOVIE_SERVICE_URL:http://movie-service:8080}
+
 vnpay:
   url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
   tmn-code: 1HFIAMAT
