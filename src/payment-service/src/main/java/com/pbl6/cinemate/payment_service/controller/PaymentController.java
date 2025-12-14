@@ -15,8 +15,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.view.RedirectView;
 
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +35,9 @@ public class PaymentController {
     private final PaymentService paymentService;
     private final VNPayService vnPayService;
     private final SubscriptionService subscriptionService;
+    
+    @Value("${app.frontend.url:http://localhost:3000}")
+    private String frontendUrl;
     
     @PostMapping("/create-url")
     public ResponseEntity<ResponseData> createPaymentUrl(
@@ -63,7 +69,7 @@ public class PaymentController {
     }
     
     @GetMapping("/vnpay-return")
-    public ResponseEntity<ResponseData> vnPayReturn(
+    public RedirectView vnPayReturn(
             @RequestParam Map<String, String> params,
             HttpServletRequest httpRequest) {
         try {
@@ -73,23 +79,18 @@ public class PaymentController {
             // If payment successful, activate subscription and send emails
             if (payment.getStatus().toString().equals("SUCCESS")) {
                 subscriptionService.activateSubscription(payment.getSubscription().getId(), payment);
+                log.info("Payment successful, redirecting to home page");
+            } else {
+                log.warn("Payment failed with status: {}", payment.getStatus());
             }
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", payment.getStatus());
-            response.put("message", vnPayService.getPaymentStatus(payment.getVnpResponseCode()));
-            response.put("transactionId", payment.getVnpTransactionNo());
-            response.put("amount", payment.getAmount());
-            
-            return ResponseEntity.ok(ResponseData.success(
-                    response,
-                    "Payment processed successfully",
-                    httpRequest.getRequestURI(),
-                    httpRequest.getMethod()));
+            // Redirect to frontend home page
+            return new RedirectView(frontendUrl);
             
         } catch (Exception e) {
             log.error("Error processing VNPay return", e);
-            throw e;
+            // Still redirect to home page even on error
+            return new RedirectView(frontendUrl);
         }
     }
     
