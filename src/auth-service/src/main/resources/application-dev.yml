@@ -39,9 +39,9 @@ server:
 
 app:
   auth:
-    access-token-secret: ${DEV_ACCESS_TOKEN_SECRET}
+    access-token-secret: ${ACCESS_TOKEN_SECRET}
     access-token-expiration-msec: 7200000
-    refresh-token-secret: ${DEV_REFRESH_TOKEN_SECRET}
+    refresh-token-secret: ${REFRESH_TOKEN_SECRET}
     refresh-token-expiration-msec: 2592000000
   admin:
     email: ${DEV_ADMIN_EMAIL}
