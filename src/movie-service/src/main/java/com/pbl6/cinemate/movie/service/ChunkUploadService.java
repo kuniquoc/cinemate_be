@@ -13,7 +13,7 @@ public interface ChunkUploadService {
     ChunkUploadInitResponse initiateUpload(ChunkUploadInitRequest request);
 
     ChunkUploadResponse uploadChunk(String uploadId, Integer chunkNumber,
-            MultipartFile chunkFile, ChunkUploadRequest request);
+                                    MultipartFile chunkFile, ChunkUploadRequest request);
 
     ChunkUploadStatusResponse getUploadStatus(String uploadId);
 

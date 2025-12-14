@@ -48,18 +48,18 @@ public class MinioConfig {
 
             // Set public read policy for the bucket
             String policy = String.format("""
-                {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Effect": "Allow",
-                            "Principal": {"AWS": "*"},
-                            "Action": ["s3:GetObject"],
-                            "Resource": ["arn:aws:s3:::%s/*"]
-                        }
-                    ]
-                }
-                """, bucketName);
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Principal": {"AWS": "*"},
+                                "Action": ["s3:GetObject"],
+                                "Resource": ["arn:aws:s3:::%s/*"]
+                            }
+                        ]
+                    }
+                    """, bucketName);
 
             minioClient.setBucketPolicy(
                     SetBucketPolicyArgs.builder()

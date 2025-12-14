@@ -7,14 +7,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class PaymentResponse {
-    
+
     private UUID id;
     private UUID userId;
     private UUID subscriptionId;
@@ -29,7 +29,7 @@ public class PaymentResponse {
     private String vnpOrderInfo;
     private String vnpPayDate;
     private String vnpResponseCode;
-    private LocalDateTime paymentDate;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Instant paymentDate;
+    private Instant createdAt;
+    private Instant updatedAt;
 }

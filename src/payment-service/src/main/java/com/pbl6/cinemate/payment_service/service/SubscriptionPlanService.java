@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class SubscriptionPlanService {
-    
+
     private final SubscriptionPlanRepository planRepository;
     private final ModelMapper modelMapper;
 
@@ -29,7 +29,7 @@ public class SubscriptionPlanService {
 
     @Value("${spring.mail.password}")
     private String password;
-    
+
     @Transactional(readOnly = true)
     public List<SubscriptionPlanResponse> getAllPlans() {
         log.info("mail {}", mail);
@@ -38,14 +38,14 @@ public class SubscriptionPlanService {
                 .map(plan -> modelMapper.map(plan, SubscriptionPlanResponse.class))
                 .collect(Collectors.toList());
     }
-    
+
     @Transactional(readOnly = true)
     public SubscriptionPlanResponse getPlanById(UUID id) {
         SubscriptionPlan plan = planRepository.findByIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("SubscriptionPlan", "id", id));
         return modelMapper.map(plan, SubscriptionPlanResponse.class);
     }
-    
+
     @Transactional(readOnly = true)
     public SubscriptionPlan getPlanEntityById(UUID id) {
         return planRepository.findByIdAndIsActiveTrue(id)

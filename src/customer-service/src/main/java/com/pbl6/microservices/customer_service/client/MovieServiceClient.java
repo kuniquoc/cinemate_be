@@ -11,11 +11,11 @@ import java.util.UUID;
  * Feign client for Movie Service
  */
 @FeignClient(
-    name = "movie-service",
-    url = "${movie.service.url}"
+        name = "movie-service",
+        url = "${movie.service.url}"
 )
 public interface MovieServiceClient {
-    
+
     /**
      * Get movie information by ID
      * Calls: GET /api/movies/{id}

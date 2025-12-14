@@ -13,7 +13,7 @@ import com.pbl6.cinemate.shared.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -68,7 +68,7 @@ public class PermissionServiceImpl implements PermissionService {
     public void deletePermission(UUID id) {
         Permission existing = permissionRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.PERMISSION_NOT_FOUND));
-        existing.setDeletedAt(LocalDateTime.now());
+        existing.setDeletedAt(Instant.now());
         permissionRepository.save(existing);
     }
 }

@@ -33,7 +33,7 @@ public class EnumValidator implements ConstraintValidator<ValidEnum, String> {
         if (!isValid) {
             context.disableDefaultConstraintViolation();
             context.buildConstraintViolationWithTemplate(
-                    "Invalid value. Allowed values are: " + allowedValues)
+                            "Invalid value. Allowed values are: " + allowedValues)
                     .addConstraintViolation();
         }
 

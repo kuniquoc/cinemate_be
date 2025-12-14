@@ -6,7 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Data
@@ -20,7 +20,7 @@ public class FamilyInvitationResponse {
     private InvitationStatus status;
     private UUID invitedBy;
     private UUID invitedUserId;
-    private LocalDateTime expiresAt;
-    private LocalDateTime acceptedAt;
-    private LocalDateTime createdAt;
+    private Instant expiresAt;
+    private Instant acceptedAt;
+    private Instant createdAt;
 }

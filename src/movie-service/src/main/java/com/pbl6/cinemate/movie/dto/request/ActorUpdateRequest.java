@@ -9,17 +9,17 @@ import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Size;
 
 public record ActorUpdateRequest(
-    @Size(max = 255, message = "Full name must not exceed 255 characters")
-    String fullname,
+        @Size(max = 255, message = "Full name must not exceed 255 characters")
+        String fullname,
 
-    @Size(max = 2000, message = "Biography must not exceed 2000 characters")
-    String biography,
+        @Size(max = 2000, message = "Biography must not exceed 2000 characters")
+        String biography,
 
-    @Size(max = 512, message = "Avatar URL must not exceed 512 characters")
-    String avatar,
+        @Size(max = 512, message = "Avatar URL must not exceed 512 characters")
+        String avatar,
 
-    @Past(message = "Date of birth must be in the past")
-    @JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
-    LocalDate dateOfBirth
+        @Past(message = "Date of birth must be in the past")
+        @JsonFormat(pattern = "yyyy-MM-dd", shape = JsonFormat.Shape.STRING)
+        LocalDate dateOfBirth
 ) {
 }

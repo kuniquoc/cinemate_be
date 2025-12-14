@@ -16,19 +16,19 @@ public record HealthResponse(
         @JsonProperty("timestamp") Instant timestamp,
 
         @JsonProperty("components") Map<String, ComponentHealth> components) {
-    public record ComponentHealth(
-            @JsonProperty("status") String status,
-
-            @JsonProperty("latencyMs") Double latencyMs,
-
-            @JsonProperty("message") String message) {
-    }
-
     public boolean isHealthy() {
         return "healthy".equals(status);
     }
 
     public boolean isDegraded() {
         return "degraded".equals(status);
+    }
+
+    public record ComponentHealth(
+            @JsonProperty("status") String status,
+
+            @JsonProperty("latencyMs") Double latencyMs,
+
+            @JsonProperty("message") String message) {
     }
 }

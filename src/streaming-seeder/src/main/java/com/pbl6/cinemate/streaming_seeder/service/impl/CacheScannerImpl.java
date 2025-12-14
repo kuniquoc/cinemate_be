@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Stream;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -109,7 +110,7 @@ public class CacheScannerImpl implements CacheScanner {
     }
 
     private CachedSegment createSegment(String movieId, String qualityId, String segmentId,
-            Path filePath, SegmentType type) {
+                                        Path filePath, SegmentType type) {
         try {
             Instant lastModified = Files.getLastModifiedTime(filePath).toInstant();
             return new CachedSegment(movieId, qualityId, segmentId, filePath, lastModified, type);

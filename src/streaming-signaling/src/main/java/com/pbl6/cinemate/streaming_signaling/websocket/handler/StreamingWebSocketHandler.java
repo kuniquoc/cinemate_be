@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -26,10 +27,6 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 @Component
 public class StreamingWebSocketHandler extends TextWebSocketHandler {
-    private final SignalingService signalingService;
-    private final ObjectMapper objectMapper;
-    private final JsonHelper jsonHelper;
-    private final ConcurrentMap<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
     private static final String CLIENT_ID_NULL = "Client ID cannot be null";
     private static final String MOVIE_ID_NULL = "Movie ID cannot be null";
     private static final String QUALITY_ID_NULL = "Quality ID cannot be null";
@@ -42,6 +39,10 @@ public class StreamingWebSocketHandler extends TextWebSocketHandler {
     private static final String QUALITY_ID_KEY = "qualityId";
     private static final String SEGMENT_ID_KEY = "segmentId";
     private static final String TO_KEY = "to";
+    private final SignalingService signalingService;
+    private final ObjectMapper objectMapper;
+    private final JsonHelper jsonHelper;
+    private final ConcurrentMap<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
 
     public StreamingWebSocketHandler(
             SignalingService signalingService,

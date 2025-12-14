@@ -19,30 +19,28 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-        private final JwtAuthFilter jwtAuthFilter;
-        private final JwtAuthEntryPoint jwtAuthEntryPoint;
+    public final String[] PUBLIC_ENDPOINT = {
+            ApiPath.UPDATE_PROFILE
+    };
+    // Internal endpoints accessible only within Docker network
+    public final String[] INTERNAL_ENDPOINT = {
+            "/internal/**"
+    };
+    private final JwtAuthFilter jwtAuthFilter;
+    private final JwtAuthEntryPoint jwtAuthEntryPoint;
 
-        public final String[] PUBLIC_ENDPOINT = {
-                        ApiPath.UPDATE_PROFILE
-        };
-
-        // Internal endpoints accessible only within Docker network
-        public final String[] INTERNAL_ENDPOINT = {
-                        "/internal/**"
-        };
-
-        @Bean
-        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-                return http.csrf(AbstractHttpConfigurer::disable)
-                                .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthEntryPoint))
-                                .sessionManagement(session -> session
-                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                                .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers(PUBLIC_ENDPOINT).permitAll()
-                                                .requestMatchers(INTERNAL_ENDPOINT).permitAll()
-                                                .anyRequest().authenticated())
-                                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                                .build();
-        }
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        return http.csrf(AbstractHttpConfigurer::disable)
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthEntryPoint))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(PUBLIC_ENDPOINT).permitAll()
+                        .requestMatchers(INTERNAL_ENDPOINT).permitAll()
+                        .anyRequest().authenticated())
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();
+    }
 
 }

@@ -10,22 +10,22 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import java.util.TimeZone;
 
 @SpringBootApplication(scanBasePackages = {
-		"com.pbl6.cinemate.movie",
-		"com.pbl6.cinemate.shared"
+        "com.pbl6.cinemate.movie",
+        "com.pbl6.cinemate.shared"
 })
 @EnableScheduling
 @EnableAsync
 @EnableFeignClients(basePackages = "com.pbl6.cinemate.movie.client")
 @ConfigurationPropertiesScan(basePackages = {
-		"com.pbl6.cinemate.movie",
-		"com.pbl6.cinemate.shared"
+        "com.pbl6.cinemate.movie",
+        "com.pbl6.cinemate.shared"
 })
 public class MovieApplication {
 
-	public static void main(String[] args) {
-		TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+    public static void main(String[] args) {
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
 
-		SpringApplication.run(MovieApplication.class, args);
-	}
+        SpringApplication.run(MovieApplication.class, args);
+    }
 
 }

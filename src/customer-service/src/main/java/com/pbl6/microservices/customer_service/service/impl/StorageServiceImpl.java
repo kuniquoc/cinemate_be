@@ -22,9 +22,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class StorageServiceImpl implements StorageService {
 
-    private final MinioClient minioClient;
-    private final AppProperties appProperties;
-
     private static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList(
             "image/jpeg",
             "image/jpg",
@@ -32,8 +29,9 @@ public class StorageServiceImpl implements StorageService {
             "image/gif",
             "image/webp"
     );
-
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    private final MinioClient minioClient;
+    private final AppProperties appProperties;
 
     @Override
     public String uploadImage(MultipartFile file) {

@@ -20,13 +20,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class ContentAccessController {
-    
+
     private final ContentAccessService contentAccessService;
-    
+
     /**
      * Check if a user has permission to watch content based on subscription and parental controls
-     * 
-     * @param request Contains movieCategories and currentWatchTimeMinutes
+     *
+     * @param request       Contains movieCategories and currentWatchTimeMinutes
      * @param userPrincipal Authenticated user from JWT token
      * @return ContentAccessResponse with allowed status and additional information
      */
@@ -34,23 +34,23 @@ public class ContentAccessController {
     public ResponseEntity<Map<String, Object>> checkContentAccess(
             @Valid @RequestBody ContentAccessRequest request,
             @CurrentUser UserPrincipal userPrincipal) {
-        
+
         UUID userId = userPrincipal.getId();
         log.info("Content access check request received for user: {}", userId);
-        
+
         ContentAccessResponse response = contentAccessService.checkContentAccess(
                 userId,
                 request.getMovieCategoryIds(),
                 request.getCurrentWatchTimeMinutes()
         );
-        
+
         Map<String, Object> responseBody = new HashMap<>();
         responseBody.put("status", "success");
         responseBody.put("data", response);
-        
-        log.info("Content access check completed for user: {}, allowed: {}", 
+
+        log.info("Content access check completed for user: {}, allowed: {}",
                 userId, response.getAllowed());
-        
+
         return ResponseEntity.ok(responseBody);
     }
 }

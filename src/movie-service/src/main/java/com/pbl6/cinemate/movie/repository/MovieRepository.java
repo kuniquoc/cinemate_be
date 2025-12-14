@@ -31,7 +31,7 @@ public interface MovieRepository extends JpaRepository<Movie, UUID> {
                 OR LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
             """)
     Page<Movie> searchMoviesByKeyword(@Param("keyword") String keyword, @Param("status") MovieStatus status,
-            Pageable pageable);
+                                      Pageable pageable);
 
     @Query("SELECT m FROM Movie m ORDER BY m.rank ASC NULLS LAST")
     List<Movie> findTop10ByOrderByRankAsc(Pageable pageable);

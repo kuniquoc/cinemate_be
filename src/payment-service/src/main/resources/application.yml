@@ -32,8 +32,6 @@ management:
         enabled: true
 
 app:
-  seed:
-    enabled: ${SEED_ENABLED:false}
   auth:
     access-token-secret: Ckj2tdZqqx4zYqn0iSB9bUPIsckWdFoa/YIi1kzGWKc9qM5XCbRoPHmWhft9pZZCGeKYcAhgILzOu++4toDC0Gn9iDWTlRAlnQ8efRnVU8I=
     access-token-expiration-msec: 900000

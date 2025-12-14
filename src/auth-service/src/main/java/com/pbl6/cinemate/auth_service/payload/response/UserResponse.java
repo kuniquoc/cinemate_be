@@ -2,13 +2,14 @@ package com.pbl6.cinemate.auth_service.payload.response;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Getter
@@ -23,7 +24,7 @@ public class UserResponse {
     String lastName;
     Boolean isEnabled;
     RoleResponse role;
-    LocalDateTime accountVerifiedAt;
-    LocalDateTime createdAt;
-    LocalDateTime updatedAt;
+    Instant accountVerifiedAt;
+    Instant createdAt;
+    Instant updatedAt;
 }

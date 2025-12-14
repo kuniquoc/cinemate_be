@@ -32,7 +32,7 @@ public class MovieTranscodeServiceImpl implements MovieTranscodeService {
     private String movieBucket;
 
     public MovieTranscodeServiceImpl(FFmpegService ffmpeg, MinioStorageService minio,
-            MovieRepository repo) {
+                                     MovieRepository repo) {
         this.ffmpeg = ffmpeg;
         this.minio = minio;
         this.repo = repo;

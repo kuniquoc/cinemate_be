@@ -1,6 +1,7 @@
 # Streaming Seeder Service
 
-The streaming-seeder service keeps Redis in sync with locally cached media segments so that peers can discover which nodes can seed content.
+The streaming-seeder service keeps Redis in sync with locally cached media segments so that peers can discover which
+nodes can seed content.
 
 ## Responsibilities
 
@@ -18,7 +19,7 @@ The streaming-seeder service keeps Redis in sync with locally cached media segme
 Environment variables (defaults in `src/main/resources/application.yml`):
 
 | Variable                                       | Description                                               |
-| ---------------------------------------------- | --------------------------------------------------------- |
+|------------------------------------------------|-----------------------------------------------------------|
 | `SERVER_PORT`                                  | HTTP port (default `8084`).                               |
 | `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` | Redis connection parameters.                              |
 | `SEEDER_ENABLED`                               | Toggle startup sync and scheduled maintenance.            |

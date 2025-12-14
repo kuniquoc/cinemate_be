@@ -12,15 +12,15 @@ import java.util.UUID;
 
 @Repository
 public interface DeviceRepository extends JpaRepository<Device, UUID> {
-    
+
     List<Device> findByUserIdAndIsActiveTrue(UUID userId);
-    
+
     Optional<Device> findByUserIdAndDeviceId(UUID userId, String deviceId);
-    
+
     @Query("SELECT COUNT(d) FROM Device d WHERE d.userId = :userId AND d.isActive = true")
     long countActiveDevicesByUserId(@Param("userId") UUID userId);
-    
+
     boolean existsByUserIdAndDeviceId(UUID userId, String deviceId);
-    
+
     List<Device> findByUserId(UUID userId);
 }

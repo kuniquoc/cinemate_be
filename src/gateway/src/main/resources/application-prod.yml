@@ -68,7 +68,7 @@ spring:
                 - Path=/api/v1/streams/**
               filters:
                 - RewritePath=/api/v1/(?<segment>.*), /api/$\{segment}
-                
+
           globalcors:
             cors-configurations:
               '[/**]':

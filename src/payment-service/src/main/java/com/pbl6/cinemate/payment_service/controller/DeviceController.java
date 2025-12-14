@@ -21,9 +21,9 @@ import java.util.UUID;
 @RequestMapping("/api/devices")
 @RequiredArgsConstructor
 public class DeviceController {
-    
+
     private final DeviceService deviceService;
-    
+
     @GetMapping("/user")
     public ResponseEntity<ResponseData> getUserDevices(
             @CurrentUser UserPrincipal userPrincipal,
@@ -35,7 +35,7 @@ public class DeviceController {
                 httpRequest.getRequestURI(),
                 httpRequest.getMethod()));
     }
-    
+
     @PostMapping("/register")
     public ResponseEntity<ResponseData> registerDevice(
             @Valid @RequestBody RegisterDeviceRequest request,
@@ -48,7 +48,7 @@ public class DeviceController {
                 httpRequest.getRequestURI(),
                 httpRequest.getMethod()));
     }
-    
+
     @DeleteMapping("/{deviceId}")
     public ResponseEntity<ResponseData> removeDevice(
             @PathVariable UUID deviceId,
@@ -60,19 +60,19 @@ public class DeviceController {
                 httpRequest.getRequestURI(),
                 httpRequest.getMethod()));
     }
-    
+
     @GetMapping("/verify")
     public ResponseEntity<ResponseData> verifyDevice(
             @CurrentUser UserPrincipal userPrincipal,
             @RequestParam(name = "deviceId") String deviceId,
             HttpServletRequest httpRequest) {
         boolean isRegistered = deviceService.isDeviceRegistered(userPrincipal.getId(), deviceId);
-        
+
         Map<String, Object> response = new HashMap<>();
         response.put("isRegistered", isRegistered);
         response.put("userId", userPrincipal.getId());
         response.put("deviceId", deviceId);
-        
+
         return ResponseEntity.ok(ResponseData.success(
                 response,
                 "Device verification completed successfully",

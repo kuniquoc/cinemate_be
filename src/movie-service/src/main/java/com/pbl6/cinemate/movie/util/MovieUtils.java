@@ -11,8 +11,11 @@ import com.pbl6.cinemate.movie.entity.Movie;
 import java.util.List;
 
 public final class MovieUtils {
+    private MovieUtils() {
+    }
+
     public static MovieResponse mapToMovieResponse(Movie movie, List<CategoryResponse> categories,
-            List<ActorResponse> actors, List<DirectorResponse> directors) {
+                                                   List<ActorResponse> actors, List<DirectorResponse> directors) {
         return new MovieResponse(
                 movie.getId(),
                 movie.getTitle(),
@@ -33,7 +36,7 @@ public final class MovieUtils {
     }
 
     public static MovieInfoResponse mapToMovieInfoResponse(Movie movie, List<ActorResponse> actors,
-            List<DirectorResponse> directors, List<CategoryResponse> categories, Long lastWatchedPosition) {
+                                                           List<DirectorResponse> directors, List<CategoryResponse> categories, Long lastWatchedPosition) {
         List<String> qualities = movie.getQualities() != null ? movie.getQualities() : List.of();
         return new MovieInfoResponse(
                 movie.getId(),
@@ -69,8 +72,5 @@ public final class MovieUtils {
                 .year(movieRequest.getYear())
                 .isVip(Boolean.TRUE.equals(movieRequest.getIsVip()))
                 .build();
-    }
-
-    private MovieUtils() {
     }
 }

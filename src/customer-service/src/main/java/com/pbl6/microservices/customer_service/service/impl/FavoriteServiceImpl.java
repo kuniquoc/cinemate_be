@@ -18,7 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -33,14 +33,14 @@ public class FavoriteServiceImpl implements FavoriteService {
     @Override
     @Transactional
     public FavoriteResponse addFavorite(UUID customerId, FavoriteCreateRequest request) {
-//        TO D0: Validate movie existence via Movie Service
+        // TO D0: Validate movie existence via Movie Service
         if (favoriteRepository.existsByCustomerIdAndMovieId(customerId, request.getMovieId())) {
             throw new IllegalArgumentException("Movie already in favorites");
         }
         Favorite favorite = Favorite.builder()
                 .customerId(customerId)
                 .movieId(request.getMovieId())
-                .createdAt(LocalDateTime.now())
+                .createdAt(Instant.now())
                 .build();
         favorite = favoriteRepository.save(favorite);
         return toResponse(favorite);
@@ -56,17 +56,17 @@ public class FavoriteServiceImpl implements FavoriteService {
     public Page<MovieDetailResponse> getFavorites(UUID customerId, int page, int limit) {
         Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Favorite> favoritePage = favoriteRepository.findByCustomerId(customerId, pageable);
-        
+
         // Enrich with movie details
         List<MovieDetailResponse> enrichedMovies = enrichFavorites(favoritePage.getContent());
-        
+
         return new PageImpl<>(enrichedMovies, pageable, favoritePage.getTotalElements());
     }
 
     @Override
     @Transactional
     public void removeFavorite(UUID customerId, UUID movieId) {
-//        TO DO: Validate movie existence via Movie Service
+        // TO DO: Validate movie existence via Movie Service
         favoriteRepository.deleteByCustomerIdAndMovieId(customerId, movieId);
     }
 
@@ -82,7 +82,7 @@ public class FavoriteServiceImpl implements FavoriteService {
                         log.warn("Movie service returned null data for movieId={}", favorite.getMovieId());
                         return null;
                     } catch (Exception e) {
-                        log.warn("Failed to fetch movie details for movieId={}: {}", 
+                        log.warn("Failed to fetch movie details for movieId={}: {}",
                                 favorite.getMovieId(), e.getMessage());
                         return null;
                     }
@@ -98,5 +98,13 @@ public class FavoriteServiceImpl implements FavoriteService {
                 .createdAt(favorite.getCreatedAt())
                 .build();
     }
-}
 
+    private FavoriteResponse toResponseWithMovie(Favorite favorite, MovieDetailResponse movie) {
+        return FavoriteResponse.builder()
+                .id(favorite.getId())
+                .movieId(favorite.getMovieId())
+                .createdAt(favorite.getCreatedAt())
+                .movie(movie)
+                .build();
+    }
+}

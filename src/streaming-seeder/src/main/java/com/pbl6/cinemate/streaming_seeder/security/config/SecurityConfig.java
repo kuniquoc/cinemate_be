@@ -19,37 +19,36 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-        private final JwtAuthFilter jwtAuthFilter;
-        private final JwtAuthEntryPoint jwtAuthEntryPoint;
+    private static final String[] PUBLIC_ENDPOINT = {
+            "/api/v3/api-docs/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+            "/actuator/health"
+    };
+    private final JwtAuthFilter jwtAuthFilter;
+    private final JwtAuthEntryPoint jwtAuthEntryPoint;
 
-        private static final String[] PUBLIC_ENDPOINT = {
-                        "/api/v3/api-docs/**",
-                        "/swagger-ui/**",
-                        "/swagger-ui.html",
-                        "/actuator/health"
-        };
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-        @Bean
-        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(AbstractHttpConfigurer::disable)
 
-                return http
-                                .csrf(AbstractHttpConfigurer::disable)
-                                .cors(AbstractHttpConfigurer::disable)
+                // Handle unauthorized errors
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthEntryPoint))
 
-                                // Handle unauthorized errors
-                                .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthEntryPoint))
+                // Stateless → Resource Server don't saved session
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                                // Stateless → Resource Server don't saved session
-                                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // Only allow public endpoints
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(PUBLIC_ENDPOINT).permitAll()
+                        // Todo: secure other endpoints later
+                        .anyRequest().permitAll())
 
-                                // Only allow public endpoints
-                                .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers(PUBLIC_ENDPOINT).permitAll()
-                                                // Todo: secure other endpoints later
-                                                .anyRequest().permitAll())
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
 
-                                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-
-                                .build();
-        }
+                .build();
+    }
 }

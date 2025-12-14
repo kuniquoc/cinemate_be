@@ -1,23 +1,21 @@
 package com.pbl6.cinemate.auth_service.entity;
 
+import com.pbl6.cinemate.shared.entity.AbstractBaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 @Entity
 @Table(name = "roles")
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Role extends AbstractEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+public class Role extends AbstractBaseEntity {
 
     @Column(nullable = false, unique = true, length = 50)
     private String name;
@@ -35,6 +33,7 @@ public class Role extends AbstractEntity {
             joinColumns = @JoinColumn(name = "role_id"),
             inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
+    @Builder.Default
     private Set<Permission> permissions = new HashSet<>();
 
     public void removePermission(Permission permission) {

@@ -11,9 +11,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateSubscriptionRequest {
-    
+
     @NotNull(message = "Plan ID is required")
     private UUID planId;
-    
+
     private Boolean autoRenew = false;
 }

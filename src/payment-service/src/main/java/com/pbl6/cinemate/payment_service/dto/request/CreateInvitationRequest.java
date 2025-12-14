@@ -10,13 +10,13 @@ import java.util.UUID;
 
 @Data
 public class CreateInvitationRequest {
-    
+
     @NotNull(message = "Invitation mode is required")
     private InvitationMode mode;
-    
+
     @NotBlank(message = "Recipient email is required")
     @Email(message = "Invalid email format")
     private String recipientEmail;
-    
+
     private Boolean sendEmail = true; // Default to true
 }

@@ -10,9 +10,9 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 @EnableFeignClients
 public class CustomerServiceApplication {
 
-	public static void main(String[] args) {
-		TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
-		SpringApplication.run(CustomerServiceApplication.class, args);
-	}
+    public static void main(String[] args) {
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+        SpringApplication.run(CustomerServiceApplication.class, args);
+    }
 
 }

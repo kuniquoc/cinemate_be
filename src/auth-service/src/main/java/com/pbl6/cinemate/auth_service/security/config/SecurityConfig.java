@@ -25,55 +25,53 @@ import com.pbl6.cinemate.shared.security.JwtAuthFilter;
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-        private final CustomUserDetailsService customUserDetailsService;
-        private final PasswordEncoder passwordEncoder;
-        private final JwtAuthFilter jwtAuthFilter;
-        private final JwtAuthEntryPoint jwtAuthEntryPoint;
+    public final String[] PUBLIC_ENDPOINT = {
+            ApiPath.AUTH + "/sign-up",
+            ApiPath.AUTH + "/login",
+            ApiPath.AUTH + "/log-out",
+            ApiPath.AUTH + "/forgot-password",
+            ApiPath.AUTH + "/reset-password",
+            ApiPath.AUTH + "/verify-account",
+            ApiPath.AUTH + "/verify-otp",
+            ApiPath.AUTH + "/refresh-token",
+            ApiPath.AUTH + "/verify-jwt",
+            ApiPath.AUTH + "/verify-email",
+            ApiPath.AUTH + "/verify-token",
+            "/api/v3/api-docs/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+            "/actuator/health"
+    };
+    private final CustomUserDetailsService customUserDetailsService;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtAuthFilter jwtAuthFilter;
+    private final JwtAuthEntryPoint jwtAuthEntryPoint;
 
-        public final String[] PUBLIC_ENDPOINT = {
-                        ApiPath.AUTH + "/sign-up",
-                        ApiPath.AUTH + "/login",
-                        ApiPath.AUTH + "/log-out",
-                        ApiPath.AUTH + "/forgot-password",
-                        ApiPath.AUTH + "/reset-password",
-                        ApiPath.AUTH + "/verify-account",
-                        ApiPath.AUTH + "/verify-otp",
-                        ApiPath.AUTH + "/refresh-token",
-                        ApiPath.AUTH + "/verify-jwt",
-                        ApiPath.AUTH + "/verify-email",
-                        ApiPath.AUTH + "/verify-token",
-                        "/api/public/users/*/email",
-                        "/api/v3/api-docs/**",
-                        "/swagger-ui/**",
-                        "/swagger-ui.html",
-                        "/actuator/health"
-        };
+    @Bean
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
 
-        @Bean
-        public AuthenticationManager authenticationManager(
-                        AuthenticationConfiguration authenticationConfiguration) throws Exception {
-                return authenticationConfiguration.getAuthenticationManager();
-        }
+    @Bean
+    public DaoAuthenticationProvider daoAuthenticationProvider() {
+        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
+        daoAuthenticationProvider.setUserDetailsService(customUserDetailsService);
+        daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
+        return daoAuthenticationProvider;
+    }
 
-        @Bean
-        public DaoAuthenticationProvider daoAuthenticationProvider() {
-                DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
-                daoAuthenticationProvider.setUserDetailsService(customUserDetailsService);
-                daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
-                return daoAuthenticationProvider;
-        }
-
-        @Bean
-        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-                return http.csrf(AbstractHttpConfigurer::disable)
-                                .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthEntryPoint))
-                                .sessionManagement(session -> session
-                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                                .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers(PUBLIC_ENDPOINT).permitAll()
-                                                .anyRequest().authenticated())
-                                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                                .build();
-        }
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        return http.csrf(AbstractHttpConfigurer::disable)
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthEntryPoint))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(PUBLIC_ENDPOINT).permitAll()
+                        .anyRequest().authenticated())
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();
+    }
 
 }

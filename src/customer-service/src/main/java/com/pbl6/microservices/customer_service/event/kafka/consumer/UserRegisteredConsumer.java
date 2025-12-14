@@ -29,7 +29,7 @@ public class UserRegisteredConsumer {
             log.info("Created successfully customer for accountId: {} at time {}", event.getAccountId(), System.currentTimeMillis());
         } catch (JsonProcessingException e) {
             log.error("Failed to parse UserRegisteredEvent: {}", e.getMessage(), e);
-            
+
         }
     }
 }

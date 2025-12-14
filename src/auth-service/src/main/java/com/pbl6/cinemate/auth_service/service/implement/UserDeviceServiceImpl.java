@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -35,15 +35,15 @@ public class UserDeviceServiceImpl implements UserDeviceService {
         String ipAddress = extractIpAddress(request);
         String userAgent = request.getHeader("User-Agent");
 
-        String deviceName = deviceInfo != null && deviceInfo.getDeviceName() != null 
-                ? deviceInfo.getDeviceName() 
+        String deviceName = deviceInfo != null && deviceInfo.getDeviceName() != null
+                ? deviceInfo.getDeviceName()
                 : extractDeviceNameFromUserAgent(userAgent);
         String deviceType = deviceInfo != null ? deviceInfo.getDeviceType() : extractDeviceType(userAgent);
-        String deviceOs = deviceInfo != null && deviceInfo.getDeviceOs() != null 
-                ? deviceInfo.getDeviceOs() 
+        String deviceOs = deviceInfo != null && deviceInfo.getDeviceOs() != null
+                ? deviceInfo.getDeviceOs()
                 : extractOS(userAgent);
-        String browser = deviceInfo != null && deviceInfo.getBrowser() != null 
-                ? deviceInfo.getBrowser() 
+        String browser = deviceInfo != null && deviceInfo.getBrowser() != null
+                ? deviceInfo.getBrowser()
                 : extractBrowser(userAgent);
 
         // Check if device already exists
@@ -56,7 +56,7 @@ public class UserDeviceServiceImpl implements UserDeviceService {
             device = existingDevice.get();
             device.setIpAddress(ipAddress);
             device.setUserAgent(userAgent);
-            device.setLastActiveAt(LocalDateTime.now());
+            device.setLastActiveAt(Instant.now());
             device.setDeviceType(deviceType);
         } else {
             // Create new device
@@ -68,13 +68,13 @@ public class UserDeviceServiceImpl implements UserDeviceService {
                     .browser(browser)
                     .ipAddress(ipAddress)
                     .userAgent(userAgent)
-                    .lastActiveAt(LocalDateTime.now())
+                    .lastActiveAt(Instant.now())
                     .build();
         }
 
         // Clear current device status for all devices
         userDeviceRepository.clearCurrentDeviceStatus(userId);
-        
+
         // Set this device as current
         device.setIsCurrent(true);
 
@@ -91,8 +91,8 @@ public class UserDeviceServiceImpl implements UserDeviceService {
     public void logoutFromDevice(UUID userId, UUID deviceId) {
         UserDevice device = userDeviceRepository.findByIdAndUserId(deviceId, userId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.DEVICE_NOT_FOUND));
-        
-        device.setDeletedAt(LocalDateTime.now());
+
+        device.setDeletedAt(Instant.now());
         device.setIsCurrent(false);
         userDeviceRepository.save(device);
     }
@@ -101,10 +101,10 @@ public class UserDeviceServiceImpl implements UserDeviceService {
     @Transactional
     public void logoutFromAllDevices(UUID userId, UUID currentDeviceId) {
         List<UserDevice> devices = userDeviceRepository.findAllByUserId(userId);
-        
+
         for (UserDevice device : devices) {
             if (!device.getId().equals(currentDeviceId)) {
-                device.setDeletedAt(LocalDateTime.now());
+                device.setDeletedAt(Instant.now());
                 device.setIsCurrent(false);
                 userDeviceRepository.save(device);
             }
@@ -129,8 +129,8 @@ public class UserDeviceServiceImpl implements UserDeviceService {
     public void adminLogoutFromDevice(UUID deviceId) {
         UserDevice device = userDeviceRepository.findById(deviceId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.DEVICE_NOT_FOUND));
-        
-        device.setDeletedAt(LocalDateTime.now());
+
+        device.setDeletedAt(Instant.now());
         device.setIsCurrent(false);
         userDeviceRepository.save(device);
     }
@@ -140,10 +140,10 @@ public class UserDeviceServiceImpl implements UserDeviceService {
     public void adminLogoutFromAllUserDevices(UUID userId) {
         // Verify user exists
         userService.findById(userId);
-        
+
         List<UserDevice> devices = userDeviceRepository.findAllByUserId(userId);
         for (UserDevice device : devices) {
-            device.setDeletedAt(LocalDateTime.now());
+            device.setDeletedAt(Instant.now());
             device.setIsCurrent(false);
             userDeviceRepository.save(device);
         }
@@ -165,21 +165,29 @@ public class UserDeviceServiceImpl implements UserDeviceService {
     }
 
     private String extractDeviceNameFromUserAgent(String userAgent) {
-        if (userAgent == null) return "Unknown Device";
-        
-        if (userAgent.contains("Windows")) return "Windows PC";
-        if (userAgent.contains("Macintosh")) return "Mac";
-        if (userAgent.contains("Linux")) return "Linux PC";
-        if (userAgent.contains("iPhone")) return "iPhone";
-        if (userAgent.contains("iPad")) return "iPad";
-        if (userAgent.contains("Android")) return "Android Device";
-        
+        if (userAgent == null)
+            return "Unknown Device";
+
+        if (userAgent.contains("Windows"))
+            return "Windows PC";
+        if (userAgent.contains("Macintosh"))
+            return "Mac";
+        if (userAgent.contains("Linux"))
+            return "Linux PC";
+        if (userAgent.contains("iPhone"))
+            return "iPhone";
+        if (userAgent.contains("iPad"))
+            return "iPad";
+        if (userAgent.contains("Android"))
+            return "Android Device";
+
         return "Unknown Device";
     }
 
     private String extractDeviceType(String userAgent) {
-        if (userAgent == null) return "Unknown";
-        
+        if (userAgent == null)
+            return "Unknown";
+
         if (userAgent.contains("Mobile") || userAgent.contains("Android") || userAgent.contains("iPhone")) {
             return "Mobile";
         }
@@ -190,13 +198,19 @@ public class UserDeviceServiceImpl implements UserDeviceService {
     }
 
     private String extractOS(String userAgent) {
-        if (userAgent == null) return "Unknown";
-        
-        if (userAgent.contains("Windows NT 10.0")) return "Windows 10";
-        if (userAgent.contains("Windows NT 11.0")) return "Windows 11";
-        if (userAgent.contains("Windows NT 6.3")) return "Windows 8.1";
-        if (userAgent.contains("Windows NT 6.2")) return "Windows 8";
-        if (userAgent.contains("Windows NT 6.1")) return "Windows 7";
+        if (userAgent == null)
+            return "Unknown";
+
+        if (userAgent.contains("Windows NT 10.0"))
+            return "Windows 10";
+        if (userAgent.contains("Windows NT 11.0"))
+            return "Windows 11";
+        if (userAgent.contains("Windows NT 6.3"))
+            return "Windows 8.1";
+        if (userAgent.contains("Windows NT 6.2"))
+            return "Windows 8";
+        if (userAgent.contains("Windows NT 6.1"))
+            return "Windows 7";
         if (userAgent.contains("Mac OS X")) {
             int startIndex = userAgent.indexOf("Mac OS X");
             if (startIndex != -1) {
@@ -205,7 +219,8 @@ public class UserDeviceServiceImpl implements UserDeviceService {
             }
             return "macOS";
         }
-        if (userAgent.contains("Linux")) return "Linux";
+        if (userAgent.contains("Linux"))
+            return "Linux";
         if (userAgent.contains("Android")) {
             int startIndex = userAgent.indexOf("Android");
             if (startIndex != -1) {
@@ -222,20 +237,27 @@ public class UserDeviceServiceImpl implements UserDeviceService {
             }
             return "iOS";
         }
-        if (userAgent.contains("iPad")) return "iPadOS";
-        
+        if (userAgent.contains("iPad"))
+            return "iPadOS";
+
         return "Unknown";
     }
 
     private String extractBrowser(String userAgent) {
-        if (userAgent == null) return "Unknown";
-        
-        if (userAgent.contains("Edg/")) return "Microsoft Edge";
-        if (userAgent.contains("Chrome/") && !userAgent.contains("Edg")) return "Google Chrome";
-        if (userAgent.contains("Safari/") && !userAgent.contains("Chrome")) return "Safari";
-        if (userAgent.contains("Firefox/")) return "Firefox";
-        if (userAgent.contains("Opera/") || userAgent.contains("OPR/")) return "Opera";
-        
+        if (userAgent == null)
+            return "Unknown";
+
+        if (userAgent.contains("Edg/"))
+            return "Microsoft Edge";
+        if (userAgent.contains("Chrome/") && !userAgent.contains("Edg"))
+            return "Google Chrome";
+        if (userAgent.contains("Safari/") && !userAgent.contains("Chrome"))
+            return "Safari";
+        if (userAgent.contains("Firefox/"))
+            return "Firefox";
+        if (userAgent.contains("Opera/") || userAgent.contains("OPR/"))
+            return "Opera";
+
         return "Unknown";
     }
 }

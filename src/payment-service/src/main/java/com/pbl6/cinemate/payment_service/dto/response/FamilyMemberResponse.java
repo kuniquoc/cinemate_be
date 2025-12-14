@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Data
@@ -14,5 +14,5 @@ public class FamilyMemberResponse {
     private UUID id;
     private UUID userId;
     private Boolean isOwner;
-    private LocalDateTime joinedAt;
+    private Instant joinedAt;
 }

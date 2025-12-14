@@ -6,81 +6,81 @@ spring:
     name: api-gateway
   cloud:
     gateway:
-        server:
-          webflux:
-            routes:
-              # Movie Service Routes
-              - id: movie-service
-                uri: http://localhost:8081
-                predicates:
-                  - Path=/api/movies/**
-                  
-              # Movie File Upload Routes
-              - id: movie-upload
-                uri: http://localhost:8081
-                predicates:
-                  - Path=/api/upload/**
-              
-              # Movie Category Routes
-              - id: category-service
-                uri: http://localhost:8081
-                predicates:
-                  - Path=/api/categories/**
-              
-              # Actor Routes  
-              - id: actor-service
-                uri: http://localhost:8081
-                predicates:
-                  - Path=/api/actors/**
-              
-              # Director Routes
-              - id: director-service
-                uri: http://localhost:8081
-                predicates:
-                  - Path=/api/directors/**
+      server:
+        webflux:
+          routes:
+            # Movie Service Routes
+            - id: movie-service
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/movies/**
 
-              # Auth Service Routes  
-              - id: auth-service
-                uri: http://localhost:8082
-                predicates:
-                  - Path=/api/auth/**
+            # Movie File Upload Routes
+            - id: movie-upload
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/upload/**
 
-              # Customer Service Routes
-              - id: customer-service
-                uri: http://localhost:8083
-                predicates:
-                  - Path=/api/customers/**
-              
-              # Payment Service Routes
-              - id: payment-service
-                uri: http://localhost:8084
-                predicates:
-                  - Path=/api/payments/**, /api/subscriptions/**
-              
-              # Interaction Recommender Service Routes
-              - id: interaction-recommender-service
-                uri: http://localhost:8085
-                predicates:
-                  - Path=/api/events/**, /api/recommendations/**
+            # Movie Category Routes
+            - id: category-service
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/categories/**
 
-            # Global CORS configuration
-            globalcors:
-              cors-configurations:
-                '[/**]':
-                  allowedOrigins:
-                    - "http://localhost:3000"
-                    - "http://localhost:4200"
-                    - "http://localhost:5173"
-                  allowedMethods:
-                    - GET
-                    - POST
-                    - PUT
-                    - DELETE
-                    - PATCH
-                    - OPTIONS
-                  allowedHeaders: "*"
-                  allowCredentials: true
-                  maxAge: 3600
+            # Actor Routes
+            - id: actor-service
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/actors/**
+
+            # Director Routes
+            - id: director-service
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/directors/**
+
+            # Auth Service Routes
+            - id: auth-service
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/auth/**
+
+            # Customer Service Routes
+            - id: customer-service
+              uri: http://localhost:8083
+              predicates:
+                - Path=/api/customers/**
+
+            # Payment Service Routes
+            - id: payment-service
+              uri: http://localhost:8084
+              predicates:
+                - Path=/api/payments/**, /api/subscriptions/**
+
+            # Interaction Recommender Service Routes
+            - id: interaction-recommender-service
+              uri: http://localhost:8085
+              predicates:
+                - Path=/api/events/**, /api/recommendations/**
+
+          # Global CORS configuration
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins:
+                  - "http://localhost:3000"
+                  - "http://localhost:4200"
+                  - "http://localhost:5173"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - PATCH
+                  - OPTIONS
+                allowedHeaders: "*"
+                allowCredentials: true
+                maxAge: 3600
 
 # JWT Configuration for gateway validation
 # Only validates signature + expiry, full auth is done by backend services

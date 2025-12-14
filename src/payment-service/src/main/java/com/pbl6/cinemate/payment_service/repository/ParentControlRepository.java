@@ -10,15 +10,15 @@ import java.util.UUID;
 
 @Repository
 public interface ParentControlRepository extends JpaRepository<ParentControl, UUID> {
-    
+
     Optional<ParentControl> findByParentIdAndKidId(UUID parentId, UUID kidId);
-    
+
     List<ParentControl> findByParentId(UUID parentId);
-    
+
     List<ParentControl> findByKidId(UUID kidId);
-    
+
     Optional<ParentControl> findByKidIdAndSubscriptionId(UUID kidId, UUID subscriptionId);
-    
+
     boolean existsByParentIdAndKidId(UUID parentId, UUID kidId);
     
     boolean existsByKidId(UUID kidId);
