@@ -40,7 +40,7 @@ public class ContentAccessController {
         
         ContentAccessResponse response = contentAccessService.checkContentAccess(
                 userId,
-                request.getMovieCategories(),
+                request.getMovieCategoryIds(),
                 request.getCurrentWatchTimeMinutes()
         );
         

@@ -6,6 +6,7 @@ import com.pbl6.cinemate.auth_service.mapper.UserMapper;
 import com.pbl6.cinemate.auth_service.payload.request.AdminResetPasswordRequest;
 import com.pbl6.cinemate.auth_service.payload.request.CreateAccountRequest;
 import com.pbl6.cinemate.auth_service.payload.request.UpdateAccountRequest;
+import com.pbl6.cinemate.auth_service.payload.response.UserEmailResponse;
 import com.pbl6.cinemate.auth_service.payload.response.UserResponse;
 import com.pbl6.cinemate.auth_service.repository.RoleRepository;
 import com.pbl6.cinemate.auth_service.repository.UserRepository;
@@ -65,6 +66,16 @@ public class AccountServiceImpl implements AccountService {
         User user = userRepository.findById(accountId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.USER_NOT_FOUND));
         return UserMapper.toUserResponse(user);
+    }
+    
+    @Override
+    public UserEmailResponse getEmailByUserId(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.USER_NOT_FOUND));
+        return UserEmailResponse.builder()
+                .userId(user.getId())
+                .email(user.getEmail())
+                .build();
     }
 
     @Override

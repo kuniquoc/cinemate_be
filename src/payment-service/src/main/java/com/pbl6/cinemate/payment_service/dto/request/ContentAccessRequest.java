@@ -8,14 +8,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ContentAccessRequest {
     
-    @NotEmpty(message = "Movie categories are required")
-    private List<String> movieCategories;
+    @NotEmpty(message = "Movie category IDs are required")
+    private List<UUID> movieCategoryIds;
     
     @NotNull(message = "Current watch time is required")
     @PositiveOrZero(message = "Watch time cannot be negative")
