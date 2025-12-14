@@ -8,61 +8,6 @@ spring:
     gateway:
       server:
         webflux:
-          routes:
-            # Movie Service Routes
-            - id: movie-service
-              uri: http://localhost:8081
-              predicates:
-                - Path=/api/movies/**
-
-            # Movie File Upload Routes
-            - id: movie-upload
-              uri: http://localhost:8081
-              predicates:
-                - Path=/api/upload/**
-
-            # Movie Category Routes
-            - id: category-service
-              uri: http://localhost:8081
-              predicates:
-                - Path=/api/categories/**
-
-            # Actor Routes
-            - id: actor-service
-              uri: http://localhost:8081
-              predicates:
-                - Path=/api/actors/**
-
-            # Director Routes
-            - id: director-service
-              uri: http://localhost:8081
-              predicates:
-                - Path=/api/directors/**
-
-            # Auth Service Routes
-            - id: auth-service
-              uri: http://localhost:8082
-              predicates:
-                - Path=/api/auth/**
-
-            # Customer Service Routes
-            - id: customer-service
-              uri: http://localhost:8083
-              predicates:
-                - Path=/api/customers/**
-
-            # Payment Service Routes
-            - id: payment-service
-              uri: http://localhost:8084
-              predicates:
-                - Path=/api/payments/**, /api/subscriptions/**
-
-            # Interaction Recommender Service Routes
-            - id: interaction-recommender-service
-              uri: http://localhost:8085
-              predicates:
-                - Path=/api/events/**, /api/recommendations/**
-
           # Global CORS configuration
           globalcors:
             cors-configurations:
@@ -88,27 +33,27 @@ jwt:
   secret: ${JWT_SECRET:your-super-secure-256-bit-secret-key-here-for-hs256-algorithm-minimum-32-chars}
   whitelist-paths:
     # Auth endpoints (login, register, etc.)
-    - /api/auth/**
+    - /api/v1/auth/**
     # Public movie listing/search
-    - /api/movies
-    - /api/movies/all
-    - /api/movies/top-ten
-    - /api/movies/{id}
-    - /api/movies/{id}/status
-    - /api/movies/{id}/process-status
+    - /api/v1/movies
+    - /api/v1/movies/all
+    - /api/v1/movies/top-ten
+    - /api/v1/movies/{id}
+    - /api/v1/movies/{id}/status
+    - /api/v1/movies/{id}/process-status
     # Public category listing
-    - /api/categories
-    - /api/categories/**
+    - /api/v1/categories
+    - /api/v1/categories/**
     # Public actor listing
-    - /api/actors
-    - /api/actors/**
+    - /api/v1/actors
+    - /api/v1/actors/**
     # Public director listing
-    - /api/directors
-    - /api/directors/**
+    - /api/v1/directors
+    - /api/v1/directors/**
     # Movie reviews (read-only public)
-    - /api/movies/*/reviews
-    - /api/movies/*/reviews/average-rating
-    - /api/movies/*/reviews/count
+    - /api/v1/movies/*/reviews
+    - /api/v1/movies/*/reviews/average-rating
+    - /api/v1/movies/*/reviews/count
     # Actuator endpoints
     - /actuator/**
 

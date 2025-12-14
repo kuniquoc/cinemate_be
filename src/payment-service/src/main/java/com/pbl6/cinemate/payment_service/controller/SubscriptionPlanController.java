@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/subscription-plans")
+@RequestMapping("/api/v1/subscription-plans")
 @RequiredArgsConstructor
 public class SubscriptionPlanController {
 

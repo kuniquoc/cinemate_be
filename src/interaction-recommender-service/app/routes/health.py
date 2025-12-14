@@ -20,7 +20,7 @@ from app.schemas import (
 )
 from app.config import get_settings
 
-router = APIRouter(tags=["System"])
+router = APIRouter(prefix="/api/v1", tags=["System"])
 
 settings = get_settings()
 

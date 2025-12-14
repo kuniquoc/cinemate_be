@@ -11,7 +11,7 @@ from app.kafka_client import kafka_manager
 from app.feedback_service import FeedbackService
 from app.schemas import FeedbackRequest, FeedbackResponse
 
-router = APIRouter(tags=["Feedback"])
+router = APIRouter(prefix="/api/v1", tags=["Feedback"])
 
 
 def get_feedback_service() -> FeedbackService:

@@ -18,7 +18,7 @@ from app.schemas import (
 )
 from app.config import get_settings
 
-router = APIRouter(tags=["Recommendations"])
+router = APIRouter(prefix="/api/v1", tags=["Recommendations"])
 
 settings = get_settings()
 

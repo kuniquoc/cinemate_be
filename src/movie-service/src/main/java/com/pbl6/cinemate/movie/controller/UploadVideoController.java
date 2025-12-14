@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/api/upload-video")
+@RequestMapping("/api/v1/upload-video")
 @RequiredArgsConstructor
 @Tag(name = "Video Upload", description = "Upload video files to MinIO storage")
 @PreAuthorize("hasRole('ADMIN')")

@@ -22,7 +22,7 @@ import com.pbl6.cinemate.streaming_seeder.service.SegmentLocator;
 import com.pbl6.cinemate.streaming_seeder.validation.SegmentIdentifierValidator;
 
 @RestController
-@RequestMapping("/api/streams/")
+@RequestMapping("/api/v1/streams/")
 public class SegmentController {
 
     private static final Logger log = LoggerFactory.getLogger(SegmentController.class);
