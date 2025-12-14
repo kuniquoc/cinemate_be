@@ -47,20 +47,20 @@ public class FavoriteServiceImpl implements FavoriteService {
     }
 
     @Override
-    public List<FavoriteResponse> getFavorites(UUID customerId) {
+    public List<MovieDetailResponse> getFavorites(UUID customerId) {
         List<Favorite> favorites = favoriteRepository.findByCustomerId(customerId);
         return enrichFavorites(favorites);
     }
 
     @Override
-    public Page<FavoriteResponse> getFavorites(UUID customerId, int page, int limit) {
+    public Page<MovieDetailResponse> getFavorites(UUID customerId, int page, int limit) {
         Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Favorite> favoritePage = favoriteRepository.findByCustomerId(customerId, pageable);
         
         // Enrich with movie details
-        List<FavoriteResponse> enrichedFavorites = enrichFavorites(favoritePage.getContent());
+        List<MovieDetailResponse> enrichedMovies = enrichFavorites(favoritePage.getContent());
         
-        return new PageImpl<>(enrichedFavorites, pageable, favoritePage.getTotalElements());
+        return new PageImpl<>(enrichedMovies, pageable, favoritePage.getTotalElements());
     }
 
     @Override
@@ -70,24 +70,24 @@ public class FavoriteServiceImpl implements FavoriteService {
         favoriteRepository.deleteByCustomerIdAndMovieId(customerId, movieId);
     }
 
-    // Enrich favorites with movie details
-    private List<FavoriteResponse> enrichFavorites(List<Favorite> favorites) {
+    // Enrich favorites with movie details - returns movie data directly
+    private List<MovieDetailResponse> enrichFavorites(List<Favorite> favorites) {
         return favorites.stream()
                 .map(favorite -> {
                     try {
                         MovieServiceResponse response = movieServiceClient.getMovieById(favorite.getMovieId());
                         if (response != null && response.getData() != null) {
-                            return toResponseWithMovie(favorite, response.getData());
+                            return response.getData();
                         }
                         log.warn("Movie service returned null data for movieId={}", favorite.getMovieId());
-                        return toResponse(favorite);
+                        return null;
                     } catch (Exception e) {
                         log.warn("Failed to fetch movie details for movieId={}: {}", 
                                 favorite.getMovieId(), e.getMessage());
-                        // Fallback: return without movie details
-                        return toResponse(favorite);
+                        return null;
                     }
                 })
+                .filter(movie -> movie != null) // Filter out null movies
                 .collect(Collectors.toList());
     }
 
@@ -96,15 +96,6 @@ public class FavoriteServiceImpl implements FavoriteService {
                 .id(favorite.getId())
                 .movieId(favorite.getMovieId())
                 .createdAt(favorite.getCreatedAt())
-                .build();
-    }
-    
-    private FavoriteResponse toResponseWithMovie(Favorite favorite, MovieDetailResponse movie) {
-        return FavoriteResponse.builder()
-                .id(favorite.getId())
-                .movieId(favorite.getMovieId())
-                .createdAt(favorite.getCreatedAt())
-                .movie(movie)
                 .build();
     }
 }
