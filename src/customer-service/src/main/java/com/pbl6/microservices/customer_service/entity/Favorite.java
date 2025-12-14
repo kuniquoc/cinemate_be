@@ -1,9 +1,10 @@
 package com.pbl6.microservices.customer_service.entity;
 
+import com.pbl6.cinemate.shared.entity.AbstractBaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -12,19 +13,13 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class Favorite {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private UUID id;
+@SuperBuilder
+public class Favorite extends AbstractBaseEntity {
 
     @Column(name = "customer_id", nullable = false)
     private UUID customerId;
 
     @Column(name = "movie_id", nullable = false)
     private UUID movieId;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
 }
 

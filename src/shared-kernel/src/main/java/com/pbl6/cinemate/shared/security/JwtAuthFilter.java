@@ -34,8 +34,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain)
+                                    @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain)
             throws ServletException, IOException {
 
         String token = parseJwt(request);
@@ -74,8 +74,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     private void writeErrorResponse(HttpServletRequest reques, HttpServletResponse response,
-            int status,
-            ErrorResponse error) throws IOException {
+                                    int status,
+                                    ErrorResponse error) throws IOException {
         response.setStatus(status);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");

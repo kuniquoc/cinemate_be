@@ -10,8 +10,8 @@ import java.util.UUID;
 
 @Repository
 public interface SubscriptionPlanRepository extends JpaRepository<SubscriptionPlan, UUID> {
-    
+
     List<SubscriptionPlan> findByIsActiveTrue();
-    
+
     Optional<SubscriptionPlan> findByIdAndIsActiveTrue(UUID id);
 }

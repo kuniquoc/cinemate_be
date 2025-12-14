@@ -20,7 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -54,7 +54,7 @@ public class AccountServiceImpl implements AccountService {
                 .lastName(request.getLastName())
                 .role(role)
                 .isEnabled(true)
-                .accountVerifiedAt(LocalDateTime.now())
+                .accountVerifiedAt(Instant.now())
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -134,7 +134,7 @@ public class AccountServiceImpl implements AccountService {
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.USER_NOT_FOUND));
 
         // Soft delete by setting deletedAt
-        user.setDeletedAt(LocalDateTime.now());
+        user.setDeletedAt(Instant.now());
         userRepository.save(user);
     }
 

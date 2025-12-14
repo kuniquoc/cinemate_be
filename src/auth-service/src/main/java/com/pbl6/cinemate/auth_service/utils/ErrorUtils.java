@@ -31,32 +31,32 @@ public final class ErrorUtils {
 
         try {
             Map<String, Object> errors = ReadYAML.getValueFromYAML(VALIDATION_FILE);
-            
+
             if (errors == null || !errors.containsKey(resource)) {
-                return new ErrorResponse("VAL.UNKNOWN", 
-                    String.format("Validation failed for %s.%s (%s)", resource, fieldName, error), 
-                    fieldName);
+                return new ErrorResponse("VAL.UNKNOWN",
+                        String.format("Validation failed for %s.%s (%s)", resource, fieldName, error),
+                        fieldName);
             }
-            
+
             Map<String, Object> fields = (Map<String, Object>) errors.get(resource);
             if (fields == null || !fields.containsKey(fieldName)) {
-                return new ErrorResponse("VAL.UNKNOWN", 
-                    String.format("Validation failed for %s.%s (%s)", resource, fieldName, error), 
-                    fieldName);
+                return new ErrorResponse("VAL.UNKNOWN",
+                        String.format("Validation failed for %s.%s (%s)", resource, fieldName, error),
+                        fieldName);
             }
-            
+
             Map<String, Object> objErrors = (Map<String, Object>) fields.get(fieldName);
             if (objErrors == null || !objErrors.containsKey(error)) {
-                return new ErrorResponse("VAL.UNKNOWN", 
-                    String.format("Validation failed for %s.%s (%s)", resource, fieldName, error), 
-                    fieldName);
+                return new ErrorResponse("VAL.UNKNOWN",
+                        String.format("Validation failed for %s.%s (%s)", resource, fieldName, error),
+                        fieldName);
             }
-            
+
             Map<String, Object> objError = (Map<String, Object>) objErrors.get(error);
             if (objError == null) {
-                return new ErrorResponse("VAL.UNKNOWN", 
-                    String.format("Validation failed for %s.%s (%s)", resource, fieldName, error), 
-                    fieldName);
+                return new ErrorResponse("VAL.UNKNOWN",
+                        String.format("Validation failed for %s.%s (%s)", resource, fieldName, error),
+                        fieldName);
             }
 
             String code = (String) objError.get("code");
@@ -65,9 +65,9 @@ public final class ErrorUtils {
             return new ErrorResponse(code, message, fieldName);
         } catch (Exception e) {
             // Fallback error response if something goes wrong
-            return new ErrorResponse("VAL.ERROR", 
-                String.format("Validation error for %s.%s (%s): %s", resource, fieldName, error, e.getMessage()), 
-                fieldName);
+            return new ErrorResponse("VAL.ERROR",
+                    String.format("Validation error for %s.%s (%s): %s", resource, fieldName, error, e.getMessage()),
+                    fieldName);
         }
     }
 

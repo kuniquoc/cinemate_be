@@ -31,43 +31,42 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class PaymentController {
-    
+
     private final PaymentService paymentService;
     private final VNPayService vnPayService;
     private final SubscriptionService subscriptionService;
-    
+
     @Value("${app.frontend.url:http://localhost:3000}")
     private String frontendUrl;
-    
+
     @PostMapping("/create-url")
     public ResponseEntity<ResponseData> createPaymentUrl(
             @Valid @RequestBody CreatePaymentRequest request,
             @CurrentUser UserPrincipal userPrincipal,
             HttpServletRequest httpRequest) {
-        
+
         // Extract userId and userEmail from authenticated user
         UUID userId = userPrincipal.getId();
         String userEmail = userPrincipal.getUsername();
-        
+
         // Create payment record with server-controlled userId and userEmail
         Payment payment = paymentService.createPayment(request, userId, userEmail);
-        
+
         // Get IP address
         String ipAddress = VNPayUtil.getIpAddress(
                 httpRequest.getHeader("X-Forwarded-For"),
-                httpRequest.getRemoteAddr()
-        );
-        
+                httpRequest.getRemoteAddr());
+
         // Generate VNPay payment URL
         PaymentUrlResponse response = vnPayService.createPaymentUrl(payment, ipAddress);
-        
+
         return ResponseEntity.ok(ResponseData.success(
                 response,
                 "Payment URL created successfully",
                 httpRequest.getRequestURI(),
                 httpRequest.getMethod()));
     }
-    
+
     @GetMapping("/vnpay-return")
     public RedirectView vnPayReturn(
             @RequestParam Map<String, String> params,
@@ -75,7 +74,7 @@ public class PaymentController {
         try {
             // Process payment callback
             Payment payment = vnPayService.processPaymentCallback(params);
-            
+
             // If payment successful, activate subscription and send emails
             if (payment.getStatus().toString().equals("SUCCESS")) {
                 subscriptionService.activateSubscription(payment.getSubscription().getId(), payment);
@@ -83,17 +82,17 @@ public class PaymentController {
             } else {
                 log.warn("Payment failed with status: {}", payment.getStatus());
             }
-            
+
             // Redirect to frontend home page
             return new RedirectView(frontendUrl);
-            
+
         } catch (Exception e) {
             log.error("Error processing VNPay return", e);
             // Still redirect to home page even on error
             return new RedirectView(frontendUrl);
         }
     }
-    
+
     @GetMapping("/vnpay-ipn")
     public ResponseEntity<ResponseData> vnPayIPN(
             @RequestParam Map<String, String> params,
@@ -101,22 +100,22 @@ public class PaymentController {
         try {
             // Process payment callback
             Payment payment = vnPayService.processPaymentCallback(params);
-            
+
             // If payment successful, activate subscription and send emails
             if (payment.getStatus().toString().equals("SUCCESS")) {
                 subscriptionService.activateSubscription(payment.getSubscription().getId(), payment);
             }
-            
+
             Map<String, String> response = new HashMap<>();
             response.put("RspCode", "00");
             response.put("Message", "Confirm Success");
-            
+
             return ResponseEntity.ok(ResponseData.success(
                     response,
                     "IPN processed successfully",
                     httpRequest.getRequestURI(),
                     httpRequest.getMethod()));
-            
+
         } catch (Exception e) {
             log.error("Error processing VNPay IPN", e);
             Map<String, String> errorResponse = new HashMap<>();
@@ -129,7 +128,7 @@ public class PaymentController {
                     httpRequest.getMethod()));
         }
     }
-    
+
     @GetMapping("/history")
     public ResponseEntity<ResponseData> getPaymentHistory(
             @CurrentUser UserPrincipal userPrincipal,
@@ -141,7 +140,7 @@ public class PaymentController {
                 httpRequest.getRequestURI(),
                 httpRequest.getMethod()));
     }
-    
+
     @GetMapping("/{id}")
     public ResponseEntity<ResponseData> getPaymentById(
             @PathVariable UUID id,

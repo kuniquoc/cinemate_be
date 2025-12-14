@@ -15,9 +15,9 @@ import java.util.UUID;
 @RequestMapping("/api/subscription-plans")
 @RequiredArgsConstructor
 public class SubscriptionPlanController {
-    
+
     private final SubscriptionPlanService planService;
-    
+
     @GetMapping
     public ResponseEntity<ResponseData> getAllPlans(HttpServletRequest httpRequest) {
         List<SubscriptionPlanResponse> plans = planService.getAllPlans();
@@ -27,7 +27,7 @@ public class SubscriptionPlanController {
                 httpRequest.getRequestURI(),
                 httpRequest.getMethod()));
     }
-    
+
     @GetMapping("/{id}")
     public ResponseEntity<ResponseData> getPlanById(
             @PathVariable UUID id,

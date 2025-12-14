@@ -18,15 +18,6 @@ public record RecommendedMoviesResponse(
         String context,
         int totalCount) {
     /**
-     * Single recommended movie with details and score
-     */
-    public record RecommendedMovieItem(
-            MovieResponse movie,
-            Double score,
-            List<String> reasons) {
-    }
-
-    /**
      * Create from raw recommendation response and movie list
      */
     public static RecommendedMoviesResponse from(
@@ -54,5 +45,14 @@ public record RecommendedMoviesResponse(
                 Instant.now(),
                 context,
                 0);
+    }
+
+    /**
+     * Single recommended movie with details and score
+     */
+    public record RecommendedMovieItem(
+            MovieResponse movie,
+            Double score,
+            List<String> reasons) {
     }
 }

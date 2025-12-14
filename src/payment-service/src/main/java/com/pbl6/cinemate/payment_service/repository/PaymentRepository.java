@@ -11,14 +11,14 @@ import java.util.UUID;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, UUID> {
-    
+
     List<Payment> findByUserIdOrderByCreatedAtDesc(UUID userId);
-    
+
     Optional<Payment> findByVnpTxnRef(String vnpTxnRef);
-    
+
     Optional<Payment> findByTransactionId(String transactionId);
-    
+
     List<Payment> findByUserIdAndStatus(UUID userId, PaymentStatus status);
-    
+
     List<Payment> findBySubscriptionId(UUID subscriptionId);
 }

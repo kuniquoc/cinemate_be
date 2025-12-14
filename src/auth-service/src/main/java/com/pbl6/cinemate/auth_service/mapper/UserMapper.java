@@ -5,6 +5,9 @@ import com.pbl6.cinemate.auth_service.payload.request.SignUpRequest;
 import com.pbl6.cinemate.auth_service.payload.response.UserResponse;
 
 public final class UserMapper {
+    private UserMapper() {
+    }
+
     public static UserResponse toUserResponse(User user) {
         if (user == null) return null;
 
@@ -28,8 +31,5 @@ public final class UserMapper {
                 .email(request.getEmail())
                 .password(request.getPassword())
                 .build();
-    }
-
-    private UserMapper() {
     }
 }

@@ -27,12 +27,12 @@ public class UserPrincipal implements UserDetails {
     private String lastName;
 
     public static UserPrincipal createUserPrincipal(String userId, String username,
-            String password, String role, List<String> permissions) {
+                                                    String password, String role, List<String> permissions) {
         return createUserPrincipal(userId, username, password, role, permissions, null, null);
     }
 
     public static UserPrincipal createUserPrincipal(String userId, String username,
-            String password, String role, List<String> permissions, String firstName, String lastName) {
+                                                    String password, String role, List<String> permissions, String firstName, String lastName) {
         return UserPrincipal.builder()
                 .id(UUID.fromString(userId))
                 .email(username)

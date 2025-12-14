@@ -31,13 +31,21 @@ public record SegmentKey(String movieId, String qualityId, String segmentId) {
     }
 
     public enum SegmentType {
-        /** Init segment (init.mp4 or init.m4s) - critical for playback start */
+        /**
+         * Init segment (init.mp4 or init.m4s) - critical for playback start
+         */
         INIT,
-        /** Master playlist (master.m3u8) - for ABR */
+        /**
+         * Master playlist (master.m3u8) - for ABR
+         */
         MASTER_PLAYLIST,
-        /** Variant playlist (playlist.m3u8 or {quality}.m3u8) - per quality */
+        /**
+         * Variant playlist (playlist.m3u8 or {quality}.m3u8) - per quality
+         */
         VARIANT_PLAYLIST,
-        /** Media segment (seg_0001.m4s) - actual video/audio data */
+        /**
+         * Media segment (seg_0001.m4s) - actual video/audio data
+         */
         MEDIA
     }
 }

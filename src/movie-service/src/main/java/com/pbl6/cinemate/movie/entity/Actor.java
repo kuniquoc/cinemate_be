@@ -1,29 +1,26 @@
 package com.pbl6.cinemate.movie.entity;
 
+import com.pbl6.cinemate.shared.entity.AbstractBaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 @Entity
 @Table(name = "actor")
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Actor {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+public class Actor extends AbstractBaseEntity {
 
     @Column(nullable = false)
     private String fullname;
@@ -36,25 +33,7 @@ public class Actor {
 
     private LocalDate dateOfBirth;
 
-    private Instant createdAt;
-    private Instant updatedAt;
-    private Instant deletedAt;
-
     @Builder.Default
     @OneToMany(mappedBy = "actor", fetch = FetchType.LAZY)
     private Set<MovieActor> movieActors = new HashSet<>();
-
-    public Actor(String fullname, String biography, String avatar, LocalDate dateOfBirth) {
-        this.fullname = fullname;
-        this.biography = biography;
-        this.avatar = avatar;
-        this.dateOfBirth = dateOfBirth;
-        this.createdAt = Instant.now();
-        this.updatedAt = Instant.now();
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        this.updatedAt = Instant.now();
-    }
 }

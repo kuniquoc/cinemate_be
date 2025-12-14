@@ -26,20 +26,20 @@ public class MovieRankingScheduler {
 
         try {
             List<Movie> allMovies = movieRepository.findAll();
-            
+
             // Calculate average rating for each movie and sort by rating
             List<MovieRating> movieRatings = allMovies.stream()
-                .map(movie -> {
-                    Double avgRating = reviewRepository.findAverageStarsByMovieId(movie.getId());
-                    return new MovieRating(movie, avgRating != null ? avgRating : 0.0);
-                })
-                .sorted((a, b) -> Double.compare(b.averageRating(), a.averageRating())) // Sort descending
-                .toList();
-            
+                    .map(movie -> {
+                        Double avgRating = reviewRepository.findAverageStarsByMovieId(movie.getId());
+                        return new MovieRating(movie, avgRating != null ? avgRating : 0.0);
+                    })
+                    .sorted((a, b) -> Double.compare(b.averageRating(), a.averageRating())) // Sort descending
+                    .toList();
+
             // Assign ranks based on sorted order
             int currentRank = 1;
             int updatedCount = 0;
-            
+
             for (MovieRating movieRating : movieRatings) {
                 try {
                     Movie movie = movieRating.movie();
@@ -47,11 +47,11 @@ public class MovieRankingScheduler {
                     movieRepository.save(movie);
                     updatedCount++;
                     currentRank++;
-                    
-                    log.debug("Updated rank for movie {} ({}): {} (avg rating: {})", 
+
+                    log.debug("Updated rank for movie {} ({}): {} (avg rating: {})",
                             movie.getId(), movie.getTitle(), movie.getRank(), movieRating.averageRating());
                 } catch (Exception e) {
-                    log.error("Failed to update rank for movie {}: {}", 
+                    log.error("Failed to update rank for movie {}: {}",
                             movieRating.movie().getId(), e.getMessage());
                 }
             }
@@ -61,29 +61,30 @@ public class MovieRankingScheduler {
             log.error("Failed to update movie rankings: {}", e.getMessage(), e);
         }
     }
-    
-    private record MovieRating(Movie movie, Double averageRating) {}
 
     @Scheduled(fixedRate = 3600000) // Run every hour for statistics
     @Transactional(readOnly = true)
     public void logRankingStatistics() {
         try {
             List<Movie> allMovies = movieRepository.findAll();
-            
+
             double averageRank = allMovies.stream()
                     .filter(m -> m.getRank() != null)
                     .mapToDouble(Movie::getRank)
                     .average()
                     .orElse(0.0);
-            
+
             long moviesWithReviews = allMovies.stream()
                     .filter(m -> m.getRank() != null && m.getRank() > 0)
                     .count();
-            
+
             log.info("Movie ranking statistics - Total movies: {}, Movies with reviews: {}, Average rank: {:.2f}",
                     allMovies.size(), moviesWithReviews, averageRank);
         } catch (Exception e) {
             log.error("Failed to log ranking statistics: {}", e.getMessage());
         }
+    }
+
+    private record MovieRating(Movie movie, Double averageRating) {
     }
 }

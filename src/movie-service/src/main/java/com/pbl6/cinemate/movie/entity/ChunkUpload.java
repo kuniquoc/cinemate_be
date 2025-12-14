@@ -1,28 +1,25 @@
 package com.pbl6.cinemate.movie.entity;
 
+import com.pbl6.cinemate.movie.enums.ChunkUploadStatus;
+import com.pbl6.cinemate.shared.entity.AbstractBaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
 import java.util.UUID;
-
-import com.pbl6.cinemate.movie.enums.ChunkUploadStatus;
 
 @Entity
 @Table(name = "chunk_uploads")
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ChunkUpload {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+public class ChunkUpload extends AbstractBaseEntity {
 
     @Column(nullable = false, unique = true)
     private String uploadId;
@@ -52,44 +49,18 @@ public class ChunkUpload {
     @Column(columnDefinition = "text")
     private String uploadedChunksList; // JSON array of uploaded chunk numbers
 
-    @Column(nullable = false)
-    private Instant createdAt;
-
-    @Column(nullable = false)
-    private Instant updatedAt;
-
     private Instant expiresAt;
 
     // Reference to the movie being uploaded
     @Column(nullable = false)
     private UUID movieId;
 
-    @PrePersist
-    public void prePersist() {
-        this.createdAt = Instant.now();
-        this.updatedAt = Instant.now();
+    @Override
+    protected void onCreate() {
+        super.onCreate();
         if (this.expiresAt == null) {
             // Default expiry: 24 hours from creation
-            this.expiresAt = this.createdAt.plusSeconds(24L * 60 * 60);
+            this.expiresAt = getCreatedAt().plusSeconds(24 * 3600L);
         }
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        this.updatedAt = Instant.now();
-    }
-
-    public ChunkUpload(String uploadId, String filename, String mimeType, Long totalSize,
-            Integer totalChunks, Integer chunkSize, UUID movieId) {
-        this.uploadId = uploadId;
-        this.filename = filename;
-        this.mimeType = mimeType;
-        this.totalSize = totalSize;
-        this.totalChunks = totalChunks;
-        this.chunkSize = chunkSize;
-        this.uploadedChunks = 0;
-        this.status = ChunkUploadStatus.INITIATED;
-        this.uploadedChunksList = "[]";
-        this.movieId = movieId;
     }
 }

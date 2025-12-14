@@ -35,7 +35,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -74,7 +74,8 @@ public class AuthServiceImpl implements AuthService {
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
 
             // Track device on login
-            userDeviceService.trackDeviceOnLogin(userPrincipal.getId(), loginRequest.getDeviceInfo(), httpServletRequest);
+            userDeviceService.trackDeviceOnLogin(userPrincipal.getId(), loginRequest.getDeviceInfo(),
+                    httpServletRequest);
 
             boolean isRefreshToken = true;
             String refreshToken = jwtUtils.generateToken(userPrincipal, isRefreshToken);
@@ -110,7 +111,7 @@ public class AuthServiceImpl implements AuthService {
         Token tokenEntity = tokenService.findByContentAndUserId(contentToken, user.getId());
         if (tokenEntity == null)
             throw new BadRequestException(ErrorMessage.INVALID_OTP);
-        if (tokenEntity.getExpireTime().isBefore(LocalDateTime.now()))
+        if (tokenEntity.getExpireTime().isBefore(Instant.now()))
             throw new BadRequestException(ErrorMessage.EXPIRED_OTP);
         return true;
     }
@@ -123,7 +124,8 @@ public class AuthServiceImpl implements AuthService {
             user.setPassword(passwordEncoder.encode(request.getNewPassword()));
             userService.save(user);
             tokenService.deleteTokenByContent(request.getOtp());
-        } else throw new BadRequestException(ErrorMessage.INVALID_OTP);
+        } else
+            throw new BadRequestException(ErrorMessage.INVALID_OTP);
     }
 
     @Override
@@ -143,7 +145,8 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void changePassword(UUID userId, PasswordChangingRequest passwordChangingRequest) {
-        if (!Objects.equals(passwordChangingRequest.getNewPassword(), passwordChangingRequest.getNewPasswordConfirmation()))
+        if (!Objects.equals(passwordChangingRequest.getNewPassword(),
+                passwordChangingRequest.getNewPasswordConfirmation()))
             throw new BadRequestException(ErrorMessage.NEW_PASSWORD_NOT_MATCHED);
 
         User user = userService.findById(userId);
@@ -176,7 +179,7 @@ public class AuthServiceImpl implements AuthService {
             throw new BadRequestException(ErrorMessage.TOKEN_NOT_BELONGS_TO_EMAIL);
         }
         user.setIsEnabled(true);
-        user.setAccountVerifiedAt(LocalDateTime.now());
+        user.setAccountVerifiedAt(Instant.now());
         tokenService.deleteTokenByContent(signUpRequest.getToken());
         user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
         User savedUser = userService.save(user);
@@ -186,14 +189,14 @@ public class AuthServiceImpl implements AuthService {
         String id = savedUser.getId().toString();
         String username = savedUser.getEmail();
         String role = "ROLE_" + savedUser.getRole().getName();
-        List<String> permissions = user.getRole().getPermissions().stream().map(permission -> permission.getName()).toList();
+        List<String> permissions = user.getRole().getPermissions().stream().map(permission -> permission.getName())
+                .toList();
 
         String accessToken = jwtUtils.generateToken(id, username, role, permissions, !isRefreshToken);
         String refreshToken = jwtUtils.generateToken(id, username, role, permissions, isRefreshToken);
 
         userRegisteredPublisher.publishUserRegistered(new UserRegisteredEvent(user.getId(), user.getEmail(),
                 user.getFirstName(), user.getLastName()));
-
 
         return new SignUpResponse(UserMapper.toUserResponse(savedUser), accessToken, refreshToken);
     }

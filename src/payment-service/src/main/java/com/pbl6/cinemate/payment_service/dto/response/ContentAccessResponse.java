@@ -13,14 +13,14 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class ContentAccessResponse {
-    
+
     private Boolean allowed;
-    
+
     private String reason;
-    
+
     private Boolean isKid;
-    
+
     private Integer remainingWatchTimeMinutes;
-    
+
     private List<UUID> blockedCategoryIds;
 }

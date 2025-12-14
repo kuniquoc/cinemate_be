@@ -69,10 +69,12 @@ public class MovieServiceImpl implements MovieService {
     @Override
     @Transactional
     public MovieUploadResponse upload(MultipartFile file, MovieUploadRequest req) {
-        Movie movie = repo.save(Movie.builder()
+        Movie movie = Movie.builder()
                 .title(req.title())
                 .description(req.description())
-                .build());
+                .processStatus(MovieProcessStatus.UPLOADING)
+                .build();
+        movie = repo.save(movie);
 
         Path tmp = createTempFile();
         if (tmp == null) {
@@ -353,8 +355,7 @@ public class MovieServiceImpl implements MovieService {
     @Override
     public PaginatedResponse<MovieResponse> getMovies(String keyword, int page, int size, String sortBy,
             @NonNull String sortDirection, String userRole) {
-        // TODO: Replace userRole parameter with proper authentication/authorization
-        // after implementing security for movie-service
+
         var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
 
         // If user role is ADMIN, pass null to get all movies; otherwise pass "PUBLIC"

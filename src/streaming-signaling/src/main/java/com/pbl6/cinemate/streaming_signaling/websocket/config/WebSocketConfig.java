@@ -1,6 +1,7 @@
 package com.pbl6.cinemate.streaming_signaling.websocket.config;
 
 import java.util.Objects;
+
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;

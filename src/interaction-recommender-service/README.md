@@ -73,6 +73,7 @@ A FastAPI-based service for tracking user interactions and providing movie recom
 ### Local Development
 
 1. Create virtual environment:
+
 ```bash
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
@@ -80,22 +81,26 @@ source venv/bin/activate  # Linux/Mac
 ```
 
 2. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
 3. Set environment variables:
+
 ```bash
 cp .env.example .env
 # Edit .env with your settings
 ```
 
 4. Run database migrations:
+
 ```bash
 alembic upgrade head
 ```
 
 5. Start the service:
+
 ```bash
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
@@ -110,7 +115,7 @@ docker run -p 8090:8000 interaction-recommender-service
 ## Configuration
 
 | Variable                  | Description                  | Default                                                               |
-| ------------------------- | ---------------------------- | --------------------------------------------------------------------- |
+|---------------------------|------------------------------|-----------------------------------------------------------------------|
 | `DATABASE_URL`            | PostgreSQL connection string | `postgresql+asyncpg://admin:admin@interaction-db:5432/interaction_db` |
 | `REDIS_URL`               | Redis connection string      | `redis://cinemate-redis:6379`                                         |
 | `KAFKA_BOOTSTRAP_SERVERS` | Kafka brokers                | `cinemate-broker:9092`                                                |
@@ -121,7 +126,7 @@ docker run -p 8090:8000 interaction-recommender-service
 ## Kafka Topics
 
 | Topic                    | Producer     | Consumer                    | Purpose           |
-| ------------------------ | ------------ | --------------------------- | ----------------- |
+|--------------------------|--------------|-----------------------------|-------------------|
 | `interaction_events`     | This service | This service + offline jobs | Raw events        |
 | `processed_features`     | This service | Offline training            | Computed features |
 | `model_feedback`         | This service | Offline training            | User feedback     |
@@ -130,10 +135,12 @@ docker run -p 8090:8000 interaction-recommender-service
 ## Model
 
 The recommendation model is loaded from `MODEL_PATH` at startup. Supported formats:
+
 - `.pkl` - Scikit-learn models (joblib)
 - `.onnx` - ONNX models (planned)
 
 To reload the model without restart:
+
 ```bash
 curl -X POST http://localhost:8090/model/reload
 ```
@@ -143,6 +150,7 @@ curl -X POST http://localhost:8090/model/reload
 See `scripts/init_db.sql` for the complete schema.
 
 Main tables:
+
 - `interaction_events` - Raw user interactions
 - `user_features` - Computed user features
 - `audit_events` - Processing audit trail

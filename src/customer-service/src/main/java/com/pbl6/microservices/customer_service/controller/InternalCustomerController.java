@@ -26,7 +26,7 @@ public class InternalCustomerController {
     /**
      * Get customer info by account ID
      * Used by movie-service to get user display info for reviews
-     * 
+     *
      * @param accountId the account ID (from auth-service)
      * @return CustomerInfoResponse with firstName, lastName, avatarUrl
      */

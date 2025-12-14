@@ -5,7 +5,7 @@ import java.util.Objects;
 /**
  * Redis key patterns for streaming system.
  * Supports fMP4/DASH with multi-quality ABR.
- * 
+ * <p>
  * Key structure for ABR:
  * - movie:{movieId}:quality:{qualityId}:segments - segments available for
  * specific quality
@@ -14,7 +14,7 @@ import java.util.Objects;
  * specific segment
  * - peer:{clientId}:lastSeen - last activity timestamp
  * - p2p:metrics:{clientId} - peer performance metrics
- * 
+ * <p>
  * For ABR streaming:
  * - streamId = movieId (consistent across quality switches)
  * - qualityId is specified per segment request
@@ -43,7 +43,7 @@ public final class StreamingRedisKeys {
     /**
      * Key for segments available for a specific movie quality.
      * Format: movie:{movieId}:quality:{qualityId}:segments
-     * 
+     *
      * @param movieId   the movie identifier
      * @param qualityId the quality variant (e.g., "720p", "1080p"), null for master
      *                  playlist
@@ -70,7 +70,7 @@ public final class StreamingRedisKeys {
     /**
      * Key for peers with a specific segment.
      * Format: movie:{movieId}:quality:{qualityId}:segment:{segmentId}:owners
-     * 
+     *
      * @param movieId   the movie identifier
      * @param qualityId the quality variant
      * @param segmentId the segment identifier

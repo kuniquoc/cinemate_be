@@ -14,18 +14,18 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreatePaymentRequest {
-    
+
     @NotNull(message = "Subscription ID is required")
     private UUID subscriptionId;
-    
+
     @NotNull(message = "Amount is required")
     @Positive(message = "Amount must be positive")
     private BigDecimal amount;
-    
+
     @NotNull(message = "Payment method is required")
     private PaymentMethod paymentMethod;
-    
+
     private String orderInfo;
-    
+
     private String ipAddress;
 }

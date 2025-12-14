@@ -18,12 +18,6 @@ public record RatingEventRequest(
         @JsonProperty("clientTimestamp") Instant clientTimestamp,
 
         @JsonProperty("metadata") RatingMetadata metadata) {
-    public record RatingMetadata(
-            @JsonProperty("rating") Double rating,
-
-            @JsonProperty("previousRating") Double previousRating) {
-    }
-
     public static RatingEventRequest create(
             UUID userId,
             UUID movieId,
@@ -42,5 +36,11 @@ public record RatingEventRequest(
             UUID movieId,
             Double rating) {
         return create(userId, movieId, rating, null);
+    }
+
+    public record RatingMetadata(
+            @JsonProperty("rating") Double rating,
+
+            @JsonProperty("previousRating") Double previousRating) {
     }
 }

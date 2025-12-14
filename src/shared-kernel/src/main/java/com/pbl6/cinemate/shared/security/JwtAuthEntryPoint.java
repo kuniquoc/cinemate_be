@@ -26,7 +26,7 @@ public class JwtAuthEntryPoint implements AuthenticationEntryPoint {
 
         ErrorResponse error;
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            error = new ErrorResponse( "AUTH0001", "missing jwt");
+            error = new ErrorResponse("AUTH0001", "missing jwt");
         } else {
             error = new ErrorResponse("AUTH0002", "Unauthenticated");
         }

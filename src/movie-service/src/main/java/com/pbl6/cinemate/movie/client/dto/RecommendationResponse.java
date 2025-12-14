@@ -21,14 +21,6 @@ public record RecommendationResponse(
         @JsonProperty("generatedAt") Instant generatedAt,
 
         @JsonProperty("context") String context) {
-    public record RecommendationItem(
-            @JsonProperty("movieId") UUID movieId,
-
-            @JsonProperty("score") Double score,
-
-            @JsonProperty("reasons") List<String> reasons) {
-    }
-
     /**
      * Get list of recommended movie IDs
      */
@@ -43,5 +35,13 @@ public record RecommendationResponse(
      */
     public boolean isEmpty() {
         return recommendations == null || recommendations.isEmpty();
+    }
+
+    public record RecommendationItem(
+            @JsonProperty("movieId") UUID movieId,
+
+            @JsonProperty("score") Double score,
+
+            @JsonProperty("reasons") List<String> reasons) {
     }
 }

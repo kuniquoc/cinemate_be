@@ -8,6 +8,9 @@ import java.util.Random;
 
 @Slf4j
 public final class CommonUtils {
+    private CommonUtils() {
+    }
+
     public static int getRandomFourDigitNumber() {
         Random random = new Random();
         // Sinh số ngẫu nhiên từ 1000 đến 9999
@@ -22,9 +25,5 @@ public final class CommonUtils {
             log.error(e.getMessage());
             return null;
         }
-    }
-
-
-    private CommonUtils() {
     }
 }

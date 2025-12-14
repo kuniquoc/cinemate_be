@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PaymentUrlResponse {
-    
+
     private String paymentUrl;
     private String vnpTxnRef;
     private String message;

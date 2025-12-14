@@ -1,7 +1,9 @@
 package com.pbl6.cinemate.streaming_signaling.config;
 
 import jakarta.validation.constraints.NotNull;
+
 import java.time.Duration;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "streaming")

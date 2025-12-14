@@ -4,6 +4,9 @@ import com.pbl6.cinemate.auth_service.entity.Permission;
 import com.pbl6.cinemate.auth_service.payload.response.PermissionResponse;
 
 public final class PermissionMapper {
+    private PermissionMapper() {
+    }
+
     public static PermissionResponse toResponse(Permission permission) {
         return PermissionResponse.builder()
                 .id(permission.getId())
@@ -12,8 +15,5 @@ public final class PermissionMapper {
                 .createdAt(permission.getCreatedAt())
                 .updatedAt(permission.getUpdatedAt())
                 .build();
-    }
-
-    private PermissionMapper() {
     }
 }

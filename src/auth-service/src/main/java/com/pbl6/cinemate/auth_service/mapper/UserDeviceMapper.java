@@ -5,6 +5,9 @@ import com.pbl6.cinemate.auth_service.payload.response.UserDeviceResponse;
 
 public class UserDeviceMapper {
 
+    private UserDeviceMapper() {
+    }
+
     public static UserDeviceResponse toUserDeviceResponse(UserDevice userDevice) {
         return UserDeviceResponse.builder()
                 .id(userDevice.getId())
@@ -17,8 +20,5 @@ public class UserDeviceMapper {
                 .lastActiveAt(userDevice.getLastActiveAt())
                 .createdAt(userDevice.getCreatedAt())
                 .build();
-    }
-
-    private UserDeviceMapper() {
     }
 }

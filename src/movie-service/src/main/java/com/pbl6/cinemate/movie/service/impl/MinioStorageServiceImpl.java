@@ -46,9 +46,9 @@ public class MinioStorageServiceImpl implements MinioStorageService {
     private final String videoBucket;
 
     public MinioStorageServiceImpl(MinioClient minioClient,
-            @Value("${minio.movie-bucket}") String movieBucket,
-            @Value("${minio.image-bucket}") String imageBucket,
-            @Value("${minio.video-bucket}") String videoBucket) {
+                                   @Value("${minio.movie-bucket}") String movieBucket,
+                                   @Value("${minio.image-bucket}") String imageBucket,
+                                   @Value("${minio.video-bucket}") String videoBucket) {
         this.minioClient = minioClient;
         this.movieBucket = movieBucket;
         this.imageBucket = imageBucket;
@@ -172,7 +172,7 @@ public class MinioStorageServiceImpl implements MinioStorageService {
      * Save chunk from input stream
      */
     public String saveChunk(InputStream inputStream, long size, String bucketName, String uploadId,
-            Integer chunkNumber) {
+                            Integer chunkNumber) {
         String objectPath = CHUNKS_PREFIX + uploadId + CHUNK_PREFIX + chunkNumber;
         try {
             String resolvedBucket = effectiveBucket(bucketName);
@@ -384,7 +384,7 @@ public class MinioStorageServiceImpl implements MinioStorageService {
 
     /**
      * Parse chunk number from chunk file name
-     * 
+     *
      * @param chunkFileName the chunk file name (e.g., "chunk_1")
      * @return chunk number or null if parsing fails
      */

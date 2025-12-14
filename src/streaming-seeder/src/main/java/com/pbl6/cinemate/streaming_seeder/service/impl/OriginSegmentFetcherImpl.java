@@ -3,9 +3,11 @@ package com.pbl6.cinemate.streaming_seeder.service.impl;
 import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.errors.ErrorResponseException;
+
 import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,17 +38,6 @@ public class OriginSegmentFetcherImpl implements OriginSegmentFetcher {
     private final MinioObjectNameBuilder objectNameBuilder;
     private final SegmentCacheWriter cacheWriter;
     private final String defaultBucket;
-
-    /**
-     * Internal record to hold fetch context parameters.
-     */
-    private record FetchContext(
-            String movieId,
-            String qualityId,
-            String sanitizedSegmentId,
-            SegmentType type,
-            String bucket) {
-    }
 
     public OriginSegmentFetcherImpl(
             MinioClient minioClient,
@@ -195,5 +186,16 @@ public class OriginSegmentFetcherImpl implements OriginSegmentFetcher {
     private boolean isNotFound(ErrorResponseException ex) {
         return ERROR_NO_SUCH_KEY.equalsIgnoreCase(ex.errorResponse().code())
                 || ex.errorResponse().code() == null;
+    }
+
+    /**
+     * Internal record to hold fetch context parameters.
+     */
+    private record FetchContext(
+            String movieId,
+            String qualityId,
+            String sanitizedSegmentId,
+            SegmentType type,
+            String bucket) {
     }
 }

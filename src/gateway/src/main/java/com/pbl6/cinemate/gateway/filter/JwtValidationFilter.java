@@ -28,14 +28,14 @@ import java.util.Date;
 
 /**
  * Gateway global filter for JWT validation.
- * 
+ * <p>
  * This filter provides "double-check" security at the gateway level:
  * - Validates JWT signature (token was issued by our auth-service)
  * - Validates JWT expiry (token is not expired)
- * 
+ * <p>
  * Full authorization (role-based access, permissions) is still handled by
  * backend services.
- * 
+ * <p>
  * This prevents:
  * - Requests with tampered tokens from reaching backend services
  * - Requests with expired tokens from reaching backend services
