@@ -17,7 +17,7 @@ import java.util.UUID;
  * Integrates with interaction-recommender-service via InteractionService
  */
 @RestController
-@RequestMapping("/api/recommendations")
+@RequestMapping("/api/v1/recommendations")
 @RequiredArgsConstructor
 @Tag(name = "Recommendations", description = "Movie recommendation endpoints")
 public class RecommendationController {

@@ -17,7 +17,7 @@ import java.util.UUID;
  * They are only accessible within the Docker network
  */
 @RestController
-@RequestMapping("/internal/customers")
+@RequestMapping("/internal/v1/customers")
 @RequiredArgsConstructor
 public class InternalCustomerController {
 

@@ -18,65 +18,65 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/devices")
+@RequestMapping("/api/v1/devices")
 @RequiredArgsConstructor
 public class DeviceController {
 
-    private final DeviceService deviceService;
+        private final DeviceService deviceService;
 
-    @GetMapping("/user")
-    public ResponseEntity<ResponseData> getUserDevices(
-            @CurrentUser UserPrincipal userPrincipal,
-            HttpServletRequest httpRequest) {
-        List<DeviceResponse> devices = deviceService.getUserDevices(userPrincipal.getId());
-        return ResponseEntity.ok(ResponseData.success(
-                devices,
-                "User devices retrieved successfully",
-                httpRequest.getRequestURI(),
-                httpRequest.getMethod()));
-    }
+        @GetMapping("/user")
+        public ResponseEntity<ResponseData> getUserDevices(
+                        @CurrentUser UserPrincipal userPrincipal,
+                        HttpServletRequest httpRequest) {
+                List<DeviceResponse> devices = deviceService.getUserDevices(userPrincipal.getId());
+                return ResponseEntity.ok(ResponseData.success(
+                                devices,
+                                "User devices retrieved successfully",
+                                httpRequest.getRequestURI(),
+                                httpRequest.getMethod()));
+        }
 
-    @PostMapping("/register")
-    public ResponseEntity<ResponseData> registerDevice(
-            @Valid @RequestBody RegisterDeviceRequest request,
-            @CurrentUser UserPrincipal userPrincipal,
-            HttpServletRequest httpRequest) {
-        DeviceResponse device = deviceService.registerDevice(request, userPrincipal.getId());
-        return ResponseEntity.ok(ResponseData.success(
-                device,
-                "Device registered successfully",
-                httpRequest.getRequestURI(),
-                httpRequest.getMethod()));
-    }
+        @PostMapping("/register")
+        public ResponseEntity<ResponseData> registerDevice(
+                        @Valid @RequestBody RegisterDeviceRequest request,
+                        @CurrentUser UserPrincipal userPrincipal,
+                        HttpServletRequest httpRequest) {
+                DeviceResponse device = deviceService.registerDevice(request, userPrincipal.getId());
+                return ResponseEntity.ok(ResponseData.success(
+                                device,
+                                "Device registered successfully",
+                                httpRequest.getRequestURI(),
+                                httpRequest.getMethod()));
+        }
 
-    @DeleteMapping("/{deviceId}")
-    public ResponseEntity<ResponseData> removeDevice(
-            @PathVariable UUID deviceId,
-            @CurrentUser UserPrincipal userPrincipal,
-            HttpServletRequest httpRequest) {
-        deviceService.removeDevice(deviceId, userPrincipal.getId());
-        return ResponseEntity.ok(ResponseData.success(
-                "Device removed successfully",
-                httpRequest.getRequestURI(),
-                httpRequest.getMethod()));
-    }
+        @DeleteMapping("/{deviceId}")
+        public ResponseEntity<ResponseData> removeDevice(
+                        @PathVariable UUID deviceId,
+                        @CurrentUser UserPrincipal userPrincipal,
+                        HttpServletRequest httpRequest) {
+                deviceService.removeDevice(deviceId, userPrincipal.getId());
+                return ResponseEntity.ok(ResponseData.success(
+                                "Device removed successfully",
+                                httpRequest.getRequestURI(),
+                                httpRequest.getMethod()));
+        }
 
-    @GetMapping("/verify")
-    public ResponseEntity<ResponseData> verifyDevice(
-            @CurrentUser UserPrincipal userPrincipal,
-            @RequestParam(name = "deviceId") String deviceId,
-            HttpServletRequest httpRequest) {
-        boolean isRegistered = deviceService.isDeviceRegistered(userPrincipal.getId(), deviceId);
+        @GetMapping("/verify")
+        public ResponseEntity<ResponseData> verifyDevice(
+                        @CurrentUser UserPrincipal userPrincipal,
+                        @RequestParam(name = "deviceId") String deviceId,
+                        HttpServletRequest httpRequest) {
+                boolean isRegistered = deviceService.isDeviceRegistered(userPrincipal.getId(), deviceId);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("isRegistered", isRegistered);
-        response.put("userId", userPrincipal.getId());
-        response.put("deviceId", deviceId);
+                Map<String, Object> response = new HashMap<>();
+                response.put("isRegistered", isRegistered);
+                response.put("userId", userPrincipal.getId());
+                response.put("deviceId", deviceId);
 
-        return ResponseEntity.ok(ResponseData.success(
-                response,
-                "Device verification completed successfully",
-                httpRequest.getRequestURI(),
-                httpRequest.getMethod()));
-    }
+                return ResponseEntity.ok(ResponseData.success(
+                                response,
+                                "Device verification completed successfully",
+                                httpRequest.getRequestURI(),
+                                httpRequest.getMethod()));
+        }
 }

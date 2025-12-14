@@ -29,7 +29,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/movies")
+@RequestMapping("/api/v1/movies")
 @Tag(name = "Movie Management", description = "Movie management including upload, information retrieval, actors, directors and reviews")
 @Slf4j
 public class MovieController {

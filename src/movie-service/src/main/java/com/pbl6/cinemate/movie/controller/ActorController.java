@@ -20,7 +20,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/actors")
+@RequestMapping("/api/v1/actors")
 @Tag(name = "Actor Management", description = "Actor creation and management")
 public class ActorController {
 

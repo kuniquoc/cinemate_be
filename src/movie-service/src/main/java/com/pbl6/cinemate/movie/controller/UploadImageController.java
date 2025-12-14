@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/api/upload-image")
+@RequestMapping("/api/v1/upload-image")
 @RequiredArgsConstructor
 @Tag(name = "Image Upload", description = "Upload poster or thumbnail images to MinIO storage")
 @PreAuthorize("hasRole('ADMIN')")

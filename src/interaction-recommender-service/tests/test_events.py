@@ -38,7 +38,7 @@ async def test_watch_event(client: AsyncClient):
         }
     }
     
-    response = await client.post("/events/watch", json=event_data)
+    response = await client.post("/api/v1/events/watch", json=event_data)
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "accepted"
@@ -57,7 +57,7 @@ async def test_search_event(client: AsyncClient):
         }
     }
     
-    response = await client.post("/events/search", json=event_data)
+    response = await client.post("/api/v1/events/search", json=event_data)
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "accepted"
@@ -75,7 +75,7 @@ async def test_rating_event(client: AsyncClient):
         }
     }
     
-    response = await client.post("/events/rating", json=event_data)
+    response = await client.post("/api/v1/events/rating", json=event_data)
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "accepted"
@@ -93,7 +93,7 @@ async def test_favorite_event(client: AsyncClient):
         }
     }
     
-    response = await client.post("/events/favorite", json=event_data)
+    response = await client.post("/api/v1/events/favorite", json=event_data)
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "accepted"

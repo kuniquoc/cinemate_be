@@ -22,6 +22,6 @@ public interface CustomerClient {
      * @param accountId the account ID (from JWT/auth-service)
      * @return CustomerInfoResponse with firstName, lastName, avatarUrl
      */
-    @GetMapping("/internal/customers/{accountId}")
+    @GetMapping("/internal/v1/customers/{accountId}")
     CustomerInfoResponse getCustomerInfo(@PathVariable("accountId") UUID accountId);
 }
