@@ -15,7 +15,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,7 +31,7 @@ public class TokenServiceImpl implements TokenService {
                 Token token = new Token();
                 token.setType(TokenType.ACCOUNT_VERIFICATION);
                 token.setContent(UUID.randomUUID().toString());
-                token.setExpireTime(LocalDateTime.now().plusHours(TokenExpirationTime.VERIFY_ACCOUNT_TOKEN_HOURS));
+                token.setExpireTime(Instant.now().plusSeconds(TokenExpirationTime.VERIFY_ACCOUNT_TOKEN_HOURS * 3600L));
                 token.setUser(user);
                 return tokenRepository.save(token);
             }
@@ -39,7 +39,7 @@ public class TokenServiceImpl implements TokenService {
                 Token token = new Token();
                 token.setType(TokenType.RESET_PASSWORD);
                 token.setContent(String.valueOf(CommonUtils.getRandomFourDigitNumber()));
-                token.setExpireTime(LocalDateTime.now().plusMinutes(TokenExpirationTime.RESET_PASSWORD_TOKEN_MINUTES));
+                token.setExpireTime(Instant.now().plusSeconds(TokenExpirationTime.RESET_PASSWORD_TOKEN_MINUTES * 60L));
                 token.setUser(user);
                 return tokenRepository.save(token);
             }
@@ -47,7 +47,7 @@ public class TokenServiceImpl implements TokenService {
                 Token token = new Token();
                 token.setType(TokenType.DELETE_ACCOUNT);
                 token.setContent(UUID.randomUUID().toString());
-                token.setExpireTime(LocalDateTime.now().plusMinutes(TokenExpirationTime.DELETE_ACCOUNT_TOKEN_MINUTES));
+                token.setExpireTime(Instant.now().plusSeconds(TokenExpirationTime.DELETE_ACCOUNT_TOKEN_MINUTES * 60L));
                 token.setUser(user);
                 return tokenRepository.save(token);
             }
@@ -79,7 +79,7 @@ public class TokenServiceImpl implements TokenService {
 
     @Override
     public Token findByContentAndUserId(String contentToken, UUID userId) {
-        return tokenRepository.findByContentAndUserId(contentToken, userId).orElseThrow(()
-                -> new NotFoundException(ErrorMessage.TOKEN_NOT_FOUND));
+        return tokenRepository.findByContentAndUserId(contentToken, userId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.TOKEN_NOT_FOUND));
     }
 }

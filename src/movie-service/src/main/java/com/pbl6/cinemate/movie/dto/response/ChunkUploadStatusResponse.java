@@ -18,10 +18,10 @@ public record ChunkUploadStatusResponse(
         Instant expiresAt,
         UUID movieId) {
     public ChunkUploadStatusResponse(String uploadId, String filename, Long totalSize,
-            Integer totalChunks, Integer uploadedChunks, String status,
-            List<Integer> missingChunks, Instant createdAt,
-            Instant updatedAt, Instant expiresAt,
-            UUID movieId) {
+                                     Integer totalChunks, Integer uploadedChunks, String status,
+                                     List<Integer> missingChunks, Instant createdAt,
+                                     Instant updatedAt, Instant expiresAt,
+                                     UUID movieId) {
         this(uploadId, filename, totalSize, totalChunks, uploadedChunks, status,
                 calculateProgress(uploadedChunks, totalChunks), missingChunks,
                 createdAt, updatedAt, expiresAt, movieId);

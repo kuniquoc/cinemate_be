@@ -1,26 +1,23 @@
 package com.pbl6.cinemate.movie.entity;
 
+import com.pbl6.cinemate.shared.entity.AbstractBaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
-import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "review")
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Review {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+public class Review extends AbstractBaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "movie_id", nullable = false)
@@ -40,24 +37,4 @@ public class Review {
 
     @Column(name = "user_avatar", length = 512)
     private String userAvatar;
-
-    private Instant createdAt;
-    private Instant updatedAt;
-    private Instant deletedAt;
-
-    public Review(Movie movie, UUID customerId, String content, Integer stars, String userName, String userAvatar) {
-        this.movie = movie;
-        this.customerId = customerId;
-        this.content = content;
-        this.stars = stars;
-        this.userName = userName;
-        this.userAvatar = userAvatar;
-        this.createdAt = Instant.now();
-        this.updatedAt = Instant.now();
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        this.updatedAt = Instant.now();
-    }
 }

@@ -1,22 +1,20 @@
 package com.pbl6.cinemate.auth_service.entity;
 
+import com.pbl6.cinemate.shared.entity.AbstractBaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
+import java.time.Instant;
 
 @Entity
 @Table(name = "user_devices")
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDevice extends AbstractEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+public class UserDevice extends AbstractBaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -45,5 +43,5 @@ public class UserDevice extends AbstractEntity {
     private Boolean isCurrent = false;
 
     @Column(name = "last_active_at")
-    private LocalDateTime lastActiveAt;
+    private Instant lastActiveAt;
 }

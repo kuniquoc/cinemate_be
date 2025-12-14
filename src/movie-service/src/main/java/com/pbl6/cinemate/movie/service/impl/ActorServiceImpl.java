@@ -28,11 +28,12 @@ public class ActorServiceImpl implements ActorService {
 
     @Override
     public ActorResponse createActor(ActorCreationRequest request) {
-        Actor actor = new Actor(
-                request.fullname(),
-                request.biography(),
-                request.avatar(),
-                request.dateOfBirth());
+        Actor actor = Actor.builder()
+                .fullname(request.fullname())
+                .biography(request.biography())
+                .avatar(request.avatar())
+                .dateOfBirth(request.dateOfBirth())
+                .build();
 
         Actor savedActor = actorRepository.save(actor);
 

@@ -11,19 +11,19 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RegisterDeviceRequest {
-    
+
     @NotBlank(message = "Device name is required")
     private String deviceName;
-    
+
     @NotNull(message = "Device type is required")
     private DeviceType deviceType;
-    
+
     @NotBlank(message = "Device ID is required")
     private String deviceId;
-    
+
     private String browserInfo;
-    
+
     private String osInfo;
-    
+
     private String ipAddress;
 }

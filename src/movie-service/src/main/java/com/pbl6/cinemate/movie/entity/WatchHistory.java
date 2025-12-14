@@ -1,28 +1,25 @@
 package com.pbl6.cinemate.movie.entity;
 
+import com.pbl6.cinemate.shared.entity.AbstractBaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
-import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "watch_history", uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "movie_id", "customer_id" })
+        @UniqueConstraint(columnNames = {"movie_id", "customer_id"})
 })
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WatchHistory {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+public class WatchHistory extends AbstractBaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "movie_id", nullable = false)
@@ -40,20 +37,15 @@ public class WatchHistory {
     @Column(name = "progress_percent", nullable = false)
     private Double progressPercent;
 
-    private Instant createdAt;
-    private Instant updatedAt;
-
-    @PrePersist
-    public void prePersist() {
-        Instant now = Instant.now();
-        this.createdAt = now;
-        this.updatedAt = now;
+    @Override
+    protected void onCreate() {
+        super.onCreate();
         calculateProgressPercent();
     }
 
-    @PreUpdate
-    public void preUpdate() {
-        this.updatedAt = Instant.now();
+    @Override
+    protected void onUpdate() {
+        super.onUpdate();
         calculateProgressPercent();
     }
 

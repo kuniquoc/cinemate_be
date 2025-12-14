@@ -21,36 +21,36 @@ import java.util.UUID;
 @RequestMapping("/api/subscriptions")
 @RequiredArgsConstructor
 public class SubscriptionController {
-    
+
     private final SubscriptionService subscriptionService;
-    
+
     @PostMapping
     public ResponseEntity<ResponseData> createSubscription(
             @Valid @RequestBody CreateSubscriptionRequest request,
             @CurrentUser UserPrincipal userPrincipal,
             HttpServletRequest httpRequest) {
-        
+
         // Extract IP address from request
         String ipAddress = VNPayUtil.getIpAddress(
-            httpRequest.getHeader("X-Forwarded-For"),
-            httpRequest.getRemoteAddr()
+                httpRequest.getHeader("X-Forwarded-For"),
+                httpRequest.getRemoteAddr()
         );
-        
+
         // Get userId and email from authenticated user
         UUID userId = userPrincipal.getId();
         String userEmail = userPrincipal.getUsername(); // Returns email
-        
+
         // Create subscription with auto-generated payment URL
         SubscriptionWithPaymentResponse response = subscriptionService.createSubscriptionWithPayment(
-            request, userId, userEmail, ipAddress);
-        
+                request, userId, userEmail, ipAddress);
+
         return ResponseEntity.ok(ResponseData.success(
                 response,
                 "Subscription and payment URL created successfully",
                 httpRequest.getRequestURI(),
                 httpRequest.getMethod()));
     }
-    
+
     @GetMapping("/current")
     public ResponseEntity<ResponseData> getCurrentSubscription(
             @CurrentUser UserPrincipal userPrincipal,
@@ -62,7 +62,7 @@ public class SubscriptionController {
                 httpRequest.getRequestURI(),
                 httpRequest.getMethod()));
     }
-    
+
     @GetMapping("/history")
     public ResponseEntity<ResponseData> getSubscriptionHistory(
             @CurrentUser UserPrincipal userPrincipal,
@@ -74,7 +74,7 @@ public class SubscriptionController {
                 httpRequest.getRequestURI(),
                 httpRequest.getMethod()));
     }
-    
+
     @PutMapping("/{subscriptionId}/cancel")
     public ResponseEntity<ResponseData> cancelSubscription(
             @PathVariable UUID subscriptionId,
@@ -87,7 +87,7 @@ public class SubscriptionController {
                 httpRequest.getRequestURI(),
                 httpRequest.getMethod()));
     }
-    
+
     @PostMapping("/renew")
     public ResponseEntity<ResponseData> renewSubscription(
             @CurrentUser UserPrincipal userPrincipal,

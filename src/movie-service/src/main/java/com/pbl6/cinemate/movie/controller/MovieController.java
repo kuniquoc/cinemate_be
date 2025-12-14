@@ -409,10 +409,10 @@ public class MovieController {
                         @CurrentUser UserPrincipal userPrincipal,
                         HttpServletRequest httpServletRequest) {
 
-                // Determine user role from JWT - admin can see all movies, regular users only
-                // see PUBLIC
+                // Determine user role from JWT
+                // admin can see all movies, regular users only see PUBLIC
                 String userRole = (userPrincipal != null && userPrincipal.getRole() != null
-                                && userPrincipal.getRole().equalsIgnoreCase("ADMIN")) ? "ADMIN" : "USER";
+                                && userPrincipal.getRole().equalsIgnoreCase("ROLE_ADMIN")) ? "ADMIN" : "USER";
 
                 PaginatedResponse<MovieResponse> data = movieService.getMovies(keyword, page - 1, size, sortBy,
                                 sortDirection, userRole);

@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "vnpay")
 @Data
 public class VNPayConfig {
-    
+
     private String url;
     private String tmnCode;
     private String hashSecret;

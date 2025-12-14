@@ -8,8 +8,8 @@ import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
 @ComponentScan(basePackages = {
-    "com.pbl6.cinemate.auth_service",
-    "com.pbl6.cinemate.shared"
+        "com.pbl6.cinemate.auth_service",
+        "com.pbl6.cinemate.shared"
 })
 public class AuthServiceApplication {
 

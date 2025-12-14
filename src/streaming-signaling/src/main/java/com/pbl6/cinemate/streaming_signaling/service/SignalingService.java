@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessResourceFailureException;
@@ -96,7 +97,7 @@ public class SignalingService {
 
     /**
      * Finds peers with a specific segment (with quality information).
-     * 
+     *
      * @param movieId   the movie identifier
      * @param qualityId the quality variant (can be null for master playlist)
      * @param segmentId the segment identifier
@@ -137,7 +138,7 @@ public class SignalingService {
 
     /**
      * Reports that a client has successfully obtained a segment.
-     * 
+     *
      * @param clientId  the client identifier
      * @param movieId   the movie identifier
      * @param qualityId the quality variant
@@ -201,7 +202,7 @@ public class SignalingService {
     /**
      * Handles removal of a segment from a client's cache.
      * Removes the client from the set of peers that own this segment.
-     * 
+     *
      * @param clientId  the client identifier
      * @param movieId   the movie identifier
      * @param qualityId the quality variant
@@ -285,10 +286,10 @@ public class SignalingService {
 
         ScanOptions scanOptions = ScanOptions.scanOptions().match(pattern).count(128).build();
         try (RedisConnection connection = connectionFactory.getConnection();
-                Cursor<byte[]> cursor = Objects.requireNonNull(
-                        Objects.requireNonNull(connection.keyCommands(), KEY_COMMANDS_REQUIRED)
-                                .scan(scanOptions),
-                        SCAN_CURSOR_REQUIRED)) {
+             Cursor<byte[]> cursor = Objects.requireNonNull(
+                     Objects.requireNonNull(connection.keyCommands(), KEY_COMMANDS_REQUIRED)
+                             .scan(scanOptions),
+                     SCAN_CURSOR_REQUIRED)) {
             while (cursor.hasNext()) {
                 byte[] rawKey = cursor.next();
                 if (rawKey == null) {

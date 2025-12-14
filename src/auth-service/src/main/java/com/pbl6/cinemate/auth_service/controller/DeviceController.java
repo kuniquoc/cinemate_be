@@ -33,7 +33,7 @@ public class DeviceController {
         List<UserDeviceResponse> deviceResponses = devices.stream()
                 .map(UserDeviceMapper::toUserDeviceResponse)
                 .collect(Collectors.toList());
-        
+
         ResponseData responseData = ResponseData.success(deviceResponses,
                 FeedbackMessage.DEVICES_FETCHED, request.getRequestURI(), request.getMethod());
         return ResponseEntity.ok(responseData);
@@ -44,7 +44,7 @@ public class DeviceController {
                                                          @PathVariable UUID deviceId,
                                                          HttpServletRequest request) {
         userDeviceService.logoutFromDevice(userPrincipal.getId(), deviceId);
-        
+
         ResponseData responseData = ResponseData.successWithoutMetaAndData(
                 FeedbackMessage.DEVICE_LOGGED_OUT, request.getRequestURI(), request.getMethod());
         return ResponseEntity.ok(responseData);
@@ -55,7 +55,7 @@ public class DeviceController {
                                                              @RequestParam(name = "currentDeviceId", required = false) UUID currentDeviceId,
                                                              HttpServletRequest request) {
         userDeviceService.logoutFromAllDevices(userPrincipal.getId(), currentDeviceId);
-        
+
         ResponseData responseData = ResponseData.successWithoutMetaAndData(
                 FeedbackMessage.ALL_DEVICES_LOGGED_OUT, request.getRequestURI(), request.getMethod());
         return ResponseEntity.ok(responseData);

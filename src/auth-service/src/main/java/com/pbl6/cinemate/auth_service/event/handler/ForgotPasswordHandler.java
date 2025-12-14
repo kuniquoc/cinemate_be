@@ -16,7 +16,7 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Optional;
 
 @Slf4j
@@ -36,7 +36,7 @@ public class ForgotPasswordHandler implements ApplicationListener<ForgotPassword
         if (tokenResult.isPresent()) {
             token = tokenResult.get();
             token.setContent(String.valueOf(CommonUtils.getRandomFourDigitNumber()));
-            token.setExpireTime(LocalDateTime.now().plusMinutes(TokenExpirationTime.RESET_PASSWORD_TOKEN_MINUTES));
+            token.setExpireTime(Instant.now().plusSeconds(TokenExpirationTime.RESET_PASSWORD_TOKEN_MINUTES * 60));
             tokenService.save(token);
         } else {
             token = tokenService.createToken(user, TokenType.RESET_PASSWORD);

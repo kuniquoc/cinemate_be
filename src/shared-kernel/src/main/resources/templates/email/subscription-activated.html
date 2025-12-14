@@ -1,314 +1,340 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>Subscription Activated - Cinemate</title>
     <style>
-      body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        line-height: 1.6;
-        color: #333;
-        background-color: #f4f4f4;
-        margin: 0;
-        padding: 0;
-      }
-      .container {
-        max-width: 600px;
-        margin: 20px auto;
-        background-color: #ffffff;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      }
-      .header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: #ffffff;
-        padding: 30px 20px;
-        text-align: center;
-      }
-      .header h1 {
-        margin: 0;
-        font-size: 28px;
-        font-weight: 600;
-      }
-      .welcome-icon {
-        font-size: 48px;
-        margin-bottom: 10px;
-      }
-      .content {
-        padding: 40px 30px;
-      }
-      .greeting {
-        font-size: 18px;
-        margin-bottom: 20px;
-        color: #1f2937;
-      }
-      .message {
-        font-size: 16px;
-        color: #4b5563;
-        margin-bottom: 25px;
-      }
-      .subscription-section {
-        background-color: #f9fafb;
-        border-radius: 8px;
-        padding: 25px;
-        margin: 25px 0;
-      }
-      .subscription-section h2 {
-        margin: 0 0 20px 0;
-        font-size: 20px;
-        color: #1f2937;
-        border-bottom: 2px solid #e5e7eb;
-        padding-bottom: 10px;
-      }
-      .subscription-item {
-        padding: 10px 0;
-        border-bottom: 1px solid #e5e7eb;
-      }
-      .subscription-item:last-child {
-        border-bottom: none;
-      }
-      .subscription-label {
-        font-weight: 600;
-        color: #6b7280;
-        display: block;
-        margin-bottom: 5px;
-      }
-      .subscription-value {
-        color: #1f2937;
-        font-size: 16px;
-      }
-      .features-section {
-        background-color: #eff6ff;
-        border-radius: 8px;
-        padding: 25px;
-        margin: 25px 0;
-      }
-      .features-section h3 {
-        margin: 0 0 15px 0;
-        font-size: 18px;
-        color: #1e40af;
-      }
-      .feature-item {
-        padding: 10px 0;
-        color: #1f2937;
-        display: flex;
-        align-items: flex-start;
-      }
-      .feature-icon {
-        color: #10b981;
-        margin-right: 10px;
-        font-weight: bold;
-      }
-      .family-section {
-        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-        border-radius: 8px;
-        padding: 25px;
-        margin: 25px 0;
-      }
-      .family-section h3 {
-        margin: 0 0 15px 0;
-        font-size: 18px;
-        color: #92400e;
-      }
-      .family-item {
-        padding: 8px 0;
-        color: #78350f;
-      }
-      .button {
-        display: inline-block;
-        padding: 14px 32px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: #ffffff;
-        text-decoration: none;
-        border-radius: 5px;
-        font-weight: 600;
-        margin: 20px 0;
-        text-align: center;
-      }
-      .button:hover {
-        opacity: 0.9;
-      }
-      .footer {
-        background-color: #f9fafb;
-        padding: 25px 30px;
-        text-align: center;
-        color: #6b7280;
-        font-size: 14px;
-        border-top: 1px solid #e5e7eb;
-      }
-      .tips-section {
-        margin-top: 25px;
-        padding: 20px;
-        background-color: #f0fdf4;
-        border-left: 4px solid #10b981;
-        border-radius: 4px;
-      }
-      .tips-section h4 {
-        margin: 0 0 10px 0;
-        color: #065f46;
-      }
-      .tips-section p {
-        margin: 5px 0;
-        color: #047857;
-        font-size: 14px;
-      }
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .welcome-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #1f2937;
+        }
+
+        .message {
+            font-size: 16px;
+            color: #4b5563;
+            margin-bottom: 25px;
+        }
+
+        .subscription-section {
+            background-color: #f9fafb;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+
+        .subscription-section h2 {
+            margin: 0 0 20px 0;
+            font-size: 20px;
+            color: #1f2937;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+
+        .subscription-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .subscription-item:last-child {
+            border-bottom: none;
+        }
+
+        .subscription-label {
+            font-weight: 600;
+            color: #6b7280;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .subscription-value {
+            color: #1f2937;
+            font-size: 16px;
+        }
+
+        .features-section {
+            background-color: #eff6ff;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+
+        .features-section h3 {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            color: #1e40af;
+        }
+
+        .feature-item {
+            padding: 10px 0;
+            color: #1f2937;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .feature-icon {
+            color: #10b981;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .family-section {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+
+        .family-section h3 {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            color: #92400e;
+        }
+
+        .family-item {
+            padding: 8px 0;
+            color: #78350f;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .button:hover {
+            opacity: 0.9;
+        }
+
+        .footer {
+            background-color: #f9fafb;
+            padding: 25px 30px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .tips-section {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #f0fdf4;
+            border-left: 4px solid #10b981;
+            border-radius: 4px;
+        }
+
+        .tips-section h4 {
+            margin: 0 0 10px 0;
+            color: #065f46;
+        }
+
+        .tips-section p {
+            margin: 5px 0;
+            color: #047857;
+            font-size: 14px;
+        }
     </style>
-  </head>
-  <body>
-    <div class="container">
-      <!-- Header -->
-      <div class="header">
+</head>
+<body>
+<div class="container">
+    <!-- Header -->
+    <div class="header">
         <div class="welcome-icon">🎬</div>
         <h1>Welcome to Cinemate <span th:text="${planName}">Premium</span>!</h1>
-      </div>
+    </div>
 
-      <!-- Content -->
-      <div class="content">
+    <!-- Content -->
+    <div class="content">
         <p class="greeting">
-          Hi <span th:text="${recipientName}">Customer</span>,
+            Hi <span th:text="${recipientName}">Customer</span>,
         </p>
 
         <p class="message">
-          Your subscription is now <strong>active</strong> and ready to use! Get
-          ready to enjoy unlimited streaming of your favorite movies and shows.
+            Your subscription is now <strong>active</strong> and ready to use! Get
+            ready to enjoy unlimited streaming of your favorite movies and shows.
         </p>
 
         <!-- Subscription Details -->
         <div class="subscription-section">
-          <h2>📅 Subscription Details</h2>
-          <div class="subscription-item">
-            <span class="subscription-label">Plan Name:</span>
-            <span class="subscription-value" th:text="${planName}"
-              >Premium</span
-            >
-          </div>
-          <div class="subscription-item">
-            <span class="subscription-label">Start Date:</span>
-            <span
-              class="subscription-value"
-              th:text="${#temporals.format(startDate, 'dd MMM yyyy')}"
-              >06 Dec 2025</span
-            >
-          </div>
-          <div class="subscription-item">
-            <span class="subscription-label">End Date:</span>
-            <span
-              class="subscription-value"
-              th:text="${#temporals.format(endDate, 'dd MMM yyyy')}"
-              >05 Jan 2026</span
-            >
-          </div>
-          <div class="subscription-item">
-            <span class="subscription-label">Auto-Renew:</span>
-            <span
-              class="subscription-value"
-              th:text="${autoRenew ? 'Enabled' : 'Disabled'}"
-              >Enabled</span
-            >
-          </div>
+            <h2>📅 Subscription Details</h2>
+            <div class="subscription-item">
+                <span class="subscription-label">Plan Name:</span>
+                <span class="subscription-value" th:text="${planName}"
+                >Premium</span
+                >
+            </div>
+            <div class="subscription-item">
+                <span class="subscription-label">Start Date:</span>
+                <span
+                        class="subscription-value"
+                        th:text="${#temporals.format(startDate, 'dd MMM yyyy')}"
+                >06 Dec 2025</span
+                >
+            </div>
+            <div class="subscription-item">
+                <span class="subscription-label">End Date:</span>
+                <span
+                        class="subscription-value"
+                        th:text="${#temporals.format(endDate, 'dd MMM yyyy')}"
+                >05 Jan 2026</span
+                >
+            </div>
+            <div class="subscription-item">
+                <span class="subscription-label">Auto-Renew:</span>
+                <span
+                        class="subscription-value"
+                        th:text="${autoRenew ? 'Enabled' : 'Disabled'}"
+                >Enabled</span
+                >
+            </div>
         </div>
 
         <!-- Features Section -->
         <div class="features-section">
-          <h3>✨ Your Features</h3>
-          <div class="feature-item">
-            <span class="feature-icon">✓</span>
-            <span>HD and 4K streaming quality</span>
-          </div>
-          <div class="feature-item">
-            <span class="feature-icon">✓</span>
-            <span
-              >Stream on up to <span th:text="${maxDevices}">4</span> devices
+            <h3>✨ Your Features</h3>
+            <div class="feature-item">
+                <span class="feature-icon">✓</span>
+                <span>HD and 4K streaming quality</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon">✓</span>
+                <span
+                >Stream on up to <span th:text="${maxDevices}">4</span> devices
               simultaneously</span
-            >
-          </div>
-          <div class="feature-item">
-            <span class="feature-icon">✓</span>
-            <span>Unlimited ad-free viewing</span>
-          </div>
-          <div class="feature-item">
-            <span class="feature-icon">✓</span>
-            <span>Download movies and shows for offline viewing</span>
-          </div>
-          <div class="feature-item">
-            <span class="feature-icon">✓</span>
-            <span>Personalized recommendations</span>
-          </div>
-          <div class="feature-item">
-            <span class="feature-icon">✓</span>
-            <span>Create multiple watchlists</span>
-          </div>
+                >
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon">✓</span>
+                <span>Unlimited ad-free viewing</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon">✓</span>
+                <span>Download movies and shows for offline viewing</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon">✓</span>
+                <span>Personalized recommendations</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon">✓</span>
+                <span>Create multiple watchlists</span>
+            </div>
         </div>
 
         <!-- Family Plan Section (conditional) -->
-        <div th:if="${isFamilyPlan}" class="family-section">
-          <h3>👨‍👩‍👧‍👦 Family Plan Features</h3>
-          <div class="family-item">
-            <strong
-              >• Invite up to <span th:text="${maxMembers}">6</span> family
-              members</strong
-            >
-          </div>
-          <div class="family-item">
-            • Each member gets their own profile and personalized
-            recommendations
-          </div>
-          <div class="family-item">
-            • Parental controls for kids - manage what content they can watch
-          </div>
-          <div class="family-item">
-            • Set daily watch time limits for children
-          </div>
-          <div class="family-item">
-            • Create a safe viewing environment for the whole family
-          </div>
+        <div class="family-section" th:if="${isFamilyPlan}">
+            <h3>👨‍👩‍👧‍👦 Family Plan Features</h3>
+            <div class="family-item">
+                <strong
+                >• Invite up to <span th:text="${maxMembers}">6</span> family
+                    members</strong
+                >
+            </div>
+            <div class="family-item">
+                • Each member gets their own profile and personalized
+                recommendations
+            </div>
+            <div class="family-item">
+                • Parental controls for kids - manage what content they can watch
+            </div>
+            <div class="family-item">
+                • Set daily watch time limits for children
+            </div>
+            <div class="family-item">
+                • Create a safe viewing environment for the whole family
+            </div>
         </div>
 
         <p class="message">
-          Start exploring our extensive library of movies, TV shows,
-          documentaries, and more!
+            Start exploring our extensive library of movies, TV shows,
+            documentaries, and more!
         </p>
 
         <div style="text-align: center">
-          <a href="http://localhost:3000/browse" class="button"
+            <a class="button" href="http://localhost:3000/browse"
             >Start Watching Now</a
-          >
+            >
         </div>
 
         <!-- Getting Started Tips -->
         <div class="tips-section">
-          <h4>💡 Getting Started Tips</h4>
-          <p>
-            <strong>1. Create Your Profile:</strong> Set up your personal
-            viewing profile
-          </p>
-          <p>
-            <strong>2. Register Devices:</strong> Add your favorite devices for
-            seamless streaming
-          </p>
-          <p th:if="${isFamilyPlan}">
-            <strong>3. Invite Family:</strong> Share your subscription with
-            loved ones
-          </p>
-          <p>
-            <strong th:text="${isFamilyPlan ? '4' : '3'}">3</strong
-            ><strong>. Start Watching:</strong> Browse our catalog and enjoy!
-          </p>
+            <h4>💡 Getting Started Tips</h4>
+            <p>
+                <strong>1. Create Your Profile:</strong> Set up your personal
+                viewing profile
+            </p>
+            <p>
+                <strong>2. Register Devices:</strong> Add your favorite devices for
+                seamless streaming
+            </p>
+            <p th:if="${isFamilyPlan}">
+                <strong>3. Invite Family:</strong> Share your subscription with
+                loved ones
+            </p>
+            <p>
+                <strong th:text="${isFamilyPlan ? '4' : '3'}">3</strong
+                ><strong>. Start Watching:</strong> Browse our catalog and enjoy!
+            </p>
         </div>
-      </div>
+    </div>
 
-      <!-- Footer -->
-      <div class="footer">
+    <!-- Footer -->
+    <div class="footer">
         <p><strong>Need Help?</strong></p>
         <p>Contact us at support@cinemate.com or visit our Help Center</p>
         <p style="margin-top: 20px">
-          © 2025 Cinemate. All rights reserved.<br />
-          You received this email because your Cinemate subscription was
-          activated.
+            © 2025 Cinemate. All rights reserved.<br/>
+            You received this email because your Cinemate subscription was
+            activated.
         </p>
-      </div>
     </div>
-  </body>
+</div>
+</body>
 </html>

@@ -28,12 +28,12 @@ public class AdminDeviceController {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/users/{userId}")
     public ResponseEntity<ResponseData> getUserDevices(@PathVariable UUID userId,
-                                                        HttpServletRequest request) {
+                                                       HttpServletRequest request) {
         List<UserDevice> devices = userDeviceService.adminGetUserDevices(userId);
         List<UserDeviceResponse> deviceResponses = devices.stream()
                 .map(UserDeviceMapper::toUserDeviceResponse)
                 .collect(Collectors.toList());
-        
+
         ResponseData responseData = ResponseData.success(deviceResponses,
                 FeedbackMessage.USER_DEVICES_FETCHED, request.getRequestURI(), request.getMethod());
         return ResponseEntity.ok(responseData);
@@ -44,7 +44,7 @@ public class AdminDeviceController {
     public ResponseEntity<ResponseData> logoutFromDevice(@PathVariable UUID deviceId,
                                                          HttpServletRequest request) {
         userDeviceService.adminLogoutFromDevice(deviceId);
-        
+
         ResponseData responseData = ResponseData.successWithoutMetaAndData(
                 FeedbackMessage.USER_DEVICE_LOGGED_OUT, request.getRequestURI(), request.getMethod());
         return ResponseEntity.ok(responseData);
@@ -53,9 +53,9 @@ public class AdminDeviceController {
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/users/{userId}/logout-all")
     public ResponseEntity<ResponseData> logoutFromAllUserDevices(@PathVariable UUID userId,
-                                                                  HttpServletRequest request) {
+                                                                 HttpServletRequest request) {
         userDeviceService.adminLogoutFromAllUserDevices(userId);
-        
+
         ResponseData responseData = ResponseData.successWithoutMetaAndData(
                 FeedbackMessage.ALL_USER_DEVICES_LOGGED_OUT, request.getRequestURI(), request.getMethod());
         return ResponseEntity.ok(responseData);

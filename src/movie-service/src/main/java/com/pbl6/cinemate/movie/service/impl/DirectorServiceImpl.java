@@ -29,11 +29,12 @@ public class DirectorServiceImpl implements DirectorService {
 
     @Override
     public DirectorResponse createDirector(DirectorCreationRequest request) {
-        Director director = new Director(
-                request.fullname(),
-                request.biography(),
-                request.avatar(),
-                request.dateOfBirth());
+        Director director = Director.builder()
+                .fullname(request.fullname())
+                .biography(request.biography())
+                .avatar(request.avatar())
+                .dateOfBirth(request.dateOfBirth())
+                .build();
 
         Director savedDirector = directorRepository.save(director);
 

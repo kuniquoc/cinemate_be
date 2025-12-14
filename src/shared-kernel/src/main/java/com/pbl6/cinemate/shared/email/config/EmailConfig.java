@@ -10,7 +10,7 @@ import java.util.concurrent.Executor;
 @Configuration
 @EnableAsync
 public class EmailConfig {
-    
+
     @Bean(name = "emailTaskExecutor")
     public Executor emailTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();

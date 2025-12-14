@@ -34,7 +34,7 @@ public interface WatchHistoryRepository extends JpaRepository<WatchHistory, UUID
             "WHERE wh.customer_id = :customerId " +
             "GROUP BY DATE(wh.updated_at AT TIME ZONE 'UTC') " +
             "ORDER BY watch_date DESC", countQuery = "SELECT COUNT(DISTINCT DATE(wh.updated_at AT TIME ZONE 'UTC')) " +
-                    "FROM watch_history wh WHERE wh.customer_id = :customerId", nativeQuery = true)
+            "FROM watch_history wh WHERE wh.customer_id = :customerId", nativeQuery = true)
     Page<Object[]> findDistinctDatesByCustomerId(@Param("customerId") UUID customerId, Pageable pageable);
 
     void deleteByMovieIdAndCustomerId(UUID movieId, UUID customerId);

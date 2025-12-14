@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 public class AcceptInvitationRequest {
-    
+
     @NotBlank(message = "Invitation token is required")
     private String invitationToken;
 }

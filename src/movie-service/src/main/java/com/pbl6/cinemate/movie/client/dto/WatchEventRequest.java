@@ -19,18 +19,6 @@ public record WatchEventRequest(
         @JsonProperty("clientTimestamp") Instant clientTimestamp,
 
         @JsonProperty("metadata") WatchMetadata metadata) {
-    public record WatchMetadata(
-            @JsonProperty("watchDuration") Integer watchDuration,
-
-            @JsonProperty("device") String device,
-
-            @JsonProperty("quality") String quality,
-
-            @JsonProperty("sessionId") String sessionId,
-
-            @JsonProperty("progressPercent") Double progressPercent) {
-    }
-
     public static WatchEventRequest create(
             UUID userId,
             UUID movieId,
@@ -45,5 +33,17 @@ public record WatchEventRequest(
                 movieId,
                 Instant.now(),
                 new WatchMetadata(watchDuration, device, quality, sessionId, progressPercent));
+    }
+
+    public record WatchMetadata(
+            @JsonProperty("watchDuration") Integer watchDuration,
+
+            @JsonProperty("device") String device,
+
+            @JsonProperty("quality") String quality,
+
+            @JsonProperty("sessionId") String sessionId,
+
+            @JsonProperty("progressPercent") Double progressPercent) {
     }
 }

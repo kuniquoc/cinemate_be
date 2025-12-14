@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -19,15 +19,15 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SubscriptionWithPaymentResponse {
-    
+
     // Subscription details
     private UUID subscriptionId;
     private UUID userId;
     private SubscriptionPlanResponse plan;
     private SubscriptionStatus status;
     private Boolean autoRenew;
-    private LocalDateTime createdAt;
-    
+    private Instant createdAt;
+
     // Payment details
     private UUID paymentId;
     private String paymentUrl;

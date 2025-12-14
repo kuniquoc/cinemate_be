@@ -27,22 +27,12 @@ from app.config import get_settings
 # These UUIDs match the Java SeedUUIDs.java for cross-service consistency
 
 class SeedUUIDs:
-    """Fixed UUIDs for seed data consistency across services."""
+    """Fixed UUIDs for seed data consistency across services.
+    NOTE: User/account UUIDs were removed — account seeding is disabled.
+    """
     
-    class Users:
-        ADMIN_01 = UUID("c0000000-0000-0000-0000-000000000001")
-        ADMIN_02 = UUID("c0000000-0000-0000-0000-000000000002")
-        USER_01 = UUID("c0000000-0000-0000-0000-000000000003")
-        USER_02 = UUID("c0000000-0000-0000-0000-000000000004")
-        USER_03 = UUID("c0000000-0000-0000-0000-000000000005")
-        USER_04 = UUID("c0000000-0000-0000-0000-000000000006")
-        USER_05 = UUID("c0000000-0000-0000-0000-000000000007")
-        USER_06 = UUID("c0000000-0000-0000-0000-000000000008")
-        USER_07 = UUID("c0000000-0000-0000-0000-000000000009")
-        USER_08 = UUID("c0000000-0000-0000-0000-000000000010")
-        USER_09 = UUID("c0000000-0000-0000-0000-000000000011")
-        USER_10 = UUID("c0000000-0000-0000-0000-000000000012")
-    
+    # Users: removed to disable account seeding
+
     class Movies:
         MOVIE_01 = UUID("f2000000-0000-0000-0000-000000000001")
         MOVIE_02 = UUID("f2000000-0000-0000-0000-000000000002")
@@ -92,12 +82,10 @@ def seed_interaction_events(session):
     
     print("Seeding interaction events...")
     
-    users = [
-        SeedUUIDs.Users.USER_01, SeedUUIDs.Users.USER_02, SeedUUIDs.Users.USER_03,
-        SeedUUIDs.Users.USER_04, SeedUUIDs.Users.USER_05, SeedUUIDs.Users.USER_06,
-        SeedUUIDs.Users.USER_07, SeedUUIDs.Users.USER_08, SeedUUIDs.Users.USER_09,
-        SeedUUIDs.Users.USER_10
-    ]
+    users = []  # Account seeding disabled — no fixed user UUIDs available
+    if not users:
+        print("Account seeding disabled; skipping interaction events.")
+        return
     
     movies = [
         SeedUUIDs.Movies.MOVIE_01, SeedUUIDs.Movies.MOVIE_02, SeedUUIDs.Movies.MOVIE_03,
@@ -162,12 +150,10 @@ def seed_user_features(session):
     
     print("Seeding user features...")
     
-    users = [
-        SeedUUIDs.Users.USER_01, SeedUUIDs.Users.USER_02, SeedUUIDs.Users.USER_03,
-        SeedUUIDs.Users.USER_04, SeedUUIDs.Users.USER_05, SeedUUIDs.Users.USER_06,
-        SeedUUIDs.Users.USER_07, SeedUUIDs.Users.USER_08, SeedUUIDs.Users.USER_09,
-        SeedUUIDs.Users.USER_10
-    ]
+    users = []  # Account seeding disabled
+    if not users:
+        print("Account seeding disabled; skipping user features seeding.")
+        return
     
     features_list = []
     now = datetime.now(timezone.utc)
@@ -207,10 +193,10 @@ def seed_model_feedback(session):
     
     print("Seeding model feedback...")
     
-    users = [
-        SeedUUIDs.Users.USER_01, SeedUUIDs.Users.USER_02, SeedUUIDs.Users.USER_03,
-        SeedUUIDs.Users.USER_04, SeedUUIDs.Users.USER_05
-    ]
+    users = []  # Account seeding disabled
+    if not users:
+        print("Account seeding disabled; skipping model feedback seeding.")
+        return
     
     movies = [
         SeedUUIDs.Movies.MOVIE_01, SeedUUIDs.Movies.MOVIE_02, SeedUUIDs.Movies.MOVIE_03,

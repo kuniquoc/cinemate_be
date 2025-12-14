@@ -28,7 +28,7 @@ public interface MovieService {
     void deleteMovie(@NonNull UUID movieId);
 
     PaginatedResponse<MovieResponse> getMovies(String keyword, int page, int size, String sortBy,
-            @NonNull String sortDirection, String userRole);
+                                               @NonNull String sortDirection, String userRole);
 
     List<MovieResponse> getTopTenMovies();
 

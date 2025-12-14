@@ -19,16 +19,6 @@ public record SearchEventRequest(
         @JsonProperty("clientTimestamp") Instant clientTimestamp,
 
         @JsonProperty("metadata") SearchMetadata metadata) {
-    public record SearchMetadata(
-            @JsonProperty("query") String query,
-
-            @JsonProperty("resultsCount") Integer resultsCount,
-
-            @JsonProperty("filters") Map<String, Object> filters,
-
-            @JsonProperty("sessionId") String sessionId) {
-    }
-
     public static SearchEventRequest create(
             UUID userId,
             String query,
@@ -54,5 +44,15 @@ public record SearchEventRequest(
                 clickedMovieId,
                 Instant.now(),
                 new SearchMetadata(query, resultsCount, null, null));
+    }
+
+    public record SearchMetadata(
+            @JsonProperty("query") String query,
+
+            @JsonProperty("resultsCount") Integer resultsCount,
+
+            @JsonProperty("filters") Map<String, Object> filters,
+
+            @JsonProperty("sessionId") String sessionId) {
     }
 }

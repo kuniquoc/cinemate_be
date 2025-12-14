@@ -2,29 +2,26 @@ package com.pbl6.cinemate.movie.entity;
 
 import com.pbl6.cinemate.movie.enums.MovieProcessStatus;
 import com.pbl6.cinemate.movie.enums.MovieStatus;
+import com.pbl6.cinemate.shared.entity.AbstractBaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 @Entity
 @Table(name = "movies")
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Movie {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+public class Movie extends AbstractBaseEntity {
 
     private String title;
     private String description;
@@ -34,9 +31,6 @@ public class Movie {
 
     @Enumerated(EnumType.STRING)
     private MovieProcessStatus processStatus;
-
-    private Instant createdAt;
-    private Instant updatedAt;
 
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(columnDefinition = "text[]")
@@ -69,21 +63,17 @@ public class Movie {
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<MovieDirector> movieDirectors = new HashSet<>();
 
-    @PrePersist
-    public void prePersist() {
-        Instant now = Instant.now();
-        this.createdAt = now;
-        this.updatedAt = now;
-        this.status = MovieStatus.DRAFT;
-        this.processStatus = MovieProcessStatus.UPLOADING;
+    @Override
+    protected void onCreate() {
+        super.onCreate();
+        if (this.status == null) {
+            this.status = MovieStatus.DRAFT;
+        }
+        if (this.processStatus == null) {
+            this.processStatus = MovieProcessStatus.UPLOADING;
+        }
         if (this.isVip == null) {
             this.isVip = false;
         }
     }
-
-    @PreUpdate
-    public void preUpdate() {
-        this.updatedAt = Instant.now();
-    }
-
 }

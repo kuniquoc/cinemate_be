@@ -23,9 +23,9 @@ public interface UserDeviceRepository extends JpaRepository<UserDevice, UUID> {
     @Query("SELECT ud FROM UserDevice ud WHERE ud.user.id = :userId AND ud.deviceName = :deviceName " +
             "AND ud.deviceOs = :deviceOs AND ud.browser = :browser AND ud.deletedAt IS NULL")
     Optional<UserDevice> findByUserIdAndDeviceInfo(@Param("userId") UUID userId,
-                                                     @Param("deviceName") String deviceName,
-                                                     @Param("deviceOs") String deviceOs,
-                                                     @Param("browser") String browser);
+                                                   @Param("deviceName") String deviceName,
+                                                   @Param("deviceOs") String deviceOs,
+                                                   @Param("browser") String browser);
 
     @Modifying
     @Query("UPDATE UserDevice ud SET ud.isCurrent = false WHERE ud.user.id = :userId")

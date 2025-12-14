@@ -1,4 +1,0 @@
-ALTER TABLE tokens
-    ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT now(),
-    ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT now(),
-    ADD COLUMN deleted_at TIMESTAMP NULL;

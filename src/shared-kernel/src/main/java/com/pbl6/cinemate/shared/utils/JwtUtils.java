@@ -24,12 +24,12 @@ public class JwtUtils {
     private final AppProperties appProperties;
 
     public String generateToken(String userId, String username, String role, List<String> permissions,
-            boolean isRefreshToken) {
+                                boolean isRefreshToken) {
         return generateToken(userId, username, role, permissions, isRefreshToken, null, null);
     }
 
     public String generateToken(String userId, String username, String role, List<String> permissions,
-            boolean isRefreshToken, String firstName, String lastName) {
+                                boolean isRefreshToken, String firstName, String lastName) {
         return Jwts.builder().setSubject(UUID.randomUUID().toString())
                 .claim("user_id", userId)
                 .claim("username", username)

@@ -11,12 +11,12 @@ import java.util.UUID;
 
 @Repository
 public interface FamilyInvitationRepository extends JpaRepository<FamilyInvitation, UUID> {
-    
+
     Optional<FamilyInvitation> findByInvitationToken(String invitationToken);
-    
+
     List<FamilyInvitation> findBySubscriptionId(UUID subscriptionId);
-    
+
     List<FamilyInvitation> findBySubscriptionIdAndStatus(UUID subscriptionId, InvitationStatus status);
-    
+
     List<FamilyInvitation> findByInvitedBy(UUID invitedBy);
 }

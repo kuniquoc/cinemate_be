@@ -83,7 +83,7 @@ public class WatchHistoryServiceImpl implements WatchHistoryService {
     @Transactional(readOnly = true)
     @Override
     public PaginatedResponse<WatchHistoryResponse> getWatchHistoryByDate(UUID customerId, LocalDate date, int page,
-            int size) {
+                                                                         int size) {
         log.info("Getting watch history for customer ID: {} on date: {}", customerId, date);
 
         var pageable = PageRequest.of(page, size);

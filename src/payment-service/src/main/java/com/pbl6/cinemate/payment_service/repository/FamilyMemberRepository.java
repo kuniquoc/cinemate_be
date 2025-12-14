@@ -10,16 +10,16 @@ import java.util.UUID;
 
 @Repository
 public interface FamilyMemberRepository extends JpaRepository<FamilyMember, UUID> {
-    
+
     List<FamilyMember> findBySubscriptionId(UUID subscriptionId);
-    
+
     Optional<FamilyMember> findBySubscriptionIdAndUserId(UUID subscriptionId, UUID userId);
-    
+
     Optional<FamilyMember> findBySubscriptionIdAndIsOwnerTrue(UUID subscriptionId);
-    
+
     Long countBySubscriptionId(UUID subscriptionId);
-    
+
     boolean existsBySubscriptionIdAndUserId(UUID subscriptionId, UUID userId);
-    
+
     List<FamilyMember> findByUserId(UUID userId);
 }

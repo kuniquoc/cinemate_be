@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -22,24 +23,24 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class ContentAccessService {
-    
+
     private final SubscriptionRepository subscriptionRepository;
     private final FamilyMemberRepository familyMemberRepository;
     private final ParentControlRepository parentControlRepository;
-    
+
     public ContentAccessResponse checkContentAccess(
-            UUID userId, 
-            List<UUID> movieCategoryIds, 
+            UUID userId,
+            List<UUID> movieCategoryIds,
             Integer currentWatchTimeMinutes) {
-        
-        log.info("Checking content access for user: {}, categoryIds: {}, watchTime: {}", 
+
+        log.info("Checking content access for user: {}, categoryIds: {}, watchTime: {}",
                 userId, movieCategoryIds, currentWatchTimeMinutes);
-        
+
         Subscription subscription;
-        
+
         // Step 1: Check if user is a FAMILY MEMBER first
         List<FamilyMember> familyMembers = familyMemberRepository.findByUserId(userId);
-        
+
         if (!familyMembers.isEmpty()) {
             // User is a family member - get subscription from family member
             FamilyMember member = familyMembers.get(0);
@@ -49,47 +50,47 @@ public class ContentAccessService {
             // User is NOT a family member - check for regular subscription
             Optional<Subscription> regularSub = subscriptionRepository
                     .findActiveSubscriptionByUserId(userId);
-            
+
             if (regularSub.isEmpty()) {
                 log.warn("No active subscription found for user: {}", userId);
                 return denied("No active subscription found");
             }
-            
+
             subscription = regularSub.get();
             log.debug("User {} has a regular subscription {}", userId, subscription.getId());
         }
-        
+
         // Step 2: Verify subscription is ACTIVE
         if (subscription.getStatus() != SubscriptionStatus.ACTIVE) {
             log.warn("Subscription {} is not active (status: {})", subscription.getId(), subscription.getStatus());
             return denied("Subscription is not active");
         }
-        
+
         // Check if subscription has expired (additional safety check)
-        if (subscription.getEndDate() != null && 
-            subscription.getEndDate().isBefore(java.time.LocalDateTime.now())) {
+        if (subscription.getEndDate() != null &&
+                subscription.getEndDate().isBefore(Instant.now())) {
             log.warn("Subscription {} has expired (end date: {})", subscription.getId(), subscription.getEndDate());
             return denied("Subscription has expired");
         }
-        
+
         log.debug("Subscription {} is active and valid", subscription.getId());
-        
+
         // Step 3: Check if user is a kid (has parent control)
         List<ParentControl> parentControls = parentControlRepository.findByKidId(userId);
-        
+
         if (parentControls.isEmpty()) {
             // Not a kid - full access (Premium subscriber, Family Owner, or Adult Member)
             log.debug("User {} has full access - no parental controls", userId);
             return allowed(false);
         }
-        
+
         // Step 4: Apply parental controls (this is a kid)
         log.info("User {} is a kid with parental controls - applying restrictions", userId);
         ParentControl control = parentControls.get(0);
-        
+
         return applyParentalControls(control, movieCategoryIds, currentWatchTimeMinutes, userId);
     }
-    
+
     /**
      * Apply parental control restrictions for a kid user
      */
@@ -98,9 +99,9 @@ public class ContentAccessService {
             List<UUID> movieCategoryIds,
             Integer currentWatchTimeMinutes,
             UUID userId) {
-        
+
         List<UUID> blockedCategoryIds = parseBlockedCategoryIds(control.getBlockedCategories());
-        
+
         // Check if any movie category is blocked
         for (UUID categoryId : movieCategoryIds) {
             if (isCategoryIdBlocked(categoryId, blockedCategoryIds)) {
@@ -114,23 +115,23 @@ public class ContentAccessService {
                         .build();
             }
         }
-        
+
         // Check watch time limit
         Integer watchTimeLimit = control.getWatchTimeLimitMinutes();
-        
+
         if (watchTimeLimit != null && currentWatchTimeMinutes >= watchTimeLimit) {
-            log.warn("Watch time limit exceeded for kid {}: {}/{} minutes", 
+            log.warn("Watch time limit exceeded for kid {}: {}/{} minutes",
                     userId, currentWatchTimeMinutes, watchTimeLimit);
             return ContentAccessResponse.builder()
                     .allowed(false)
-                    .reason(String.format("Daily watch time limit reached (%d/%d minutes)", 
+                    .reason(String.format("Daily watch time limit reached (%d/%d minutes)",
                             currentWatchTimeMinutes, watchTimeLimit))
                     .isKid(true)
                     .blockedCategoryIds(blockedCategoryIds)
                     .remainingWatchTimeMinutes(0)
                     .build();
         }
-        
+
         // All checks passed - kid can watch
         log.info("Content access granted for kid {}", userId);
         return ContentAccessResponse.builder()
@@ -140,7 +141,7 @@ public class ContentAccessService {
                 .remainingWatchTimeMinutes(calculateRemainingTime(control, currentWatchTimeMinutes))
                 .build();
     }
-    
+
     /**
      * Helper method to build a denied response
      */
@@ -151,7 +152,7 @@ public class ContentAccessService {
                 .isKid(false)
                 .build();
     }
-    
+
     /**
      * Helper method to build an allowed response
      */
@@ -161,7 +162,7 @@ public class ContentAccessService {
                 .isKid(isKid)
                 .build();
     }
-    
+
     /**
      * Parse comma-separated blocked category UUIDs string into a list
      */
@@ -175,14 +176,14 @@ public class ContentAccessService {
                 .map(UUID::fromString)
                 .collect(Collectors.toList());
     }
-    
+
     /**
      * Check if a movie category UUID is in the blocked list
      */
     private boolean isCategoryIdBlocked(UUID categoryId, List<UUID> blockedCategoryIds) {
         return blockedCategoryIds.contains(categoryId);
     }
-    
+
     /**
      * Calculate remaining watch time for the kid
      */

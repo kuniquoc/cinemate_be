@@ -11,7 +11,7 @@ public interface FFmpegService {
     VideoMetadata getVideoMetadata(Path inputFile);
 
     record Variant(String name, String resolution,
-            String videoBitrate, String audioBitrate, int bandwidth) {
+                   String videoBitrate, String audioBitrate, int bandwidth) {
     }
 
     record VideoMetadata(int width, int height, long bitrate) {

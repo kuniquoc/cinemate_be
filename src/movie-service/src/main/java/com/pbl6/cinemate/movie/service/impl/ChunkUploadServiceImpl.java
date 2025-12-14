@@ -79,14 +79,17 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
                 .orElseThrow(() -> new NotFoundException(MOVIE_NOT_FOUND + request.movieId()));
 
         String uploadId = generateUploadId();
-        ChunkUpload chunkUpload = new ChunkUpload(
-                uploadId,
-                request.filename(),
-                request.mimeType(),
-                request.totalSize(),
-                request.getTotalChunks(),
-                request.chunkSize(),
-                request.movieId());
+        ChunkUpload chunkUpload = ChunkUpload.builder()
+                .uploadId(uploadId)
+                .filename(request.filename())
+                .mimeType(request.mimeType())
+                .totalSize(request.totalSize())
+                .totalChunks(request.getTotalChunks())
+                .chunkSize(request.chunkSize())
+                .uploadedChunks(0)
+                .status(ChunkUploadStatus.INITIATED)
+                .movieId(request.movieId())
+                .build();
 
         chunkUpload = chunkUploadRepository.save(chunkUpload);
         createUploadDirectory(uploadId);
@@ -107,7 +110,7 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
 
     @Transactional
     public ChunkUploadResponse uploadChunk(String uploadId, Integer chunkNumber,
-            MultipartFile chunkFile, ChunkUploadRequest request) {
+                                           MultipartFile chunkFile, ChunkUploadRequest request) {
         ChunkUpload chunkUpload = chunkUploadRepository.findByUploadId(uploadId)
                 .orElseThrow(() -> new NotFoundException(UPLOAD_SESSION_NOT_FOUND + uploadId));
 
@@ -236,7 +239,7 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
     }
 
     private void validateChunkUpload(ChunkUpload chunkUpload, Integer chunkNumber,
-            MultipartFile chunkFile) {
+                                     MultipartFile chunkFile) {
         if (chunkUpload.getStatus() == ChunkUploadStatus.COMPLETED) {
             throw new BadRequestException("Upload already completed");
         }
@@ -345,7 +348,7 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             try (InputStream is = file.getInputStream();
-                    DigestInputStream dis = new DigestInputStream(is, md)) {
+                 DigestInputStream dis = new DigestInputStream(is, md)) {
                 byte[] buffer = new byte[8192];
                 while (dis.read(buffer) != -1) {
                     // Reading to calculate digest
@@ -369,7 +372,7 @@ public class ChunkUploadServiceImpl implements ChunkUploadService {
 
             // Download from MinIO to temporary file
             try (InputStream inputStream = minioStorageService.getObject(movieBucket, objectPath);
-                    FileOutputStream outputStream = new FileOutputStream(tempFile.toFile())) {
+                 FileOutputStream outputStream = new FileOutputStream(tempFile.toFile())) {
                 inputStream.transferTo(outputStream);
             }
 

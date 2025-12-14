@@ -9,7 +9,7 @@ public record ChunkUploadResponse(
         Integer totalChunks,
         Double progressPercentage) {
     public ChunkUploadResponse(String uploadId, Integer chunkNumber, String status,
-            String message, Integer uploadedChunks, Integer totalChunks) {
+                               String message, Integer uploadedChunks, Integer totalChunks) {
         this(uploadId, chunkNumber, status, message, uploadedChunks, totalChunks,
                 calculateProgress(uploadedChunks, totalChunks));
     }

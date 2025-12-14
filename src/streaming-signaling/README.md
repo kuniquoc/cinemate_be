@@ -1,6 +1,7 @@
 # Streaming Signaling Service
 
-The streaming-signaling service coordinates peer discovery for movie playback via a WebSocket endpoint and Redis/Kafka backplane.
+The streaming-signaling service coordinates peer discovery for movie playback via a WebSocket endpoint and Redis/Kafka
+backplane.
 
 ## Features
 
@@ -17,6 +18,7 @@ See [Streaming Signaling Protocol](../../docs/streaming-signaling-protocol.md) f
 ## Message Types Overview
 
 ### Client → Server
+
 - **whoHas**: Query which peers have a specific segment
 - **reportSegment**: Report downloaded segment with metrics
 - **rtcOffer**: Send WebRTC offer for P2P connection
@@ -24,6 +26,7 @@ See [Streaming Signaling Protocol](../../docs/streaming-signaling-protocol.md) f
 - **iceCandidate**: Exchange ICE candidates for NAT traversal
 
 ### Server → Client
+
 - **peerList**: List of peers watching the same movie (sent on connect)
 - **whoHasReply**: Response with peers that have the requested segment
 - **reportAck**: Acknowledgment of segment report
@@ -34,7 +37,7 @@ See [Streaming Signaling Protocol](../../docs/streaming-signaling-protocol.md) f
 Environment variables (defaults in `src/main/resources/application.yml`):
 
 | Variable                                       | Description                                    |
-| ---------------------------------------------- | ---------------------------------------------- |
+|------------------------------------------------|------------------------------------------------|
 | `SERVER_PORT`                                  | HTTP port (default `8083`).                    |
 | `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` | Redis connection.                              |
 | `KAFKA_BOOTSTRAP_SERVERS`                      | Kafka brokers list (default `localhost:9092`). |

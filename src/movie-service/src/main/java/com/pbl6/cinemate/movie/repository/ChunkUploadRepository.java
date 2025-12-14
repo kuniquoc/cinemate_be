@@ -23,12 +23,12 @@ public interface ChunkUploadRepository extends JpaRepository<ChunkUpload, UUID> 
 
     @Query("SELECT c FROM ChunkUpload c WHERE c.expiresAt < :now AND c.status != :completedStatus")
     List<ChunkUpload> findExpiredUploads(@Param("now") Instant now,
-            @Param("completedStatus") ChunkUploadStatus completedStatus);
+                                         @Param("completedStatus") ChunkUploadStatus completedStatus);
 
     @Modifying
     @Query("DELETE FROM ChunkUpload c WHERE c.expiresAt < :now AND c.status = :expiredStatus")
     int deleteExpiredUploads(@Param("now") Instant now,
-            @Param("expiredStatus") ChunkUploadStatus expiredStatus);
+                             @Param("expiredStatus") ChunkUploadStatus expiredStatus);
 
     @Query("SELECT COUNT(c) FROM ChunkUpload c WHERE c.status = :status")
     long countByStatus(@Param("status") ChunkUploadStatus status);

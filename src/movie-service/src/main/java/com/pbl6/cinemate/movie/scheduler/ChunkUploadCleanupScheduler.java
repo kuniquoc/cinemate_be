@@ -62,7 +62,7 @@ public class ChunkUploadCleanupScheduler {
         log.debug("Starting deletion of old completed chunk uploads");
 
         // Delete completed uploads older than 7 days
-        Instant cutoff = Instant.now().minusSeconds(7L * 24 * 60 * 60);
+        Instant cutoff = Instant.now().minusSeconds(7 * 24 * 3600L);
 
         try {
             List<ChunkUpload> oldUploads = chunkUploadRepository.findExpiredUploads(cutoff, null);

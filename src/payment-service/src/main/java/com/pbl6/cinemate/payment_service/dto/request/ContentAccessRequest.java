@@ -14,10 +14,10 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ContentAccessRequest {
-    
+
     @NotEmpty(message = "Movie category IDs are required")
     private List<UUID> movieCategoryIds;
-    
+
     @NotNull(message = "Current watch time is required")
     @PositiveOrZero(message = "Watch time cannot be negative")
     private Integer currentWatchTimeMinutes;

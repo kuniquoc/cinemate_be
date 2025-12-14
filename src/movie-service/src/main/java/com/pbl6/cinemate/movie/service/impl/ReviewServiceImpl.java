@@ -32,7 +32,7 @@ public class ReviewServiceImpl implements ReviewService {
     @Transactional
     @Override
     public ReviewResponse createReview(UUID movieId, UUID customerId, ReviewCreationRequest request, String userName,
-            String userAvatar) {
+                                       String userAvatar) {
         log.info("Creating review for movie ID: {} by customer ID: {}", movieId, customerId);
 
         // Validate movie exists

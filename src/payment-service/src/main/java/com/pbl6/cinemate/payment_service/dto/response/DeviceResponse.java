@@ -5,14 +5,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class DeviceResponse {
-    
+
     private UUID id;
     private UUID userId;
     private String deviceName;
@@ -21,8 +21,8 @@ public class DeviceResponse {
     private String browserInfo;
     private String osInfo;
     private String ipAddress;
-    private LocalDateTime lastAccessed;
+    private Instant lastAccessed;
     private Boolean isActive;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Instant createdAt;
+    private Instant updatedAt;
 }
