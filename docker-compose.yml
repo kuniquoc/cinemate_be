@@ -22,7 +22,7 @@ services:
   # GATEWAY
   # ==========================================
   gateway:
-    image: kuniquoc24/cinemate/gateway:${GATEWAY_VERSION:-latest}
+    image: kuniquoc24/cinemate-gateway:${GATEWAY_VERSION:-latest}
     container_name: cinemate-gateway
     <<: *common
     ports:
@@ -50,7 +50,7 @@ services:
   # AUTH SERVICE
   # ==========================================
   auth-service:
-    image: kuniquoc24/cinemate/auth-service:${AUTH_SERVICE_VERSION:-latest}
+    image: kuniquoc24/cinemate-auth-service:${AUTH_SERVICE_VERSION:-latest}
     container_name: cinemate-auth-service
     <<: *common
     ports:
@@ -97,7 +97,7 @@ services:
   # MOVIE SERVICE
   # ==========================================
   movie-service:
-    image: kuniquoc24/cinemate/movie-service:${MOVIE_SERVICE_VERSION:-latest}
+    image: kuniquoc24/cinemate-movie-service:${MOVIE_SERVICE_VERSION:-latest}
     container_name: cinemate-movie-service
     <<: *common
     ports:
@@ -144,7 +144,7 @@ services:
   # CUSTOMER SERVICE
   # ==========================================
   customer-service:
-    image: kuniquoc24/cinemate/customer-service:${CUSTOMER_SERVICE_VERSION:-latest}
+    image: kuniquoc24/cinemate-customer-service:${CUSTOMER_SERVICE_VERSION:-latest}
     container_name: cinemate-customer-service
     <<: *common
     ports:
@@ -189,7 +189,7 @@ services:
   # STREAMING SERVICES
   # ==========================================
   streaming-signaling:
-    image: kuniquoc24/cinemate/streaming-signaling:${STREAMING_SIGNALING_VERSION:-latest}
+    image: kuniquoc24/cinemate-streaming-signaling:${STREAMING_SIGNALING_VERSION:-latest}
     container_name: cinemate-streaming-signaling
     <<: *common
     ports:
@@ -210,7 +210,7 @@ services:
           memory: 256M
 
   streaming-seeder:
-    image: kuniquoc24/cinemate/streaming-seeder:${STREAMING_SEEDER_VERSION:-latest}
+    image: kuniquoc24/cinemate-streaming-seeder:${STREAMING_SEEDER_VERSION:-latest}
     container_name: cinemate-streaming-seeder
     <<: *common
     ports:
@@ -238,7 +238,7 @@ services:
   # INTERACTION RECOMMENDER SERVICE
   # ==========================================
   interaction-recommender:
-    image: kuniquoc24/cinemate/interaction-recommender:${INTERACTION_RECOMMENDER_VERSION:-latest}
+    image: kuniquoc24/cinemate-interaction-recommender:${INTERACTION_RECOMMENDER_VERSION:-latest}
     container_name: cinemate-interaction-recommender
     <<: *common
     ports:
@@ -290,7 +290,7 @@ services:
   # PAYMENT SERVICE
   # ==========================================
   payment-service:
-    image: kuniquoc24/cinemate/payment-service:${PAYMENT_SERVICE_VERSION:-latest}
+    image: kuniquoc24/cinemate-payment-service:${PAYMENT_SERVICE_VERSION:-latest}
     container_name: cinemate-payment-service
     <<: *common
     ports:
