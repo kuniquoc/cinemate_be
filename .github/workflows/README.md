@@ -57,6 +57,8 @@ Vào **Settings > Secrets and variables > Actions** của repository và thêm c
 | `ENV_STREAMING_SEEDER`        | Nội dung file `env/streaming-seeder.env`        |
 | `ENV_STREAMING_SIGNALING`     | Nội dung file `env/streaming-signaling.env`     |
 
+### Check kĩ file ci-cd.yml
+
 ## 🖥️ Chuẩn bị Server
 
 ### 1. Cài đặt Docker
