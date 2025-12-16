@@ -286,6 +286,11 @@ jobs:
           
           # Tạo file .env chính cho docker-compose
           cat << EOF > env_files/.env
+
+          # JWT Tokens
+          ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}
+          REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}
+
           # Database credentials
           AUTH_POSTGRES_USER=${{ secrets.AUTH_POSTGRES_USER }}
           AUTH_POSTGRES_PASSWORD=${{ secrets.AUTH_POSTGRES_PASSWORD }}
@@ -297,10 +302,29 @@ jobs:
           INTERACTION_POSTGRES_PASSWORD=${{ secrets.INTERACTION_POSTGRES_PASSWORD }}
           PAYMENT_POSTGRES_USER=${{ secrets.PAYMENT_POSTGRES_USER }}
           PAYMENT_POSTGRES_PASSWORD=${{ secrets.PAYMENT_POSTGRES_PASSWORD }}
-          
+
+          # ADMIN CREDENTIALS
+          AUTH_ADMIN_EMAIL=${{ secrets.AUTH_ADMIN_EMAIL }}
+          AUTH_ADMIN_PASSWORD=${{ secrets.AUTH_ADMIN_PASSWORD }}
+          AUTH_ADMIN_FIRST_NAME=${{ secrets.AUTH_ADMIN_FIRST_NAME }}
+          AUTH_ADMIN_LAST_NAME=${{ secrets.AUTH_ADMIN_LAST_NAME }}
+
+          # EXTERNAL SERVICES
+          SMTP_EMAIL=${{ secrets.SMTP_EMAIL }}
+          SMTP_APP_PASSWORD=${{ secrets.SMTP_APP_PASSWORD }}
+
           # MinIO credentials
           MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }}
           MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY }}
+
+          # VNPay
+          VNPAY_TMN_CODE=${{ secrets.VNPAY_TMN_CODE }}
+          VNPAY_HASH_SECRET=${{ secrets.VNPAY_HASH_SECRET }}
+
+          # FRONTEND URLS
+          FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+          ADMIN_URL=${{ secrets.ADMIN_URL }}
+          WEB_URL=${{ secrets.WEB_URL }}
           EOF
 
       - name: Copy files to server
