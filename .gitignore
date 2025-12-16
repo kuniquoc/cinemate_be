@@ -1,54 +1,67 @@
-# Compiled class file
+# === Compiled & logs ===
 *.class
-
-# Log file
 *.log
 
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
+# === Java / Maven ===
+target/
 *.jar
 *.war
-*.nar
 *.ear
-*.zip
-*.tar.gz
-*.rar
+.mvn/
+!.mvn/wrapper/
+!.mvn/wrapper/maven-wrapper.jar
+logs/
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-replay_pid*
-
-.env.local
+# === Python ===
+__pycache__/
+*.py[cod]
 .env
-env.yml
-auth-service/target
-**/target/
-auth-redis-data/
-/docker-data/
-
-
-
-
-
-
-#Visual studio code
-.vscode/
-
-# IntelliJ
-.idea/
-
-# Environment variable files
-.env
-
-large-video.mp4
-sample-video.mp4
-
-data/
+*.env
+!.env.example
+venv/
+.venv/
+env/
+.pytest_cache/
+.coverage
+.mypy_cache/
+.tox/
 .cache/
+.pylint.d/
+htmlcov/
 
+# === Node.js ===
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# === Docker ===
+*.pid
+docker-compose.override.yml
+
+# === IDEs ===
+.vscode/
+.idea/
+.idea/**
+.classpath
+.project
+.settings/
+.factorypath
+
+# === OS files ===
+.DS_Store
+Thumbs.db
+
+# === Temp / backup ===
+*~
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# === Jupyter ===
+.ipynb_checkpoints/
+
+# === Misc ===
+*.orig
+*.rej
