@@ -1,0 +1,112 @@
+package com.pbl6.cinemate.payment_service.service;
+
+import com.pbl6.cinemate.payment_service.dto.request.CreatePaymentRequest;
+import com.pbl6.cinemate.payment_service.dto.response.PaymentResponse;
+import com.pbl6.cinemate.payment_service.entity.Payment;
+import com.pbl6.cinemate.payment_service.entity.Subscription;
+import com.pbl6.cinemate.payment_service.enums.PaymentStatus;
+import com.pbl6.cinemate.payment_service.exception.ResourceNotFoundException;
+import com.pbl6.cinemate.payment_service.repository.PaymentRepository;
+import com.pbl6.cinemate.payment_service.repository.SubscriptionRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.security.SecureRandom;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class PaymentService {
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private final PaymentRepository paymentRepository;
+    private final SubscriptionRepository subscriptionRepository;
+    private final ModelMapper modelMapper;
+
+    @Transactional
+    public Payment createPayment(CreatePaymentRequest request, UUID userId, String userEmail) {
+        // Verify subscription exists
+        Subscription subscription = subscriptionRepository.findById(request.getSubscriptionId())
+                .orElseThrow(() -> new ResourceNotFoundException("Subscription", "id", request.getSubscriptionId()));
+
+        // Create payment entity with server-controlled userId and userEmail
+        Payment payment = new Payment();
+        payment.setUserId(userId);
+        payment.setUserEmail(userEmail);
+        payment.setSubscription(subscription);
+        // Note: In production, use exact amount. For sandbox testing, you may need to
+        // vary amounts
+        // to avoid VNPay's duplicate transaction detection
+        payment.setAmount(request.getAmount());
+        payment.setPaymentMethod(request.getPaymentMethod());
+        payment.setStatus(PaymentStatus.PENDING);
+
+        // Generate unique transaction reference
+        String vnpTxnRef = generateTransactionRef();
+        payment.setVnpTxnRef(vnpTxnRef);
+
+        // Make order info unique by appending transaction ref to avoid VNPay duplicate
+        // detection
+        String baseOrderInfo = request.getOrderInfo() != null ? request.getOrderInfo() : "Payment for subscription";
+        payment.setVnpOrderInfo(baseOrderInfo + " - " + vnpTxnRef);
+
+        Payment savedPayment = paymentRepository.save(payment);
+        log.info("Created payment with ID: {} for user: {}", savedPayment.getId(), userId);
+
+        return savedPayment;
+    }
+
+    @Transactional
+    public Payment updatePaymentStatus(UUID paymentId, PaymentStatus status) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment", "id", paymentId));
+
+        payment.setStatus(status);
+        if (status == PaymentStatus.SUCCESS) {
+            payment.setPaymentDate(Instant.now());
+        }
+
+        Payment updatedPayment = paymentRepository.save(payment);
+        log.info("Updated payment {} status to: {}", paymentId, status);
+
+        return updatedPayment;
+    }
+
+    @Transactional(readOnly = true)
+    public List<PaymentResponse> getPaymentHistory(UUID userId) {
+        return paymentRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(payment -> modelMapper.map(payment, PaymentResponse.class))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public PaymentResponse getPaymentById(UUID id) {
+        Payment payment = paymentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment", "id", id));
+        return modelMapper.map(payment, PaymentResponse.class);
+    }
+
+    @Transactional(readOnly = true)
+    public Payment getPaymentByVnpTxnRef(String vnpTxnRef) {
+        return paymentRepository.findByVnpTxnRef(vnpTxnRef)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment", "vnpTxnRef", vnpTxnRef));
+    }
+
+    private String generateTransactionRef() {
+        // Generate format: VNPAY_YYYYMMDDHHMMSS_RANDOM (UTC timestamp + secure 6-digit
+        // random)
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(ZoneOffset.UTC);
+        String timestamp = formatter.format(Instant.now());
+        String random = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
+        return "VNPAY_" + timestamp + "_" + random;
+    }
+}

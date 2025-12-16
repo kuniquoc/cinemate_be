@@ -1,0 +1,331 @@
+# ============================================
+# CINEMATE BACKEND - DOCKER COMPOSE (DEVELOPMENT)
+# ============================================
+# Usage:
+#   Start all services:     docker compose -f docker-compose.dev.yml up -d
+#   Build and start:        docker compose -f docker-compose.dev.yml up -d --build
+#   Build specific service: docker compose -f docker-compose.dev.yml build <service-name>
+#   View logs:              docker compose -f docker-compose.dev.yml logs -f <service-name>
+#   Stop all:               docker compose -f docker-compose.dev.yml down
+#   Stop and remove volumes: docker compose -f docker-compose.dev.yml down -v
+# ============================================
+
+x-common: &common
+  restart: unless-stopped
+  networks:
+    - cinemate-network
+
+services:
+  # ==========================================
+  # GATEWAY
+  # ==========================================
+  gateway:
+    build:
+      context: ./src
+      dockerfile: ./gateway/Dockerfile
+    container_name: cinemate-gateway
+    <<: *common
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./env/gateway.env
+    depends_on:
+      - auth-service
+      - movie-service
+      - customer-service
+
+  # ==========================================
+  # AUTH SERVICE
+  # ==========================================
+  auth-service:
+    build:
+      context: ./src
+      dockerfile: ./auth-service/Dockerfile
+    container_name: cinemate-auth-service
+    <<: *common
+    ports:
+      - "8085:8085"
+    env_file:
+      - ./env/auth-service.env
+    depends_on:
+      - auth-postgres
+      - cinemate-redis
+
+  auth-postgres:
+    image: postgres:15-alpine
+    container_name: cinemate-auth-postgres
+    <<: *common
+    environment:
+      POSTGRES_USER: ${AUTH_POSTGRES_USER:-auth_user}
+      POSTGRES_PASSWORD: ${AUTH_POSTGRES_PASSWORD:-auth_password}
+      POSTGRES_DB: auth_db
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "5434:5432"
+    volumes:
+      - auth-postgres-data:/var/lib/postgresql/data
+
+  # ==========================================
+  # MOVIE SERVICE
+  # ==========================================
+  movie-service:
+    build:
+      context: ./src
+      dockerfile: ./movie-service/Dockerfile
+    container_name: cinemate-movie-service
+    <<: *common
+    ports:
+      - "8081:8080"
+    env_file:
+      - ./env/movie-service.env
+    depends_on:
+      - movie-postgres
+      - minio
+
+  movie-postgres:
+    image: postgres:15-alpine
+    container_name: cinemate-movie-postgres
+    <<: *common
+    environment:
+      POSTGRES_USER: ${MOVIE_POSTGRES_USER:-movie_user}
+      POSTGRES_PASSWORD: ${MOVIE_POSTGRES_PASSWORD:-movie_password}
+      POSTGRES_DB: movie_db
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "5432:5432"
+    volumes:
+      - movie-postgres-data:/var/lib/postgresql/data
+
+  # ==========================================
+  # CUSTOMER SERVICE
+  # ==========================================
+  customer-service:
+    build:
+      context: ./src
+      dockerfile: ./customer-service/Dockerfile
+    container_name: cinemate-customer-service
+    <<: *common
+    ports:
+      - "8082:8080"
+    env_file:
+      - ./env/customer-service.env
+    depends_on:
+      - customer-postgres
+
+  customer-postgres:
+    image: postgres:15-alpine
+    container_name: cinemate-customer-postgres
+    <<: *common
+    environment:
+      POSTGRES_USER: ${CUSTOMER_POSTGRES_USER:-customer_user}
+      POSTGRES_PASSWORD: ${CUSTOMER_POSTGRES_PASSWORD:-customer_password}
+      POSTGRES_DB: customer_db
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "5435:5432"
+    volumes:
+      - customer-postgres-data:/var/lib/postgresql/data
+
+  # ==========================================
+  # STREAMING SERVICES
+  # ==========================================
+  streaming-signaling:
+    build:
+      context: ./src
+      dockerfile: ./streaming-signaling/Dockerfile
+    container_name: cinemate-streaming-signaling
+    <<: *common
+    ports:
+      - "8083:8080"
+    env_file:
+      - ./env/streaming-signaling.env
+    depends_on:
+      - cinemate-redis
+
+  streaming-seeder:
+    build:
+      context: ./src
+      dockerfile: ./streaming-seeder/Dockerfile
+    container_name: cinemate-streaming-seeder
+    <<: *common
+    ports:
+      - "8084:8080"
+    env_file:
+      - ./env/streaming-seeder.env
+    volumes:
+      - streaming-seeder-cache:/var/cinemate/cache
+    depends_on:
+      - cinemate-redis
+      - minio
+
+  # ==========================================
+  # INTERACTION RECOMMENDER SERVICE
+  # ==========================================
+  interaction-recommender:
+    build:
+      context: ./src/interaction-recommender-service
+      dockerfile: Dockerfile
+    container_name: cinemate-interaction-recommender
+    <<: *common
+    ports:
+      - "8088:8000"
+    env_file:
+      - ./env/interaction-recommender.env
+    volumes:
+      - interaction-recommender-models:/app/models
+    depends_on:
+      - interaction-postgres
+      - cinemate-redis
+      - cinemate-broker
+
+  interaction-postgres:
+    image: postgres:15-alpine
+    container_name: cinemate-interaction-postgres
+    <<: *common
+    environment:
+      POSTGRES_USER: ${INTERACTION_POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${INTERACTION_POSTGRES_PASSWORD:-admin}
+      POSTGRES_DB: interaction_db
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "5433:5432"
+    volumes:
+      - interaction-postgres-data:/var/lib/postgresql/data
+      - ./src/interaction-recommender-service/scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+
+  # ==========================================
+  # PAYMENT SERVICE
+  # ==========================================
+  payment-service:
+    build:
+      context: ./src
+      dockerfile: ./payment-service/Dockerfile
+    container_name: cinemate-payment-service
+    <<: *common
+    ports:
+      - "8086:8080"
+    env_file:
+      - ./env/payment-service.env
+    environment:
+      SMTP_EMAIL: ${SMTP_EMAIL}
+      SMTP_APP_PASSWORD: ${SMTP_APP_PASSWORD}
+    depends_on:
+      - payment-postgres
+
+  payment-postgres:
+    image: postgres:15-alpine
+    container_name: cinemate-payment-postgres
+    <<: *common
+    environment:
+      POSTGRES_USER: ${PAYMENT_POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${PAYMENT_POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: cinemate_payment
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "5436:5432"
+    volumes:
+      - payment-postgres-data:/var/lib/postgresql/data
+
+  # ==========================================
+  # INFRASTRUCTURE - REDIS
+  # ==========================================
+  cinemate-redis:
+    image: redis:7.2-alpine
+    container_name: cinemate-redis
+    <<: *common
+    ports:
+      - "6379:6379"
+    volumes:
+      - cinemate-redis-data:/data
+    command: redis-server --appendonly yes
+
+  # ==========================================
+  # INFRASTRUCTURE - MINIO
+  # ==========================================
+  minio:
+    image: minio/minio:latest
+    container_name: cinemate-minio
+    <<: *common
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+
+  # ==========================================
+  # INFRASTRUCTURE - KAFKA (KRaft Mode)
+  # ==========================================
+  cinemate-broker:
+    image: confluentinc/cp-kafka:8.1.1
+    container_name: cinemate-broker
+    hostname: cinemate-broker
+    <<: *common
+    ports:
+      - "9092:9092"
+    environment:
+      # KRaft Mode Configuration
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@cinemate-broker:29093'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+      # Listener Configuration
+      KAFKA_LISTENERS: 'PLAINTEXT://cinemate-broker:29092,CONTROLLER://cinemate-broker:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://cinemate-broker:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      # Storage Configuration
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data'
+      # Single-Broker Settings
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    volumes:
+      - cinemate-kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: [ "CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:29092" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  cinemate-kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: cinemate-kafka-ui
+    <<: *common
+    depends_on:
+      - cinemate-broker
+    ports:
+      - "8087:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: cinemate
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: cinemate-broker:29092
+      DYNAMIC_CONFIG_ENABLED: "true"
+
+# ==========================================
+# VOLUMES
+# ==========================================
+volumes:
+  auth-postgres-data:
+  movie-postgres-data:
+  customer-postgres-data:
+  interaction-postgres-data:
+  payment-postgres-data:
+  cinemate-redis-data:
+  cinemate-kafka-data:
+  minio-data:
+  streaming-seeder-cache:
+  interaction-recommender-models:
+
+    # ==========================================
+    # NETWORKS
+    # ==========================================
+networks:
+  cinemate-network:
+    driver: bridge

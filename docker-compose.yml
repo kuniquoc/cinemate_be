@@ -1,0 +1,446 @@
+# ============================================
+# CINEMATE BACKEND - DOCKER COMPOSE (PRODUCTION)
+# ============================================
+# Usage: docker compose up -d
+# Pull latest images: docker compose pull
+# Enable payment: docker compose --profile payment up -d
+# ============================================
+
+x-common: &common
+  restart: unless-stopped
+  networks:
+    - cinemate-network
+
+x-healthcheck-defaults: &healthcheck-defaults
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s
+
+services:
+  # ==========================================
+  # GATEWAY
+  # ==========================================
+  gateway:
+    image: kuniquoc24/cinemate-gateway:${GATEWAY_VERSION:-latest}
+    container_name: cinemate-gateway
+    <<: *common
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./env/gateway.env
+    depends_on:
+      auth-service:
+        condition: service_started
+      movie-service:
+        condition: service_started
+      customer-service:
+        condition: service_started
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # ==========================================
+  # AUTH SERVICE
+  # ==========================================
+  auth-service:
+    image: kuniquoc24/cinemate-auth-service:${AUTH_SERVICE_VERSION:-latest}
+    container_name: cinemate-auth-service
+    <<: *common
+    ports:
+      - "8085:8085"
+    env_file:
+      - ./env/auth-service.env
+    depends_on:
+      auth-postgres:
+        condition: service_healthy
+      cinemate-redis:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD", "curl", "-f", "http://localhost:8085/actuator/health" ]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  auth-postgres:
+    image: postgres:15-alpine
+    container_name: cinemate-auth-postgres
+    <<: *common
+    environment:
+      POSTGRES_USER: ${AUTH_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${AUTH_POSTGRES_PASSWORD}
+      POSTGRES_DB: auth_db
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - auth-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD-SHELL", "pg_isready -U ${AUTH_POSTGRES_USER:-auth_user} -d auth_db" ]
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  # ==========================================
+  # MOVIE SERVICE
+  # ==========================================
+  movie-service:
+    image: kuniquoc24/cinemate-movie-service:${MOVIE_SERVICE_VERSION:-latest}
+    container_name: cinemate-movie-service
+    <<: *common
+    ports:
+      - "8081:8080"
+    env_file:
+      - ./env/movie-service.env
+    depends_on:
+      movie-postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  movie-postgres:
+    image: postgres:15-alpine
+    container_name: cinemate-movie-postgres
+    <<: *common
+    environment:
+      POSTGRES_USER: ${MOVIE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${MOVIE_POSTGRES_PASSWORD}
+      POSTGRES_DB: movie_db
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - movie-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD-SHELL", "pg_isready -U ${MOVIE_POSTGRES_USER:-movie_user} -d movie_db" ]
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  # ==========================================
+  # CUSTOMER SERVICE
+  # ==========================================
+  customer-service:
+    image: kuniquoc24/cinemate-customer-service:${CUSTOMER_SERVICE_VERSION:-latest}
+    container_name: cinemate-customer-service
+    <<: *common
+    ports:
+      - "8082:8080"
+    env_file:
+      - ./env/customer-service.env
+    depends_on:
+      customer-postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  customer-postgres:
+    image: postgres:15-alpine
+    container_name: cinemate-customer-postgres
+    <<: *common
+    environment:
+      POSTGRES_USER: ${CUSTOMER_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${CUSTOMER_POSTGRES_PASSWORD}
+      POSTGRES_DB: customer_db
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - customer-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD-SHELL", "pg_isready -U ${CUSTOMER_POSTGRES_USER:-customer_user} -d customer_db" ]
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  # ==========================================
+  # STREAMING SERVICES
+  # ==========================================
+  streaming-signaling:
+    image: kuniquoc24/cinemate-streaming-signaling:${STREAMING_SIGNALING_VERSION:-latest}
+    container_name: cinemate-streaming-signaling
+    <<: *common
+    ports:
+      - "8083:8080"
+    env_file:
+      - ./env/streaming-signaling.env
+    depends_on:
+      cinemate-redis:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  streaming-seeder:
+    image: kuniquoc24/cinemate-streaming-seeder:${STREAMING_SEEDER_VERSION:-latest}
+    container_name: cinemate-streaming-seeder
+    <<: *common
+    ports:
+      - "8084:8080"
+    env_file:
+      - ./env/streaming-seeder.env
+    volumes:
+      - streaming-seeder-cache:/var/cinemate/cache
+    depends_on:
+      cinemate-redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # ==========================================
+  # INTERACTION RECOMMENDER SERVICE
+  # ==========================================
+  interaction-recommender:
+    image: kuniquoc24/cinemate-interaction-recommender:${INTERACTION_RECOMMENDER_VERSION:-latest}
+    container_name: cinemate-interaction-recommender
+    <<: *common
+    ports:
+      - "8088:8000"
+    env_file:
+      - ./env/interaction-recommender.env
+    volumes:
+      - interaction-recommender-models:/app/models
+    depends_on:
+      interaction-postgres:
+        condition: service_healthy
+      cinemate-redis:
+        condition: service_healthy
+      cinemate-broker:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  interaction-postgres:
+    image: postgres:15-alpine
+    container_name: cinemate-interaction-postgres
+    <<: *common
+    environment:
+      POSTGRES_USER: ${INTERACTION_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${INTERACTION_POSTGRES_PASSWORD}
+      POSTGRES_DB: interaction_db
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - interaction-postgres-data:/var/lib/postgresql/data
+      - ./src/interaction-recommender-service/scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql:ro
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD-SHELL", "pg_isready -U ${INTERACTION_POSTGRES_USER:-admin} -d interaction_db" ]
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  # ==========================================
+  # PAYMENT SERVICE
+  # ==========================================
+  payment-service:
+    image: kuniquoc24/cinemate-payment-service:${PAYMENT_SERVICE_VERSION:-latest}
+    container_name: cinemate-payment-service
+    <<: *common
+    ports:
+      - "8086:8086"
+    env_file:
+      - ./env/payment-service.env
+    depends_on:
+      payment-postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD", "curl", "-f", "http://localhost:8086/actuator/health" ]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  payment-postgres:
+    image: postgres:15-alpine
+    container_name: cinemate-payment-postgres
+    <<: *common
+    environment:
+      POSTGRES_USER: ${PAYMENT_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${PAYMENT_POSTGRES_PASSWORD}
+      POSTGRES_DB: cinemate_payment
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - payment-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD-SHELL", "pg_isready -U ${PAYMENT_POSTGRES_USER:-postgres} -d cinemate_payment" ]
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  # ==========================================
+  # INFRASTRUCTURE - REDIS
+  # ==========================================
+  cinemate-redis:
+    image: redis:7.2-alpine
+    container_name: cinemate-redis
+    <<: *common
+    volumes:
+      - cinemate-redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD", "redis-cli", "ping" ]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # ==========================================
+  # INFRASTRUCTURE - MINIO
+  # ==========================================
+  minio:
+    image: minio/minio:RELEASE.2024-01-01T16-36-33Z
+    container_name: cinemate-minio
+    <<: *common
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD", "mc", "ready", "local" ]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # ==========================================
+  # INFRASTRUCTURE - KAFKA (KRaft Mode)
+  # ==========================================
+  cinemate-broker:
+    image: confluentinc/cp-kafka:8.1.1
+    container_name: cinemate-broker
+    hostname: cinemate-broker
+    <<: *common
+    environment:
+      # KRaft Mode Configuration
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@cinemate-broker:29093'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+      # Listener Configuration
+      KAFKA_LISTENERS: 'PLAINTEXT://cinemate-broker:29092,CONTROLLER://cinemate-broker:29093'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://cinemate-broker:29092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      # Storage Configuration
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data'
+      # Single-Broker Settings
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      # Topic Settings
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_RETENTION_BYTES: 1073741824
+    volumes:
+      - cinemate-kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: [ "CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:29092" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+# ==========================================
+# VOLUMES
+# ==========================================
+volumes:
+  auth-postgres-data:
+  movie-postgres-data:
+  customer-postgres-data:
+  interaction-postgres-data:
+  payment-postgres-data:
+  cinemate-redis-data:
+  cinemate-kafka-data:
+  minio-data:
+  streaming-seeder-cache:
+  interaction-recommender-models:
+
+    # ==========================================
+    # NETWORKS
+    # ==========================================
+networks:
+  cinemate-network:
+    driver: bridge

@@ -1,0 +1,70 @@
+spring:
+  application:
+    name: payment-service
+  datasource:
+    url: jdbc:postgresql://payment-postgres:5432/cinemate_payment
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SMTP_EMAIL}
+    password: ${SMTP_APP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+    default-encoding: UTF-8
+
+server:
+  port: ${SERVICE_PORT}
+
+# Management endpoints for health checks
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+
+app:
+  auth:
+    access-token-secret: ${ACCESS_TOKEN_SECRET}
+    access-token-expiration-msec: 900000
+    refresh-token-secret: ${REFRESH_TOKEN_SECRET}
+    refresh-token-expiration-msec: 604800000
+  email:
+    from: ${EMAIL_FROM:noreply@cinemate.com}
+    from-name: ${EMAIL_FROM_NAME:Cinemate Team}
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:3000}
+
+movie:
+  service:
+    url: ${MOVIE_SERVICE_URL:http://movie-service:8080}
+
+vnpay:
+  url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+  tmn-code: 1HFIAMAT
+  hash-secret: CADXA3EU1ARGTN6ZDVVDEVGTZWDEDSSB
+  return-url: https://d5e2025a0f1e.ngrok-free.app/api/payments/vnpay-return
+  ipn-url: https://d5e2025a0f1e.ngrok-free.app/api/payments/vnpay-ipn

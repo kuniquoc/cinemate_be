@@ -1,0 +1,85 @@
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  application:
+    name: movie-service
+
+  datasource:
+    url: ${MOVIE_DATASOURCE_URL:jdbc:postgresql://movie-postgres:5432/movie_db}
+    username: ${MOVIE_DATASOURCE_USERNAME:postgres}
+    password: ${MOVIE_DATASOURCE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        '[format_sql]': true
+        '[show_sql]': false
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+
+  servlet:
+    multipart:
+      max-file-size: 2GB
+      max-request-size: 2GB
+
+server:
+  port: ${SERVICE_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+logging:
+  level:
+    root: INFO
+    # '[org.hibernate.SQL]': DEBUG
+    # '[org.hibernate.type.descriptor.sql.BasicBinder]': TRACE
+
+
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://minio:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  movie-bucket: ${MINIO_BUCKET_NAME:movies}
+  image-bucket: ${MINIO_IMAGE_BUCKET:images}
+  video-bucket: ${MINIO_VIDEO_BUCKET:videos}
+  region: us-east-1
+
+ffmpeg:
+  tmp-dir: /tmp/movies
+  executable: ffmpeg
+
+chunk-upload:
+  max-file-size: 5368709120  # 5GB
+  min-chunk-size: 1048576    # 1MB
+  max-chunk-size: 104857600  # 100MB
+  cleanup-interval: 3600000  # 1 hour in milliseconds
+
+app:
+  auth:
+    access-token-secret: ${ACCESS_TOKEN_SECRET}
+    access-token-expiration-msec: 7200000
+    refresh-token-secret: ${REFRESH_TOKEN_SECRET}
+    refresh-token-expiration-msec: 2592000000
+  seed:
+    enabled: ${SEED_ENABLED:false}
+
+# Interaction Recommender Service Configuration
+interaction:
+  recommender:
+    service:
+      url: ${INTERACTION_RECOMMENDER_URL:http://interaction-recommender-service:8000}
+      enabled: ${INTERACTION_RECOMMENDER_ENABLED:true}

@@ -1,0 +1,37 @@
+spring:
+  datasource:
+    url: ${CUSTOMER_DATASOURCE_URL:jdbc:postgresql://customer-postgres:5432/customer_db}
+    username: ${CUSTOMER_DATASOURCE_USERNAME}
+    password: ${CUSTOMER_DATASOURCE_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: none
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:cinemate-broker:29092}
+    consumer:
+      group-id: customer-service
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.pbl6.events"
+server:
+  port: ${SERVICE_PORT:8080}
+
+app:
+  auth:
+    access-token-secret: ${ACCESS_TOKEN_SECRET}
+    access-token-expiration-msec: 7200000
+  minio:
+    url: ${MINIO_ENDPOINT:http://minio:9000}
+    access-key: ${MINIO_ACCESS_KEY}
+    secret-key: ${MINIO_SECRET_KEY}
+    bucket-name: ${MINIO_BUCKET_NAME:images}
+
+# Movie Service
+movie:
+  service:
+    url: http://movie-service:8080

@@ -1,0 +1,35 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5632/customer_db
+    username: admin
+    password: admin
+  jpa:
+    hibernate:
+      ddl-auto: none
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: customer-service
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+
+server:
+  port: 8967
+
+app:
+  auth:
+    access-token-secret: Ckj2tdZqqx4zYqn0iSB9bUPIsckWdFoa/YIi1kzGWKc9qM5XCbRoPHmWhft9pZZCGeKYcAhgILzOu++4toDC0Gn9iDWTlRAlnQ8efRnVU8I=
+    access-token-expiration-msec: 7200000
+  minio:
+    url: http://localhost:9000
+    access-key: minioadmin
+    secret-key: minioadmin
+    bucket-name: images
+
+# Movie Service
+movie:
+  service:
+    url: http://localhost:8080

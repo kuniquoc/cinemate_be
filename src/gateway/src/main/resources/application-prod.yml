@@ -1,0 +1,98 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            # Movie Service Routes (Production)
+            - id: movie-service-prod
+              uri: ${MOVIE_SERVICE_URL:http://movie-service:8080}
+              predicates:
+                - Path=/api/v1/movies/**,/api/v1/actors/**,/api/v1/categories/**,/api/v1/directors/**,/api/v1/recommendations/**,/api/v1/upload-image/**,/api/v1/upload-video/**
+
+            # Auth Service Routes (Production)
+            - id: auth-service-prod
+              uri: ${AUTH_SERVICE_URL:http://auth-service:8585}
+              predicates:
+                - Path=/api/v1/auth/**
+
+            # Customer Service Routes (Production)
+            - id: customer-service-prod
+              uri: ${CUSTOMER_SERVICE_URL:http://customer-service:8080}
+              predicates:
+                - Path=/api/v1/customers/**
+
+            # Payment Service Routes (Production)
+            - id: payment-service-prod
+              uri: ${PAYMENT_SERVICE_URL:http://payment-service:8080}
+              predicates:
+                - Path=/api/v1/payments/**,/api/v1/subscriptions/**,/api/v1/devices/**,/api/v1/family-plans/**,/api/v1/content-access/**,/api/v1/subscription-plans/**
+
+            # Interaction Recommender Routes (Production)
+            - id: interaction-recommender-prod
+              uri: ${INTERACTION_RECOMMENDER_URL:http://interaction-recommender:8080}
+              predicates:
+                - Path=/api/v1/events/**,/api/v1/recommendations/**,/api/v1/features/**,/api/v1/feedback/**,/api/v1/health/**
+
+            # Streaming Signaling Routes (WebSocket)
+            - id: streaming-signaling-prod
+              uri: ${STREAMING_SIGNALING_URL:ws://streaming-signaling:8080}
+              predicates:
+                - Path=/ws/signaling/**
+
+            # Streaming Seeder Routes (Segment delivery)
+            - id: streaming-seeder-prod
+              uri: ${STREAMING_SEEDER_URL:http://streaming-seeder:8080}
+              predicates:
+                - Path=/api/v1/streams/**
+
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins:
+                  - "http://localhost:3000"
+                  - "http://localhost:3001"
+                  - "http://localhost:3002"
+                  - "http://localhost:4200"
+                  - "http://localhost:5173"
+                  - "http://127.0.0.1:3000"
+                  - "http://127.0.0.1:4200"
+                  - "http://127.0.0.1:5173"
+                  - "${FRONTEND_URL:https://cinemate.com}"
+                  - "${ADMIN_URL:https://admin.cinemate.com}"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - PATCH
+                  - OPTIONS
+                allowedHeaders: "*"
+                allowCredentials: true
+                maxAge: 3600
+
+# Management endpoints for production
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# Production logging
+logging:
+  level:
+    '[org.springframework.cloud.gateway]': INFO
+    '[com.pbl6.cinemate.gateway]': INFO
+    '[reactor.netty]': WARN
+    '[root]': INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

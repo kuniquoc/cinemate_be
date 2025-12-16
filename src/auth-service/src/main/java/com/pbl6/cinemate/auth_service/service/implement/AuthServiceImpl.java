@@ -1,0 +1,204 @@
+package com.pbl6.cinemate.auth_service.service.implement;
+
+import com.pbl6.cinemate.auth_service.constant.RoleName;
+import com.pbl6.cinemate.auth_service.entity.Role;
+import com.pbl6.cinemate.auth_service.entity.Token;
+import com.pbl6.cinemate.auth_service.entity.User;
+import com.pbl6.cinemate.auth_service.enums.CachePrefix;
+import com.pbl6.cinemate.auth_service.event.ForgotPasswordEvent;
+import com.pbl6.cinemate.auth_service.event.UserRegistrationEvent;
+import com.pbl6.cinemate.auth_service.event.kafka.UserRegisteredEvent;
+import com.pbl6.cinemate.auth_service.event.kafka.publisher.UserRegisteredPublisher;
+import com.pbl6.cinemate.auth_service.mapper.UserMapper;
+import com.pbl6.cinemate.auth_service.payload.request.*;
+import com.pbl6.cinemate.auth_service.payload.response.JwtLoginResponse;
+import com.pbl6.cinemate.auth_service.payload.response.LoginResponse;
+import com.pbl6.cinemate.auth_service.payload.response.SignUpResponse;
+import com.pbl6.cinemate.auth_service.payload.response.VerifyTokenResponse;
+import com.pbl6.cinemate.auth_service.service.*;
+import com.pbl6.cinemate.shared.constants.ErrorMessage;
+import com.pbl6.cinemate.shared.exception.BadRequestException;
+import com.pbl6.cinemate.shared.exception.UnauthenticatedException;
+import com.pbl6.cinemate.shared.security.UserPrincipal;
+import com.pbl6.cinemate.shared.utils.JwtUtils;
+
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.authentication.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
+@Service
+@Slf4j
+@RequiredArgsConstructor
+public class AuthServiceImpl implements AuthService {
+    private final UserService userService;
+    private final PasswordEncoder passwordEncoder;
+    private final RoleService roleService;
+    private final ApplicationEventPublisher eventPublisher;
+    private final TokenService tokenService;
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtils jwtUtils;
+    private final CacheService cacheService;
+    private final UserRegisteredPublisher userRegisteredPublisher;
+    private final UserDeviceService userDeviceService;
+
+    @Transactional
+    @Override
+    public VerifyTokenResponse verifyToken(VerifyTokenRequest request) {
+        User user = userService.findByToken(request.getToken());
+        return VerifyTokenResponse.builder().email(user.getEmail()).build();
+    }
+
+    @Override
+    public LoginResponse login(LoginRequest loginRequest, HttpServletRequest httpServletRequest) {
+        try {
+            Authentication authentication = authenticationManager
+                    .authenticate(new UsernamePasswordAuthenticationToken(
+                            loginRequest.getEmail(), loginRequest.getPassword()));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+
+            // Track device on login
+            userDeviceService.trackDeviceOnLogin(userPrincipal.getId(), loginRequest.getDeviceInfo(),
+                    httpServletRequest);
+
+            boolean isRefreshToken = true;
+            String refreshToken = jwtUtils.generateToken(userPrincipal, isRefreshToken);
+            String accessToken = jwtUtils.generateToken(userPrincipal, !isRefreshToken);
+
+            return new JwtLoginResponse(UserMapper.toUserResponse(userService.findById(userPrincipal.getId())),
+                    accessToken, refreshToken);
+        } catch (BadCredentialsException e) {
+            throw new BadRequestException(ErrorMessage.INVALID_EMAIL_OR_PASSWORD);
+        } catch (InternalAuthenticationServiceException e) {
+            throw new UnauthenticatedException(ErrorMessage.ACCOUNT_NOT_EXISTED);
+        } catch (DisabledException e) {
+            User user = userService.findByEmail(loginRequest.getEmail());
+            if (user.getAccountVerifiedAt() != null) {
+                throw new UnauthenticatedException(ErrorMessage.ACCOUNT_LOCKED);
+            } else {
+                throw new UnauthenticatedException(ErrorMessage.ACCOUNT_NOT_ACTIVE);
+            }
+        } catch (AuthenticationException e) {
+            throw new UnauthenticatedException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    public void forgotPassword(ForgotPasswordRequest request) {
+        User user = userService.findByEmail(request.getEmail());
+        eventPublisher.publishEvent(new ForgotPasswordEvent(user));
+    }
+
+    @Override
+    public boolean verifyOTP(String email, String contentToken) {
+        User user = userService.findByEmail(email);
+        Token tokenEntity = tokenService.findByContentAndUserId(contentToken, user.getId());
+        if (tokenEntity == null)
+            throw new BadRequestException(ErrorMessage.INVALID_OTP);
+        if (tokenEntity.getExpireTime().isBefore(Instant.now()))
+            throw new BadRequestException(ErrorMessage.EXPIRED_OTP);
+        return true;
+    }
+
+    @Transactional
+    @Override
+    public void resetPassword(ResetPasswordRequest request) {
+        User user = userService.findByEmail(request.getEmail());
+        if (verifyOTP(request.getEmail(), request.getOtp())) {
+            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+            userService.save(user);
+            tokenService.deleteTokenByContent(request.getOtp());
+        } else
+            throw new BadRequestException(ErrorMessage.INVALID_OTP);
+    }
+
+    @Override
+    public void logout(LogoutRequest logoutRequest) {
+        String refreshToken = logoutRequest.getRefreshToken();
+
+        boolean isRefreshToken = true;
+        Claims refreshTokenClaims = jwtUtils.verifyToken(refreshToken, isRefreshToken);
+
+        String prefix = CachePrefix.BLACK_LIST_TOKENS.getPrefix();
+        log.info(prefix);
+        cacheService.set(prefix + jwtUtils.getJwtIdFromJWTClaims(refreshTokenClaims), 1,
+                jwtUtils.getTokenAvailableDuration(refreshTokenClaims), TimeUnit.MILLISECONDS);
+        log.info(jwtUtils.getJwtIdFromJWTClaims(refreshTokenClaims));
+        log.info(jwtUtils.getJwtIdFromJWTClaims(refreshTokenClaims));
+    }
+
+    @Override
+    public void changePassword(UUID userId, PasswordChangingRequest passwordChangingRequest) {
+        if (!Objects.equals(passwordChangingRequest.getNewPassword(),
+                passwordChangingRequest.getNewPasswordConfirmation()))
+            throw new BadRequestException(ErrorMessage.NEW_PASSWORD_NOT_MATCHED);
+
+        User user = userService.findById(userId);
+        if (!passwordEncoder.matches(passwordChangingRequest.getOldPassword(), user.getPassword()))
+            throw new BadRequestException(ErrorMessage.OLD_PASSWORD_NOT_MATCHED);
+        user.setPassword(passwordEncoder.encode(passwordChangingRequest.getNewPassword()));
+        userService.save(user);
+    }
+
+    @Override
+    public void verifyEmail(VerifyEmailRequest request) {
+        if (userService.isExistedUser(request.getEmail())) {
+            throw new BadRequestException(ErrorMessage.USER_ALREADY_EXISTED);
+        }
+
+        Role userRole = roleService.findByName(RoleName.USER);
+
+        User user = new User();
+        user.setEmail(request.getEmail());
+        user.setRole(userRole);
+        User savedUser = userService.save(user);
+
+        eventPublisher.publishEvent(new UserRegistrationEvent(savedUser));
+    }
+
+    @Override
+    public SignUpResponse signUp(SignUpRequest signUpRequest) {
+        User user = userService.findByToken(signUpRequest.getToken());
+        if (!user.getEmail().equals(signUpRequest.getEmail())) {
+            throw new BadRequestException(ErrorMessage.TOKEN_NOT_BELONGS_TO_EMAIL);
+        }
+        user.setIsEnabled(true);
+        user.setAccountVerifiedAt(Instant.now());
+        tokenService.deleteTokenByContent(signUpRequest.getToken());
+        user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
+        User savedUser = userService.save(user);
+
+        boolean isRefreshToken = true;
+
+        String id = savedUser.getId().toString();
+        String username = savedUser.getEmail();
+        String role = "ROLE_" + savedUser.getRole().getName();
+        List<String> permissions = user.getRole().getPermissions().stream().map(permission -> permission.getName())
+                .toList();
+
+        String accessToken = jwtUtils.generateToken(id, username, role, permissions, !isRefreshToken);
+        String refreshToken = jwtUtils.generateToken(id, username, role, permissions, isRefreshToken);
+
+        userRegisteredPublisher.publishUserRegistered(new UserRegisteredEvent(user.getId(), user.getEmail(),
+                user.getFirstName(), user.getLastName()));
+
+        return new SignUpResponse(UserMapper.toUserResponse(savedUser), accessToken, refreshToken);
+    }
+
+}

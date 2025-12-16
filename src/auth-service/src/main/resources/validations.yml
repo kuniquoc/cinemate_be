@@ -1,0 +1,202 @@
+#authentication
+verify_email_request:
+  email:
+    not_blank:
+      code: VAL.VE0101
+      message: Email must not be blank
+    email:
+      code: VAL.VE0102
+      message: Email must be a well-formed email address
+
+verify_token_request:
+  token:
+    not_blank:
+      code: VAL.VT0101
+      message: Token must not be blank
+
+sign_up_request:
+  email:
+    not_blank:
+      code: VAL.SU0101
+      message: Email must not be blank
+    email:
+      code: VAL.SU0102
+      message: Email must be a well-formed email address
+  password:
+    not_blank:
+      code: VAL.SU0201
+      message: Password must not be blank
+    pattern:
+      code: VAL.SU0202
+      message: Password has at least 8 characters, containing at least 1 uppercase letter, 1 lowercase letter, 1 numeric character.
+  token:
+    not_blank:
+      code: VAL.SU0301
+      message: Token must not be blank
+
+account_verification_request:
+  account_verification_token:
+    not_blank:
+      code: VAL.AV0101
+      message: Account verification token must not be blank !
+login_request:
+  email:
+    not_blank:
+      code: VAL.LI0101
+      message: Email must not be blank
+    email:
+      code: VAL.LI0102
+      message: Email must be a well-formed email address
+  password:
+    not_blank:
+      code: VAL.LI0201
+      message: Password must not be blank
+
+forgot_password_request:
+  email:
+    not_blank:
+      code: VAL.FP0101
+      message: Email must not be blank
+    email:
+      code: VAL.FP0102
+      message: Email must be a well-formed email address
+
+otp_verification_request:
+  otp:
+    not_blank:
+      code: VAL.OV0101
+      message: OTP must not be blank
+  email:
+    not_blank:
+      code: VAL.OV0201
+      message: Email must not be blank
+    email:
+      code: VAL.OV0202
+      message: Email must be a well-formed email address
+
+reset_password_request:
+  email:
+    not_blank:
+      code: VAL.RP0101
+      message: Email must not be blank
+    email:
+      code: VAL.RP0102
+      message: Email must be a well-formed email address
+  otp:
+    not_blank:
+      code: VAL.RP0201
+      message: OTP must not be blank
+  new_password:
+    not_blank:
+      code: VAL.RP0301
+      message: New password must not be blank
+    pattern:
+      code: VAL.RP0302
+      message: New password has at least 8 characters, containing at least 1 uppercase letter
+permission_request:
+  name:
+    not_blank:
+      code: VAL.PR0101
+      message: Permission name must not be blank
+  description:
+    not_blank:
+      code: VAL.PR0201
+      message: Permission description must not be blank
+
+logout_request:
+  refresh_token:
+    not_blank:
+      code: VAL.LO0101
+      message: Refresh token must not be blank
+
+password_changing_request:
+  old_password:
+    not_blank:
+      code: VAL.PC0101
+      message: Current password must not be blank
+  new_password:
+    not_blank:
+      code: VAL.PC0201
+      message: New password must not be blank
+    pattern:
+      code: VAL.PC0202
+      message: New password has at least 8 characters, containing at least 1 uppercase letter, 1 lowercase letter, 1 numeric character.
+  new_password_confirmation:
+    not_blank:
+      code: VAL.PC0301
+      message: New password confirmation must not be blank
+    pattern:
+      code: VAL.PC0302
+      message: New password has at least 8 characters, containing at least 1 uppercase letter, 1 lowercase letter, 1 numeric character.
+
+refresh_token_request:
+  refresh_token:
+    not_blank:
+      code: VAL.RT0101
+      message: Refresh token must not be blank
+
+jwt_verification_request:
+  token:
+    not_blank:
+      code: VAL.JV0201
+      message: Jwt must not be blank
+
+#role
+role_request:
+  name:
+    not_blank:
+      code: VAL.RR0101
+      message: Role name must not be blank
+  description:
+    not_blank:
+      code: VAL.RR0201
+      message: Role description must not be blank
+
+adding_permission_request:
+  permission_ids:
+    not_empty:
+      code: VAL.APR0101
+      message: Permission ids must not be empty
+    not_null:
+      code: VAL.APR0102
+      message: Permission id must not be null
+
+#account management
+create_account_request:
+  email:
+    not_blank:
+      code: VAL.CA0101
+      message: Email must not be blank
+    email:
+      code: VAL.CA0102
+      message: Email must be a well-formed email address
+  password:
+    not_blank:
+      code: VAL.CA0201
+      message: Password must not be blank
+    pattern:
+      code: VAL.CA0202
+      message: Password has at least 8 characters, containing at least 1 uppercase letter, 1 lowercase letter, 1 numeric character.
+  first_name:
+    not_blank:
+      code: VAL.CA0301
+      message: First name must not be blank
+  last_name:
+    not_blank:
+      code: VAL.CA0401
+      message: Last name must not be blank
+
+update_account_request:
+  email:
+    email:
+      code: VAL.UA0101
+      message: Email must be a well-formed email address
+
+admin_reset_password_request:
+  new_password:
+    not_blank:
+      code: VAL.ARP0101
+      message: New password must not be blank
+    pattern:
+      code: VAL.ARP0102
+      message: New password has at least 8 characters, containing at least 1 uppercase letter, 1 lowercase letter, 1 numeric character.

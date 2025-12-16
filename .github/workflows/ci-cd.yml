@@ -1,0 +1,338 @@
+# ============================================
+# CINEMATE BACKEND - CI/CD PIPELINE
+# ============================================
+# Workflow này sẽ:
+# 1. Build và push Docker images lên Docker Hub
+# 2. SSH vào server và deploy bằng docker compose
+# 3. Đảm bảo luôn pull image mới nhất (không bị cache)
+# ============================================
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      services:
+        description: 'Services to deploy (comma-separated, or "all")'
+        required: false
+        default: 'all'
+        type: string
+
+env:
+  DOCKER_REGISTRY: docker.io
+  DOCKER_NAMESPACE: kuniquoc24/cinemate
+
+jobs:
+  # ==========================================
+  # BUILD & PUSH - Java Services
+  # ==========================================
+
+  # ==========================================
+  # BUILD & PUSH - Java Services
+  # ==========================================
+  build-java-services:
+    name: Build Java Services
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: gateway
+            dockerfile: ./src/gateway/Dockerfile
+            context: ./src
+          - service: auth-service
+            dockerfile: ./src/auth-service/Dockerfile
+            context: ./src
+          - service: movie-service
+            dockerfile: ./src/movie-service/Dockerfile
+            context: ./src
+          - service: customer-service
+            dockerfile: ./src/customer-service/Dockerfile
+            context: ./src
+          - service: streaming-signaling
+            dockerfile: ./src/streaming-signaling/Dockerfile
+            context: ./src
+          - service: streaming-seeder
+            dockerfile: ./src/streaming-seeder/Dockerfile
+            context: ./src
+          - service: payment-service
+            dockerfile: ./src/payment-service/Dockerfile
+            context: ./src
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Generate image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_NAMESPACE }}-${{ matrix.service }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=,format=short
+            type=raw,value={{date 'YYYYMMDD-HHmmss'}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Đảm bảo không cache layer cuối cùng
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            GIT_SHA=${{ github.sha }}
+
+  # ==========================================
+  # BUILD & PUSH - Python Services (Interaction Recommender)
+  # ==========================================
+  build-python-services:
+    name: Build Python Services
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Generate image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_NAMESPACE }}-interaction-recommender
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=,format=short
+            type=raw,value={{date 'YYYYMMDD-HHmmss'}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./src/interaction-recommender-service
+          file: ./src/interaction-recommender-service/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            GIT_SHA=${{ github.sha }}
+
+  # ==========================================
+  # DEPLOY - Deploy to Server
+  # ==========================================
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+    needs: [build-java-services, build-python-services]
+    # Chạy deploy nếu có ít nhất 1 job build thành công
+    if: |
+      always() && 
+      (needs.build-java-services.result == 'success' || needs.build-python-services.result == 'success')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create env files content
+        id: env-files
+        run: |
+          # Tạo nội dung cho các file env từ secrets
+          mkdir -p env_files
+          
+          echo "${{ secrets.ENV_AUTH_SERVICE }}" > env_files/auth-service.env
+          echo "${{ secrets.ENV_CUSTOMER_SERVICE }}" > env_files/customer-service.env
+          echo "${{ secrets.ENV_GATEWAY }}" > env_files/gateway.env
+          echo "${{ secrets.ENV_INTERACTION_RECOMMENDER }}" > env_files/interaction-recommender.env
+          echo "${{ secrets.ENV_MOVIE_SERVICE }}" > env_files/movie-service.env
+          echo "${{ secrets.ENV_PAYMENT_SERVICE }}" > env_files/payment-service.env
+          echo "${{ secrets.ENV_STREAMING_SEEDER }}" > env_files/streaming-seeder.env
+          echo "${{ secrets.ENV_STREAMING_SIGNALING }}" > env_files/streaming-signaling.env
+          
+          # Tạo file .env chính cho docker-compose
+          cat << EOF > env_files/.env
+
+          # JWT Tokens
+          ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}
+          REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}
+
+          # Database credentials
+          AUTH_POSTGRES_USER=${{ secrets.AUTH_POSTGRES_USER }}
+          AUTH_POSTGRES_PASSWORD=${{ secrets.AUTH_POSTGRES_PASSWORD }}
+          MOVIE_POSTGRES_USER=${{ secrets.MOVIE_POSTGRES_USER }}
+          MOVIE_POSTGRES_PASSWORD=${{ secrets.MOVIE_POSTGRES_PASSWORD }}
+          CUSTOMER_POSTGRES_USER=${{ secrets.CUSTOMER_POSTGRES_USER }}
+          CUSTOMER_POSTGRES_PASSWORD=${{ secrets.CUSTOMER_POSTGRES_PASSWORD }}
+          INTERACTION_POSTGRES_USER=${{ secrets.INTERACTION_POSTGRES_USER }}
+          INTERACTION_POSTGRES_PASSWORD=${{ secrets.INTERACTION_POSTGRES_PASSWORD }}
+          PAYMENT_POSTGRES_USER=${{ secrets.PAYMENT_POSTGRES_USER }}
+          PAYMENT_POSTGRES_PASSWORD=${{ secrets.PAYMENT_POSTGRES_PASSWORD }}
+
+          # ADMIN CREDENTIALS
+          AUTH_ADMIN_EMAIL=${{ secrets.AUTH_ADMIN_EMAIL }}
+          AUTH_ADMIN_PASSWORD=${{ secrets.AUTH_ADMIN_PASSWORD }}
+          AUTH_ADMIN_FIRST_NAME=${{ secrets.AUTH_ADMIN_FIRST_NAME }}
+          AUTH_ADMIN_LAST_NAME=${{ secrets.AUTH_ADMIN_LAST_NAME }}
+
+          # EXTERNAL SERVICES
+          SMTP_EMAIL=${{ secrets.SMTP_EMAIL }}
+          SMTP_APP_PASSWORD=${{ secrets.SMTP_APP_PASSWORD }}
+
+          # MinIO credentials
+          MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }}
+          MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY }}
+
+          # VNPay
+          VNPAY_TMN_CODE=${{ secrets.VNPAY_TMN_CODE }}
+          VNPAY_HASH_SECRET=${{ secrets.VNPAY_HASH_SECRET }}
+
+          # FRONTEND URLS
+          FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+          ADMIN_URL=${{ secrets.ADMIN_URL }}
+          WEB_URL=${{ secrets.WEB_URL }}
+          EOF
+
+      - name: Copy files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: ${{ secrets.SERVER_SSH_PORT || 22 }}
+          source: "docker-compose.yml,env_files/*"
+          target: ${{ secrets.DEPLOY_PATH }}
+          overwrite: true
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: ${{ secrets.SERVER_SSH_PORT || 22 }}
+          script: |
+            set -e
+            
+            DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+            cd "$DEPLOY_PATH"
+            
+            echo "=========================================="
+            echo "🚀 Starting deployment..."
+            echo "=========================================="
+            
+            # Di chuyển env files vào đúng vị trí
+            mkdir -p env
+            mv env_files/*.env env/ 2>/dev/null || true
+            mv env_files/.env . 2>/dev/null || true
+            rm -rf env_files
+            
+            # Login vào Docker Hub
+            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+            
+            echo "=========================================="
+            echo "📥 Pulling latest images..."
+            echo "=========================================="
+            
+            # Pull images mới nhất với --pull always để đảm bảo không bị cache
+            # Sử dụng docker compose pull với --ignore-pull-failures để không fail nếu 1 image lỗi
+            docker compose pull --ignore-pull-failures
+            
+            echo "=========================================="
+            echo "🔄 Stopping old containers..."
+            echo "=========================================="
+            
+            # Stop và remove containers cũ
+            docker compose down --remove-orphans || true
+            
+            echo "=========================================="
+            echo "🧹 Cleaning up old images..."
+            echo "=========================================="
+            
+            # Xóa các dangling images để tiết kiệm dung lượng
+            docker image prune -f || true
+            
+            echo "=========================================="
+            echo "🚀 Starting new containers..."
+            echo "=========================================="
+            
+            # Start containers mới với --pull always để đảm bảo sử dụng image mới nhất
+            docker compose up -d --force-recreate --pull always
+            
+            echo "=========================================="
+            echo "⏳ Waiting for services to be healthy..."
+            echo "=========================================="
+            
+            # Đợi 30 giây cho services khởi động
+            sleep 30
+            
+            # Kiểm tra trạng thái containers
+            docker compose ps
+            
+            echo "=========================================="
+            echo "✅ Deployment completed!"
+            echo "=========================================="
+
+      - name: Health check
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: ${{ secrets.SERVER_SSH_PORT || 22 }}
+          script: |
+            DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+            cd "$DEPLOY_PATH"
+            
+            echo "=========================================="
+            echo "🏥 Running health checks..."
+            echo "=========================================="
+            
+            # Kiểm tra các services
+            SERVICES=("gateway:8080" "auth-service:8080" "movie-service:8080" "customer-service:8080" "streaming-signaling:8081" "streaming-seeder:8082" "payment-service:8080")
+            
+            for SERVICE in "${SERVICES[@]}"; do
+              NAME="${SERVICE%%:*}"
+              PORT="${SERVICE##*:}"
+              
+              if curl -sf "http://localhost:$PORT/actuator/health" > /dev/null 2>&1; then
+                echo "✅ $NAME is healthy"
+              else
+                echo "⚠️  $NAME health check failed (may still be starting)"
+              fi
+            done
+            
+            # Kiểm tra interaction-recommender
+            if curl -sf "http://localhost:8088/health" > /dev/null 2>&1; then
+              echo "✅ interaction-recommender is healthy"
+            else
+              echo "⚠️  interaction-recommender health check failed (may still be starting)"
+            fi
+            
+            echo "=========================================="
+            echo "📊 Container status:"
+            echo "=========================================="
+            docker compose ps
