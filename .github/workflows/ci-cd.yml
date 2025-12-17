@@ -226,7 +226,7 @@ jobs:
           source: "docker-compose.yml,env_files/*"
           target: ${{ secrets.DEPLOY_PATH }}
           overwrite: true
-          timeout: 3600
+          timeout: 3600s
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -319,6 +319,6 @@ jobs:
             echo "Container status:" && docker compose ps
             echo "Recent logs (tail 200):" && docker compose logs --tail 200 || true
             exit 1
-          timeout: 3600
+          timeout: 3600s
 
       
