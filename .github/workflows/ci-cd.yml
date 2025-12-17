@@ -226,6 +226,7 @@ jobs:
           source: "docker-compose.yml,env_files/*"
           target: ${{ secrets.DEPLOY_PATH }}
           overwrite: true
+          timeout: 3600
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -235,104 +236,89 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           port: ${{ secrets.SERVER_SSH_PORT || 22 }}
           script: |
-            set -e
-            
+            set -euo pipefail
+
             DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
             cd "$DEPLOY_PATH"
-            
+
             echo "=========================================="
             echo "🚀 Starting deployment..."
             echo "=========================================="
-            
-            # Di chuyển env files vào đúng vị trí
+
             mkdir -p env
             mv env_files/*.env env/ 2>/dev/null || true
             mv env_files/.env . 2>/dev/null || true
             rm -rf env_files
-            
-            # Login vào Docker Hub
-            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-            
-            echo "=========================================="
-            echo "📥 Pulling latest images..."
-            echo "=========================================="
-            
-            # Pull images mới nhất với --pull always để đảm bảo không bị cache
-            # Sử dụng docker compose pull với --ignore-pull-failures để không fail nếu 1 image lỗi
-            docker compose pull --ignore-pull-failures
-            
-            echo "=========================================="
-            echo "🔄 Stopping old containers..."
-            echo "=========================================="
-            
-            # Stop và remove containers cũ
-            docker compose down --remove-orphans || true
-            
-            echo "=========================================="
-            echo "🧹 Cleaning up old images..."
-            echo "=========================================="
-            
-            # Xóa các dangling images để tiết kiệm dung lượng
-            docker image prune -f || true
-            
-            echo "=========================================="
-            echo "🚀 Starting new containers..."
-            echo "=========================================="
-            
-            # Start containers mới với --pull always để đảm bảo sử dụng image mới nhất
-            docker compose up -d --force-recreate --pull always
-            
-            echo "=========================================="
-            echo "⏳ Waiting for services to be healthy..."
-            echo "=========================================="
-            
-            # Đợi 30 giây cho services khởi động
-            sleep 30
-            
-            # Kiểm tra trạng thái containers
-            docker compose ps
-            
-            echo "=========================================="
-            echo "✅ Deployment completed!"
-            echo "=========================================="
 
-      - name: Health check
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USERNAME }}
-          password: ${{ secrets.SERVER_PASSWORD }}
-          port: ${{ secrets.SERVER_SSH_PORT || 22 }}
-          script: |
-            DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
-            cd "$DEPLOY_PATH"
-            
-            echo "=========================================="
-            echo "🏥 Running health checks..."
-            echo "=========================================="
-            
-            # Kiểm tra các services
-            SERVICES=("gateway:8080" "auth-service:8080" "movie-service:8080" "customer-service:8080" "streaming-signaling:8081" "streaming-seeder:8082" "payment-service:8080")
-            
-            for SERVICE in "${SERVICES[@]}"; do
-              NAME="${SERVICE%%:*}"
-              PORT="${SERVICE##*:}"
-              
-              if curl -sf "http://localhost:$PORT/actuator/health" > /dev/null 2>&1; then
-                echo "✅ $NAME is healthy"
+            echo "Logging into Docker registry"
+            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+            echo "Pulling latest images"
+            docker compose pull --ignore-pull-failures || true
+
+            echo "Bringing down old containers"
+            docker compose down --remove-orphans || true
+
+            echo "Pruning images"
+            docker image prune -f || true
+
+            echo "Starting containers"
+            docker compose up -d --force-recreate --pull always
+
+            echo "Waiting for services to become healthy (timeout 600s)"
+
+            SERVICES=(
+              "gateway:8080"
+              "auth-service:8080"
+              "movie-service:8080"
+              "customer-service:8080"
+              "streaming-signaling:8081"
+              "streaming-seeder:8082"
+              "payment-service:8080"
+            )
+
+            # interaction-recommender uses different path
+            INTERACTION_URL="http://localhost:8088/health"
+
+            TOTAL_TIMEOUT=600
+            INTERVAL=10
+            ELAPSED=0
+
+            while [ $ELAPSED -lt $TOTAL_TIMEOUT ]; do
+              ALL_OK=true
+              for S in "${SERVICES[@]}"; do
+                NAME="${S%%:*}"
+                PORT="${S##*:}"
+                if curl -sf "http://localhost:$PORT/actuator/health" > /dev/null 2>&1; then
+                  echo "✅ $NAME healthy"
+                else
+                  echo "⚠️  $NAME not ready"
+                  ALL_OK=false
+                fi
+              done
+
+              if curl -sf "$INTERACTION_URL" > /dev/null 2>&1; then
+                echo "✅ interaction-recommender healthy"
               else
-                echo "⚠️  $NAME health check failed (may still be starting)"
+                echo "⚠️  interaction-recommender not ready"
+                ALL_OK=false
               fi
+
+              if [ "$ALL_OK" = true ]; then
+                echo "All services healthy"
+                docker compose ps
+                exit 0
+              fi
+
+              sleep $INTERVAL
+              ELAPSED=$((ELAPSED + INTERVAL))
+              echo "Waiting... ${ELAPSED}/${TOTAL_TIMEOUT}s"
             done
-            
-            # Kiểm tra interaction-recommender
-            if curl -sf "http://localhost:8088/health" > /dev/null 2>&1; then
-              echo "✅ interaction-recommender is healthy"
-            else
-              echo "⚠️  interaction-recommender health check failed (may still be starting)"
-            fi
-            
-            echo "=========================================="
-            echo "📊 Container status:"
-            echo "=========================================="
-            docker compose ps
+
+            echo "Timeout waiting for services to be healthy"
+            echo "Container status:" && docker compose ps
+            echo "Recent logs (tail 200):" && docker compose logs --tail 200 || true
+            exit 1
+          timeout: 3600
+
+      
