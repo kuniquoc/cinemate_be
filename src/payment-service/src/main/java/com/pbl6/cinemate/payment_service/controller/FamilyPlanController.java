@@ -77,7 +77,8 @@ public class FamilyPlanController {
 
                 FamilyMember member = familyPlanService.acceptInvitation(
                                 request.getInvitationToken(),
-                                userPrincipal.getId());
+                                userPrincipal.getId(),
+                                userPrincipal.getUsername());
 
                 FamilyMemberResponse response = modelMapper.map(member, FamilyMemberResponse.class);
 
@@ -222,7 +223,8 @@ public class FamilyPlanController {
 
         private FamilyInvitationResponse toInvitationResponse(FamilyInvitation invitation) {
                 FamilyInvitationResponse response = modelMapper.map(invitation, FamilyInvitationResponse.class);
-                response.setInvitationLink(frontendUrl + "/family/join?token=" + invitation.getInvitationToken());
+                response.setInvitationToken("");
+                response.setInvitationLink("");
                 return response;
         }
 

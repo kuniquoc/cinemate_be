@@ -124,6 +124,7 @@ CREATE TABLE family_invitations
     status           VARCHAR(20)  NOT NULL,
     invited_by       UUID         NOT NULL,
     invited_user_id  UUID,
+    recipient_email  VARCHAR(255),
     expires_at       TIMESTAMP    NOT NULL,
     accepted_at      TIMESTAMP,
     created_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
