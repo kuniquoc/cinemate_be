@@ -26,6 +26,8 @@ from app.routes import (
     feedback_router,
     health_router
 )
+# import the health handler so we can expose a root /health path
+from app.routes.health import health_check as api_health_check
 
 # Configure logging
 logging.basicConfig(
@@ -217,6 +219,12 @@ app.include_router(health_router)
 app.include_router(events_router)
 app.include_router(recommendations_router)
 app.include_router(feedback_router)
+
+
+# Expose a root-level /health to satisfy Docker healthchecks
+@app.get("/health", tags=["System"])
+async def root_health():
+    return await api_health_check()
 
 
 # Root endpoint
