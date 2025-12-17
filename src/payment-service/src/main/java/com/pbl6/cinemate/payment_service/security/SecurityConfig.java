@@ -15,37 +15,40 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-
 @EnableWebSecurity
 @Configuration
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    public final String[] PUBLIC_ENDPOINT = {
-            "/api/payments/vnpay-return",
-            "/api/payments/vnpay-ipn",
-            "/api/subscription-plans/**"
-    };
-    private final JwtAuthFilter jwtAuthFilter;
-    private final JwtAuthEntryPoint jwtAuthEntryPoint;
+        public final String[] PUBLIC_ENDPOINT = {
+                        "/api/payments/vnpay-return",
+                        "/api/payments/vnpay-ipn",
+                        "/api/subscription-plans/**",
+                        "/actuator/health"
+        };
+        // allow actuator health checks without auth
+        // (Docker healthchecks call /actuator/health)
+        // keep this field mutable for tests/tools that may read it
+        private final JwtAuthFilter jwtAuthFilter;
+        private final JwtAuthEntryPoint jwtAuthEntryPoint;
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        return http.csrf(AbstractHttpConfigurer::disable)
-                .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthEntryPoint))
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(PUBLIC_ENDPOINT).permitAll()
-                        .anyRequest().authenticated())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                .build();
-    }
+        @Bean
+        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+                return http.csrf(AbstractHttpConfigurer::disable)
+                                .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthEntryPoint))
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers(PUBLIC_ENDPOINT).permitAll()
+                                                .anyRequest().authenticated())
+                                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                                .build();
+        }
 
 }

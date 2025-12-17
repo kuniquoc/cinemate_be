@@ -191,7 +191,6 @@ services:
       - "5433:5432"
     volumes:
       - interaction-postgres-data:/var/lib/postgresql/data
-      - ./src/interaction-recommender-service/scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
 
   # ==========================================
   # PAYMENT SERVICE
@@ -217,8 +216,8 @@ services:
     container_name: cinemate-payment-postgres
     <<: *common
     environment:
-      POSTGRES_USER: ${PAYMENT_POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${PAYMENT_POSTGRES_PASSWORD:-postgres}
+      POSTGRES_USER: ${PAYMENT_POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${PAYMENT_POSTGRES_PASSWORD:-admin}
       POSTGRES_DB: cinemate_payment
       TZ: Asia/Ho_Chi_Minh
     ports:

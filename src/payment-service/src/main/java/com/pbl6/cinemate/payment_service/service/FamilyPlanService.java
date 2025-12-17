@@ -106,7 +106,7 @@ public class FamilyPlanService {
     }
 
     @Transactional
-    public FamilyMember acceptInvitation(String token, UUID userId) {
+    public FamilyMember acceptInvitation(String token, UUID userId, String userEmail) {
         // Find invitation
         FamilyInvitation invitation = invitationRepository.findByInvitationToken(token)
                 .orElseThrow(() -> new ResourceNotFoundException("Invitation not found"));
@@ -120,6 +120,14 @@ public class FamilyPlanService {
             invitation.setStatus(InvitationStatus.EXPIRED);
             invitationRepository.save(invitation);
             throw new SubscriptionException("Invitation has expired");
+        }
+
+        // Validate that the accepting user's email matches the invited email
+        if (invitation.getRecipientEmail() != null &&
+                !invitation.getRecipientEmail().equalsIgnoreCase(userEmail)) {
+            throw new SubscriptionException(
+                    "This invitation was sent to a different email address. Please use the account associated with the invited email: "
+                            + invitation.getRecipientEmail());
         }
 
         Subscription subscription = invitation.getSubscription();

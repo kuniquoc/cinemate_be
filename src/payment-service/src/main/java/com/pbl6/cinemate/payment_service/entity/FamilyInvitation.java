@@ -43,6 +43,9 @@ public class FamilyInvitation extends AbstractBaseEntity {
     @Column(name = "invited_by", nullable = false)
     private UUID invitedBy;
 
+    @Column(name = "recipient_email")
+    private String recipientEmail;
+
     @Column(name = "invited_user_id")
     private UUID invitedUserId;
 

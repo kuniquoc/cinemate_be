@@ -2,9 +2,9 @@ spring:
   application:
     name: payment-service
   datasource:
-    url: jdbc:postgresql://payment-postgres:5432/cinemate_payment
-    username: postgres
-    password: postgres
+    url: ${PAYMENT_DATASOURCE_URL}
+    username: ${PAYMENT_DATASOURCE_USERNAME}
+    password: ${PAYMENT_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:

@@ -275,7 +275,6 @@ services:
       TZ: Asia/Ho_Chi_Minh
     volumes:
       - interaction-postgres-data:/var/lib/postgresql/data
-      - ./src/interaction-recommender-service/scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql:ro
     healthcheck:
       <<: *healthcheck-defaults
       test: [ "CMD-SHELL", "pg_isready -U ${INTERACTION_POSTGRES_USER:-admin} -d interaction_db" ]
@@ -355,7 +354,7 @@ services:
   # INFRASTRUCTURE - MINIO
   # ==========================================
   minio:
-    image: minio/minio:RELEASE.2024-01-01T16-36-33Z
+    image: minio/minio:latest
     container_name: cinemate-minio
     <<: *common
     environment:
