@@ -29,6 +29,14 @@ services:
       - "8080:8080"
     env_file:
       - ./env/gateway.env
+    environment:
+      - MOVIE_SERVICE_URL=http://movie-service:8080
+      - AUTH_SERVICE_URL=http://auth-service:8585
+      - CUSTOMER_SERVICE_URL=http://customer-service:8080
+      - STREAMING_SIGNALING_URL=ws://streaming-signaling:8080
+      - STREAMING_SEEDER_URL=http://streaming-seeder:8080
+      - FRONTEND_URL=${FRONTEND_URL}
+      - ADMIN_URL=${ADMIN_URL}
     depends_on:
       auth-service:
         condition: service_started
@@ -57,6 +65,20 @@ services:
       - "8085:8085"
     env_file:
       - ./env/auth-service.env
+    environment:
+      - ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}
+      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_EMAIL=${SMTP_EMAIL}
+      - SMTP_APP_PASSWORD=${SMTP_APP_PASSWORD}
+      - WEB_URL=${WEB_URL}
+      - AUTH_DATASOURCE_USERNAME=${AUTH_POSTGRES_USER}
+      - AUTH_DATASOURCE_PASSWORD=${AUTH_POSTGRES_PASSWORD}
+      - AUTH_DATASOURCE_URL=jdbc:postgresql://auth-postgres:5432/auth_db
+      - KAFKA_BOOTSTRAP_SERVERS=cinemate-broker:29092
+      - REDIS_HOST=cinemate-redis
+      - REDIS_PORT=6379
     depends_on:
       auth-postgres:
         condition: service_healthy
@@ -104,6 +126,15 @@ services:
       - "8081:8080"
     env_file:
       - ./env/movie-service.env
+    environment:
+      - MOVIE_DATASOURCE_URL=jdbc:postgresql://movie-postgres:5432/movie_db
+      - MOVIE_DATASOURCE_USERNAME=${MOVIE_POSTGRES_USER}
+      - MOVIE_DATASOURCE_PASSWORD=${MOVIE_POSTGRES_PASSWORD}
+      - ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}
+      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_ENDPOINT=http://minio:9000
     depends_on:
       movie-postgres:
         condition: service_healthy
@@ -151,6 +182,18 @@ services:
       - "8082:8080"
     env_file:
       - ./env/customer-service.env
+    environment:
+      - CUSTOMER_DATASOURCE_URL=jdbc:postgresql://customer-postgres:5432/customer_db
+      - CUSTOMER_DATASOURCE_USERNAME=${CUSTOMER_POSTGRES_USER}
+      - CUSTOMER_DATASOURCE_PASSWORD=${CUSTOMER_POSTGRES_PASSWORD}
+      - ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}
+      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - KAFKA_BOOTSTRAP_SERVERS=cinemate-broker:29092
+      - REDIS_HOST=cinemate-redis
+      - REDIS_PORT=6379
     depends_on:
       customer-postgres:
         condition: service_healthy
@@ -196,6 +239,12 @@ services:
       - "8083:8080"
     env_file:
       - ./env/streaming-signaling.env
+    environment:
+      - ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}
+      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
+      - KAFKA_BOOTSTRAP_SERVERS=cinemate-broker:29092
+      - REDIS_HOST=cinemate-redis
+      - REDIS_PORT=6379
     depends_on:
       cinemate-redis:
         condition: service_healthy
@@ -217,6 +266,14 @@ services:
       - "8084:8080"
     env_file:
       - ./env/streaming-seeder.env
+    environment:
+      - ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}
+      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
+      - REDIS_HOST=cinemate-redis
+      - REDIS_PORT=6379
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
     volumes:
       - streaming-seeder-cache:/var/cinemate/cache
     depends_on:
@@ -245,6 +302,12 @@ services:
       - "8088:8000"
     env_file:
       - ./env/interaction-recommender.env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${INTERACTION_POSTGRES_USER}:${INTERACTION_POSTGRES_PASSWORD}@interaction-postgres:5432/interaction_db
+      - ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}
+      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
+      - KAFKA_BOOTSTRAP_SERVERS=cinemate-broker:29092
+      - REDIS_URL=redis://cinemate-redis:6379
     volumes:
       - interaction-recommender-models:/app/models
     depends_on:
@@ -296,6 +359,19 @@ services:
       - "8086:8086"
     env_file:
       - ./env/payment-service.env
+    environment:
+      - PAYMENT_DATASOURCE_URL=jdbc:postgresql://payment-postgres:5432/cinemate_payment
+      - PAYMENT_DATASOURCE_USERNAME=${PAYMENT_POSTGRES_USER}
+      - PAYMENT_DATASOURCE_PASSWORD=${PAYMENT_POSTGRES_PASSWORD}
+      - ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}
+      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
+      - KAFKA_BOOTSTRAP_SERVERS=cinemate-broker:29092
+      - VNPAY_TMN_CODE=${VNPAY_TMN_CODE}
+      - VNPAY_HASH_SECRET=${VNPAY_HASH_SECRET}
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_EMAIL=${SMTP_EMAIL}
+      - SMTP_APP_PASSWORD=${SMTP_APP_PASSWORD}
     depends_on:
       payment-postgres:
         condition: service_healthy
