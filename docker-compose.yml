@@ -62,7 +62,7 @@ services:
     container_name: cinemate-auth-service
     <<: *common
     ports:
-      - "8085:8085"
+      - "8585:8585"
     env_file:
       - ./env/auth-service.env
     environment:
@@ -86,7 +86,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: [ "CMD", "curl", "-f", "http://localhost:8085/actuator/health" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8585/actuator/health" ]
     deploy:
       resources:
         limits:
@@ -356,7 +356,7 @@ services:
     container_name: cinemate-payment-service
     <<: *common
     ports:
-      - "8086:8086"
+      - "8086:8080"
     env_file:
       - ./env/payment-service.env
     environment:
@@ -377,7 +377,7 @@ services:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
-      test: [ "CMD", "curl", "-f", "http://localhost:8086/actuator/health" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
     deploy:
       resources:
         limits:

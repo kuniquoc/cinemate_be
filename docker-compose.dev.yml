@@ -52,7 +52,7 @@ services:
     container_name: cinemate-auth-service
     <<: *common
     ports:
-      - "8085:8085"
+      - "8585:8585"
     env_file:
       - ./env/auth-service.env
     environment:
