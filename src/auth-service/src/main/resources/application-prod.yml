@@ -48,3 +48,13 @@ app:
     last-name: ${AUTH_ADMIN_LAST_NAME}
 
 web-url: ${WEB_URL:http://localhost:3000}
+
+# Management endpoints for production - unified: expose only health
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: when-authorized

@@ -15,12 +15,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health
   endpoint:
     health:
       show-details: when-authorized
-      probes:
-        enabled: true
 
 # Movie Service Configuration
 movie:

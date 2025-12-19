@@ -56,3 +56,13 @@ vnpay:
 movie:
   service:
     url: ${MOVIE_SERVICE_URL:http://movie-service:8080}
+
+# Management endpoints for production - unified: expose only health
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: when-authorized

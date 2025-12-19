@@ -31,10 +31,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,env
+        include: health
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized
 
 minio:
   endpoint: ${MINIO_URL:http://localhost:9000}

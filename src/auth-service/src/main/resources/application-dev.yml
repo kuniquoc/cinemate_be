@@ -50,3 +50,13 @@ app:
     last-name: ${DEV_ADMIN_LAST_NAME}
 
 web-url: ${DEV_WEB_URL}
+
+# Management endpoints (unified with default/prod): expose only health
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: when-authorized

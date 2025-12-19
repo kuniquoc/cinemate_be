@@ -28,10 +28,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health
   endpoint:
     health:
-      show-details: never
+      show-details: when-authorized
 
 minio:
   endpoint: ${MINIO_ENDPOINT:http://minio:9000}

@@ -9,9 +9,13 @@ spring:
       password: ${REDIS_PASSWORD:}
 
 management:
+  endpoints:
+    web:
+      exposure:
+        include: health
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized
 
 streaming:
   seeder:

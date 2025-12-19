@@ -33,3 +33,13 @@ app:
 movie:
   service:
     url: http://localhost:8080
+
+# Management endpoints for health checks (unified)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: when-authorized
