@@ -37,6 +37,7 @@ services:
       - STREAMING_SEEDER_URL=http://streaming-seeder:8080
       - FRONTEND_URL=${FRONTEND_URL}
       - ADMIN_URL=${ADMIN_URL}
+      - MINIO_SERVICE_URL=http://minio:9000
     depends_on:
       - auth-service
       - movie-service

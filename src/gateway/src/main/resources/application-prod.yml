@@ -53,7 +53,7 @@ spring:
              
             # Minio Service Routes (Production)
             - id: minio-service-prod
-              uri: ${MINIO_SERVICE_URL:http://minio-service:9000}
+              uri: ${MINIO_SERVICE_URL:http://minio:9000}
               predicates:
                 - Path=/minio/**
               filters:
