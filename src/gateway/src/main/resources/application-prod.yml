@@ -50,6 +50,14 @@ spring:
               uri: ${STREAMING_SEEDER_URL:http://streaming-seeder:8080}
               predicates:
                 - Path=/api/v1/streams/**
+             
+            # Minio Service Routes (Production)
+            - id: minio-service-prod
+              uri: ${MINIO_SERVICE_URL:http://minio-service:9000}
+              predicates:
+                - Path=/minio/**
+              filters:
+                - RewritePath=/minio/(?<segment>.*), /${segment}
 
           globalcors:
             cors-configurations:
