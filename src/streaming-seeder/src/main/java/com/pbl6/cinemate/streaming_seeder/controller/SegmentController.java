@@ -70,9 +70,6 @@ public class SegmentController {
             return ResponseEntity.badRequest().build();
         }
         
-        // Check content access before serving (throws exception if denied)
-        checkAccess(movieId, userPrincipal);
-        
         return serveSegment(movieId, null, "master");
     }
 
@@ -84,10 +81,7 @@ public class SegmentController {
             @CurrentUser UserPrincipal userPrincipal) throws IOException {
         if (!validator.isSafeIdentifier(movieId) || !validator.isSafeIdentifier(qualityId)) {
             return ResponseEntity.badRequest().build();
-        }
-        
-        // Check content access before serving (throws exception if denied)
-        checkAccess(movieId, userPrincipal);
+        }   
         
         return serveSegment(movieId, qualityId, "init");
     }
@@ -100,10 +94,7 @@ public class SegmentController {
         if (!validator.isSafeIdentifier(movieId) || !validator.isSafeIdentifier(qualityId)) {
             return ResponseEntity.badRequest().build();
         }
-        
-        // Check content access before serving (throws exception if denied)
-        checkAccess(movieId, userPrincipal);
-        
+
         return serveSegment(movieId, qualityId, "playlist");
     }
 
@@ -118,8 +109,6 @@ public class SegmentController {
             return ResponseEntity.badRequest().build();
         }
         
-        // Check content access before serving (throws exception if denied)
-        checkAccess(movieId, userPrincipal);
         
         return serveSegment(movieId, qualityId, segmentId);
     }
