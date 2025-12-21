@@ -8,4 +8,6 @@ import java.util.UUID;
 
 public interface CustomerRepository extends JpaRepository<Customer, UUID> {
     Optional<Customer> findByAccountId(UUID accountId);
+    
+    boolean existsByAccountId(UUID accountId);
 }
