@@ -55,3 +55,11 @@ app:
     access-token-expiration-msec: 7200000
     refresh-token-secret: ${REFRESH_TOKEN_SECRET}
     refresh-token-expiration-msec: 2592000000
+
+payment:
+  service:
+    url: ${PAYMENT_SERVICE_URL:http://payment-service:8080}
+
+movie:
+  service:
+    url: ${MOVIE_SERVICE_URL:http://movie-service:8080}
