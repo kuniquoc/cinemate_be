@@ -46,20 +46,24 @@ public class WatchHistoryServiceImpl implements WatchHistoryService {
                                 customerId);
 
                 WatchHistory watchHistory;
+                // Guard against null duration to avoid auto-unboxing NPEs
+                Long movieDuration = movie.getDuration();
+                long movieDurationLong = movieDuration != null ? movieDuration : 0L;
+
                 if (existingHistory.isPresent()) {
-                        if (request.lastWatchedPosition() > movie.getDuration()) {
-                                request = new WatchProgressRequest(movie.getDuration());
+                        if (request.lastWatchedPosition() > movieDurationLong) {
+                                request = new WatchProgressRequest(movieDurationLong);
                         }
 
                         watchHistory = existingHistory.get();
                         watchHistory.setLastWatchedPosition(request.lastWatchedPosition());
-                        watchHistory.setTotalDuration(movie.getDuration());
+                        watchHistory.setTotalDuration(movieDurationLong);
                 } else {
                         watchHistory = WatchHistory.builder()
                                         .movie(movie)
                                         .customerId(customerId)
                                         .lastWatchedPosition(request.lastWatchedPosition())
-                                        .totalDuration(movie.getDuration())
+                                        .totalDuration(movieDurationLong)
                                         .build();
                 }
 
