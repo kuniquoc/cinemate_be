@@ -211,9 +211,9 @@ public class SubscriptionService {
 
     @Transactional(readOnly = true)
     public SubscriptionResponse getCurrentSubscription(UUID userId) {
-        Subscription subscription = subscriptionRepository.findActiveSubscriptionByUserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Active subscription not found for user: " + userId));
-        return mapToResponse(subscription);
+        return subscriptionRepository.findActiveSubscriptionByUserId(userId)
+                .map(this::mapToResponse)
+                .orElse(null);
     }
 
     @Transactional(readOnly = true)
