@@ -7,6 +7,7 @@ import com.pbl6.cinemate.shared.dto.general.PaginatedResponse;
 
 import java.time.LocalDate;
 import java.util.UUID;
+import com.pbl6.cinemate.movie.dto.response.WatchProgressResponse;
 
 public interface WatchHistoryService {
 
@@ -30,6 +31,12 @@ public interface WatchHistoryService {
      * Returns null if no watch history exists
      */
     Long getLastWatchedPosition(UUID movieId, UUID customerId);
+
+    /**
+     * Get watch progress (last position and total duration) for a movie and
+     * customer
+     */
+    WatchProgressResponse getWatchProgress(UUID movieId, UUID customerId);
 
     /**
      * Delete watch history for a specific movie

@@ -99,4 +99,20 @@ public class WatchHistoryController {
                                 httpServletRequest.getRequestURI(),
                                 httpServletRequest.getMethod()));
         }
+
+        @Operation(summary = "Get watch progress for movie", description = "Get last watched position and total duration for a movie for current user")
+        @GetMapping("/{movieId}/watch-progress")
+        public ResponseEntity<ResponseData> getWatchProgress(
+                        @Parameter(description = "Movie ID") @PathVariable UUID movieId,
+                        @CurrentUser UserPrincipal userPrincipal,
+                        HttpServletRequest httpServletRequest) {
+
+                var response = watchHistoryService.getWatchProgress(movieId, userPrincipal.getId());
+
+                return ResponseEntity.ok(ResponseData.success(
+                                response,
+                                "Watch progress retrieved successfully",
+                                httpServletRequest.getRequestURI(),
+                                httpServletRequest.getMethod()));
+        }
 }

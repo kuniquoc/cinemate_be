@@ -43,7 +43,7 @@ public class MovieTranscodeServiceImpl implements MovieTranscodeService {
             return;
         long dur = metadata.durationSeconds();
         if (dur > 0 && dur <= Integer.MAX_VALUE) {
-            movie.setDuration((int) dur);
+            movie.setDuration(dur);
             repo.save(movie);
         }
     }

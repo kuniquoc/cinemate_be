@@ -47,15 +47,19 @@ public class WatchHistoryServiceImpl implements WatchHistoryService {
 
                 WatchHistory watchHistory;
                 if (existingHistory.isPresent()) {
+                        if (request.lastWatchedPosition() > movie.getDuration()) {
+                                request = new WatchProgressRequest(movie.getDuration());
+                        }
+
                         watchHistory = existingHistory.get();
                         watchHistory.setLastWatchedPosition(request.lastWatchedPosition());
-                        watchHistory.setTotalDuration(request.totalDuration());
+                        watchHistory.setTotalDuration(movie.getDuration());
                 } else {
                         watchHistory = WatchHistory.builder()
                                         .movie(movie)
                                         .customerId(customerId)
                                         .lastWatchedPosition(request.lastWatchedPosition())
-                                        .totalDuration(request.totalDuration())
+                                        .totalDuration(movie.getDuration())
                                         .build();
                 }
 
@@ -64,8 +68,7 @@ public class WatchHistoryServiceImpl implements WatchHistoryService {
 
                 // Best-effort: send watch event to interaction recommender
                 try {
-                        Integer watchDuration = request.totalDuration() != null ? request.totalDuration().intValue()
-                                        : null;
+                        Integer watchDuration = movie.getDuration() != null ? movie.getDuration().intValue() : null;
                         Double progress = watchHistory.getProgressPercent();
                         var watchReq = WatchEventRequest.create(
                                         customerId,
@@ -79,6 +82,21 @@ public class WatchHistoryServiceImpl implements WatchHistoryService {
                 } catch (Exception e) {
                         log.debug("Failed to send watch event: {}", e.getMessage());
                 }
+        }
+
+        @Transactional(readOnly = true)
+        @Override
+        public WatchProgressResponse getWatchProgress(UUID movieId, UUID customerId) {
+                Movie movie = movieRepository.findById(movieId)
+                                .orElseThrow(() -> new NotFoundException("Movie not found with ID: " + movieId));
+
+                long totalDuration = movie.getDuration() != null ? movie.getDuration() : 0L;
+
+                long lastWatched = watchHistoryRepository.findByMovieIdAndCustomerId(movieId, customerId)
+                                .map(WatchHistory::getLastWatchedPosition)
+                                .orElse(0L);
+
+                return new WatchProgressResponse(lastWatched, totalDuration);
         }
 
         @Transactional(readOnly = true)

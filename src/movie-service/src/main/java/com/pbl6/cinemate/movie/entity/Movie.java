@@ -52,7 +52,7 @@ public class Movie extends AbstractBaseEntity {
     private Integer rank;
 
     // Duration in seconds (nullable)
-    private Integer duration;
+    private Long duration;
 
     @Builder.Default
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
