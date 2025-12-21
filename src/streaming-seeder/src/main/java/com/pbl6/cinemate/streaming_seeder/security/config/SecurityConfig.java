@@ -23,7 +23,8 @@ public class SecurityConfig {
             "/api/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
-            "/actuator/health"
+            "/actuator/health",
+            "/api/internal/**"
     };
     private final JwtAuthFilter jwtAuthFilter;
     private final JwtAuthEntryPoint jwtAuthEntryPoint;
@@ -44,8 +45,7 @@ public class SecurityConfig {
                 // Only allow public endpoints
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINT).permitAll()
-                        // Todo: secure other endpoints later
-                        .anyRequest().permitAll())
+                        .anyRequest().authenticated())
 
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
 

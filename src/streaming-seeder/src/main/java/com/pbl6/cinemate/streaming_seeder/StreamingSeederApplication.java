@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(scanBasePackages = {
@@ -15,6 +16,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         HibernateJpaAutoConfiguration.class
 })
 @EnableScheduling
+@EnableFeignClients(basePackages = "com.pbl6.cinemate.streaming_seeder.client")
 @ConfigurationPropertiesScan(basePackages = {
         "com.pbl6.cinemate.streaming_seeder",
         "com.pbl6.cinemate.shared"
