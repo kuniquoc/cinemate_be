@@ -1,8 +1,10 @@
 package com.pbl6.cinemate.movie.service;
 
 import com.pbl6.cinemate.movie.client.dto.RecommendationResponse;
+import com.pbl6.cinemate.movie.dto.response.MovieWithScoreResponse;
 import com.pbl6.cinemate.movie.dto.response.RecommendedMoviesResponse;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -16,17 +18,17 @@ public interface InteractionService {
     /**
      * Get personalized movie recommendations with full movie details
      */
-    RecommendedMoviesResponse getRecommendedMovies(UUID userId, int count, String context);
+    List<MovieWithScoreResponse> getRecommendedMovies(UUID userId, int count, String context);
 
     /**
      * Get home page recommendations with full movie details
      */
-    RecommendedMoviesResponse getHomeRecommendations(UUID userId, int count);
+    List<MovieWithScoreResponse> getHomeRecommendations(UUID userId, int count);
 
     /**
      * Get similar movies recommendations
      */
-    RecommendedMoviesResponse getSimilarMovies(UUID userId, UUID movieId, int count);
+    List<MovieWithScoreResponse> getSimilarMovies(UUID userId, UUID movieId, int count);
 
     /**
      * Get raw recommendation response (movie IDs only)

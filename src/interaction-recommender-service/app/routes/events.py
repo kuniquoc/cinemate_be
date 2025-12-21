@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.cache import cache
-from app.kafka_client import kafka_manager
 from app.event_service import EventService
 from app.schemas import (
     WatchEventRequest,
@@ -24,7 +23,7 @@ router = APIRouter(prefix="/api/v1/events", tags=["Events"])
 
 def get_event_service() -> EventService:
     """Get event service instance"""
-    return EventService(cache, kafka_manager)
+    return EventService(cache)
 
 
 @router.post("/watch", response_model=EventResponse, status_code=status.HTTP_200_OK)
@@ -56,6 +55,11 @@ async def track_watch_event(
             requestId=result["requestId"],
             status=result["status"],
             serverTimestamp=datetime.fromisoformat(result["serverTimestamp"].replace("Z", "+00:00"))
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
         )
     except Exception as e:
         raise HTTPException(
@@ -94,6 +98,11 @@ async def track_search_event(
             status=result["status"],
             serverTimestamp=datetime.fromisoformat(result["serverTimestamp"].replace("Z", "+00:00"))
         )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -131,6 +140,11 @@ async def track_rating_event(
             status=result["status"],
             serverTimestamp=datetime.fromisoformat(result["serverTimestamp"].replace("Z", "+00:00"))
         )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -167,6 +181,11 @@ async def track_favorite_event(
             requestId=result["requestId"],
             status=result["status"],
             serverTimestamp=datetime.fromisoformat(result["serverTimestamp"].replace("Z", "+00:00"))
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
         )
     except Exception as e:
         raise HTTPException(

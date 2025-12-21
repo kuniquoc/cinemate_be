@@ -10,7 +10,7 @@ import java.util.UUID;
  * Feign client for Interaction Recommender Service
  * Handles user interaction tracking and movie recommendations
  */
-@FeignClient(name = "interaction-recommender-service", url = "${interaction.recommender.service.url:http://interaction-recommender-service:8000}", fallback = InteractionRecommenderClientFallback.class)
+@FeignClient(name = "interaction-recommender-service", url = "${interaction.service.url:http://interaction-recommender:8000}", fallback = InteractionRecommenderClientFallback.class)
 public interface InteractionRecommenderClient {
 
         // ============== Event Tracking ==============
@@ -52,7 +52,8 @@ public interface InteractionRecommenderClient {
         RecommendationResponse getRecommendations(
                         @PathVariable("userId") UUID userId,
                         @RequestParam(name = "k", required = false, defaultValue = "20") Integer k,
-                        @RequestParam(name = "context", required = false, defaultValue = "home") String context);
+                        @RequestParam(name = "context", required = false, defaultValue = "home") String context,
+                        @RequestParam(name = "retrain", required = false, defaultValue = "true") Boolean retrain);
 
         // ============== Features ==============
 
@@ -61,24 +62,6 @@ public interface InteractionRecommenderClient {
          */
         @GetMapping("/api/v1/features/{userId}")
         UserFeaturesResponse getUserFeatures(@PathVariable("userId") UUID userId);
-
-        /**
-         * Refresh user features from historical events
-         */
-        @PostMapping("/api/v1/features/{userId}/refresh")
-        FeatureRefreshResponse refreshUserFeatures(
-                        @PathVariable("userId") UUID userId,
-                        @RequestParam(name = "days_back", required = false, defaultValue = "90") Integer daysBack);
-
-        // ============== Feedback ==============
-
-        /**
-         * Submit user feedback on recommendations
-         */
-        @PostMapping("/api/v1/feedback")
-        FeedbackResponse submitFeedback(@RequestBody FeedbackRequest request);
-
-        // ============== Health ==============
 
         /**
          * Check service health

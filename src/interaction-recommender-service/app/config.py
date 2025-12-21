@@ -1,67 +1,29 @@
-"""
-Application configuration using Pydantic Settings
-"""
-from functools import lru_cache
-from typing import Optional
-from pydantic_settings import BaseSettings
+import os
+from types import SimpleNamespace
 
 
-class Settings(BaseSettings):
-    """Application settings loaded from environment variables"""
-    
-    # Application
-    app_name: str = "interaction-recommender-service"
-    app_version: str = "1.0.0"
-    debug: bool = False
-    
-    # Database
-    database_url: str = "postgresql+asyncpg://admin:admin@interaction-postgres:5432/interaction_db"
-    db_pool_size: int = 10
-    db_max_overflow: int = 20
-    
-    # Redis
-    redis_url: str = "redis://cinemate-redis:6379"
-    redis_cache_ttl: int = 3600  # 1 hour
-    redis_feature_ttl: int = 86400  # 24 hours
-    
-    # Kafka
-    kafka_bootstrap_servers: str = "cinemate-broker:29092"
-    kafka_consumer_group: str = "ir-consumers"
-    kafka_interaction_topic: str = "interaction_events"
-    kafka_features_topic: str = "processed_features"
-    kafka_feedback_topic: str = "model_feedback"
-    kafka_dlq_topic: str = "interaction_events_dlq"
-    
-    # Feature flags
-    enable_consumers: bool = True
-    enable_kafka: bool = True
-    enable_feature_extraction: bool = True
-    
-    # Model
-    model_path: str = "/app/models/recommender.pkl"
-    model_version: str = "v1.0.0"
-    default_recommendation_count: int = 20
-    
-    # Retry settings
-    max_retries: int = 3
-    retry_delay_seconds: float = 1.0
-    
-    # Server
-    host: str = "0.0.0.0"
-    port: int = 8000
-    workers: int = 2
-    
-    # Database connection retry
-    db_retry_count: int = 10
-    db_retry_delay: float = 3.0
+def get_settings():
+    # Read from environment where possible; provide sensible defaults for local dev
+    database_url = os.environ.get(
+        "DATABASE_URL",
+        os.environ.get("INTERACTION_DATABASE_URL", "sqlite+aiosqlite:///./recommender.db")
+    )
+    redis_url = os.environ.get("REDIS_URL", os.environ.get("REDIS", None))
+    model_path = os.environ.get("MODEL_PATH", "./models/recommender_model.joblib")
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
-        protected_namespaces = ('settings_',)  # Fix Pydantic warning for model_* fields
-
-
-@lru_cache()
-def get_settings() -> Settings:
-    """Get cached settings instance"""
-    return Settings()
+    return SimpleNamespace(
+        app_version=os.environ.get("APP_VERSION", "0.1.0"),
+        app_name=os.environ.get("APP_NAME", "interaction-recommender-service"),
+        host=os.environ.get("HOST", "0.0.0.0"),
+        port=int(os.environ.get("PORT", 8000)),
+        workers=int(os.environ.get("WORKERS", 1)),
+        debug=os.environ.get("DEBUG", "true").lower() in ("1", "true", "yes"),
+        enable_kafka=False,
+        enable_consumers=False,
+        enable_feature_extraction=False,
+        database_url=database_url,
+        redis_url=redis_url,
+        movie_service_url=os.environ.get("MOVIE_SERVICE_URL", "http://movie-service:8080"),
+        model_path=model_path,
+        model_version=os.environ.get("MODEL_VERSION", "v0"),
+    )

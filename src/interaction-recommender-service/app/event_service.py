@@ -1,156 +1,230 @@
-"""
-Event service for handling interaction events
-"""
+from datetime import datetime, timezone
+from typing import Any, Dict
+import asyncio
 import logging
-from datetime import datetime
-from typing import Dict, Any, Optional
-from uuid import uuid4
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import insert, select
 
-from app.models import InteractionEvent, AuditEvent
-from app.cache import RedisCache
-from app.kafka_client import KafkaManager
-from app.config import get_settings
+from app.models import Interaction, Rating, UserFeatures, Movie
 
 logger = logging.getLogger(__name__)
 
-settings = get_settings()
-
 
 class EventService:
-    """
-    Service for processing and storing interaction events
-    Handles idempotency, persistence, and Kafka publishing
-    """
-    
-    def __init__(self, cache: RedisCache, kafka: KafkaManager):
+    def __init__(self, cache):
         self.cache = cache
-        self.kafka = kafka
-    
+
     async def process_event(
         self,
         event_type: str,
         user_id: str,
-        movie_id: Optional[str],
-        metadata: Dict[str, Any],
-        client_timestamp: Optional[datetime],
-        request_id: Optional[str],
-        session: AsyncSession
+        movie_id: str | None,
+        metadata: Dict[str, Any] | None,
+        client_timestamp: str | None,
+        request_id: str | None,
+        session: AsyncSession,
     ) -> Dict[str, Any]:
-        """
-        Process an interaction event
-        
-        Args:
-            event_type: Type of event (watch, search, rating, favorite)
-            user_id: User identifier
-            movie_id: Movie identifier (optional for search)
-            metadata: Event-specific metadata
-            client_timestamp: Client-provided timestamp
-            request_id: Request ID for idempotency
-            session: Database session
-            
-        Returns:
-            Response with request ID and status
-        """
-        # Generate request ID if not provided
-        req_id = request_id or str(uuid4())
-        server_ts = datetime.utcnow()
-        
-        # Check idempotency
-        if await self.cache.check_request_processed(req_id):
-            logger.info(f"Duplicate request detected: {req_id}")
-            return {
-                "requestId": req_id,
-                "status": "duplicate",
-                "serverTimestamp": server_ts.isoformat() + "Z"
-            }
-        
+        logger.info("Processing event: type=%s, user=%s, movie=%s", event_type, user_id, movie_id)
         try:
-            # Persist to database
-            event = InteractionEvent(
-                request_id=req_id,
-                user_id=user_id,
-                movie_id=movie_id,
-                event_type=event_type.lower(),
-                event_data=metadata,
-                client_timestamp=client_timestamp,
-                server_timestamp=server_ts
-            )
-            session.add(event)
-            await session.flush()  # Get event ID
-            
-            # Mark request as processed (idempotency)
-            await self.cache.mark_request_processed(req_id)
-            
-            # Prepare Kafka message
-            kafka_message = {
-                "requestId": req_id,
-                "eventId": str(event.id),
-                "userId": user_id,
-                "movieId": movie_id,
-                "eventType": event_type.upper(),
-                "clientTimestamp": client_timestamp.isoformat() + "Z" if client_timestamp else None,
-                "serverTimestamp": server_ts.isoformat() + "Z",
-                "metadata": metadata
-            }
-            
-            # Publish to Kafka (async, non-blocking)
-            published = await self.kafka.publish_interaction_event(kafka_message)
-            
-            # Create audit entry
-            audit = AuditEvent(
-                event_id=event.id,
-                status="published" if published else "pending",
-                message="Event published to Kafka" if published else "Kafka publish pending"
-            )
-            session.add(audit)
-            
-            await session.commit()
-            
-            logger.info(f"Event processed: {req_id} ({event_type})")
-            
+            # Get recommendation engine for prediction
+            from app.routes import recommendations
+            engine = getattr(recommendations, "recommendation_engine", None)
+            if engine is None:
+                logger.warning("Recommendation engine not available for score prediction")
+
+            # Validate movie exists when provided by calling movie service
+            if movie_id:
+                from app.config import get_settings
+                import httpx
+
+                settings = get_settings()
+                movie_url = settings.movie_service_url.rstrip("/") + f"/api/v1/movies/{movie_id}"
+                try:
+                    async with httpx.AsyncClient(timeout=5.0) as client:
+                        resp = await client.get(movie_url)
+                        if resp.status_code == 404:
+                            raise ValueError(f"movie not found: {movie_id}")
+                        if resp.status_code >= 400:
+                            raise ValueError(f"movie service error: {resp.status_code}")
+                except httpx.RequestError as e:
+                    raise ValueError(f"failed to validate movie id via movie service: {e}")
+
+            # Persist interaction
+            try:
+                stmt = insert(Interaction).values(
+                    event_type=event_type,
+                    request_id=request_id,
+                    user_id=user_id,
+                    movie_id=movie_id,
+                    client_timestamp=client_timestamp,
+                    meta=metadata,
+                )
+                await session.execute(stmt)
+                await session.commit()
+            except Exception as e:
+                logger.error("Failed to persist interaction: %s", e, exc_info=True)
+                raise
+
+            # If rating event, persist rating
+            if event_type == "rating" and metadata:
+                rating_val = metadata.get("rating")
+                if rating_val is not None:
+                    try:
+                        rstmt = insert(Rating).values(
+                            user_id=user_id,
+                            movie_id=movie_id,
+                            rating=rating_val
+                        )
+                        await session.execute(rstmt)
+                        await session.commit()
+                    except Exception as e:
+                        logger.error("Failed to persist rating: %s", e, exc_info=True)
+                        raise
+
+            # Update user features (cache disabled)
+            try:
+                # try DB
+                q = select(UserFeatures).where(UserFeatures.user_id == user_id)
+                res = await session.execute(q)
+                row = res.scalar_one_or_none()
+                if row:
+                    features = row.features
+                    logger.info("Loaded existing features for user %s: ratings keys=%d", user_id, len(features.get("ratings", {})))
+                else:
+                    features = {
+                        "totalInteractions": 0,
+                        "watchHistory": [],
+                        "favorites": [],
+                        "ratings": {}
+                    }
+                    logger.info("Created new features for user %s", user_id)
+
+                features["totalInteractions"] = features.get("totalInteractions", 0) + 1
+                if event_type == "watch" and movie_id:
+                    features.setdefault("watchHistory", []).append({
+                        "movieId": movie_id,
+                        "ts": datetime.now(timezone.utc).isoformat(),
+                        "metadata": metadata,
+                    })
+
+                if event_type == "favorite" and metadata:
+                    action = metadata.get("action")
+                    if action == "add":
+                        if movie_id and movie_id not in features.get("favorites", []):
+                            features.setdefault("favorites", []).append(movie_id)
+                    elif action == "remove":
+                        try:
+                            features.setdefault("favorites", []).remove(movie_id)
+                        except Exception:
+                            pass
+
+                # Update ratings based on event type
+                if movie_id:
+                    current_score = features.setdefault("ratings", {}).get(movie_id, 0.0)
+                    predicted = 0.0
+                    try:
+                        if engine:
+                            predicted = await engine.predict_rating(user_id, movie_id)
+                    except Exception as e:
+                        logger.warning("Failed to get prediction for user %s, movie %s: %s", user_id, movie_id, e)
+                        predicted = 0.0
+                    
+                    if event_type == "rating" and metadata:
+                        rating_val = metadata.get("rating")
+                        if rating_val is not None:
+                            # Combine user rating with model prediction
+                            combined_score = 0.7 * rating_val + 0.3 * predicted
+                            features["ratings"][movie_id] = combined_score
+                            logger.info("Rating update: user=%s, movie=%s, user_rating=%.2f, predicted=%.2f, combined=%.2f", user_id, movie_id, rating_val, predicted, combined_score)
+                    elif event_type == "watch":
+                        # Increase score slightly for watch
+                        new_score = min(current_score + 0.1, 5.0)  # Cap at 5.0
+                        combined_score = 0.7 * new_score + 0.3 * predicted
+                        features["ratings"][movie_id] = combined_score
+                        logger.info("Watch update: user=%s, movie=%s, old_score=%.2f, new_score=%.2f, predicted=%.2f, combined=%.2f", user_id, movie_id, current_score, new_score, predicted, combined_score)
+                    elif event_type == "favorite" and metadata:
+                        action = metadata.get("action")
+                        if action == "add":
+                            # Set high score for favorite
+                            new_score = 4.5
+                            combined_score = 0.7 * new_score + 0.3 * predicted
+                            features["ratings"][movie_id] = combined_score
+                            logger.info("Favorite add: user=%s, movie=%s, set_score=%.2f, predicted=%.2f, combined=%.2f", user_id, movie_id, new_score, predicted, combined_score)
+                        elif action == "remove":
+                            # Decrease score for unfavorite
+                            new_score = max(current_score - 0.5, 0.0)
+                            combined_score = 0.7 * new_score + 0.3 * predicted
+                            features["ratings"][movie_id] = combined_score
+                            logger.info("Favorite remove: user=%s, movie=%s, old_score=%.2f, new_score=%.2f, predicted=%.2f, combined=%.2f", user_id, movie_id, current_score, new_score, predicted, combined_score)
+                    elif event_type == "search":
+                        # Slight increase for search
+                        new_score = min(current_score + 0.05, 5.0)
+                        combined_score = 0.7 * new_score + 0.3 * predicted
+                        features["ratings"][movie_id] = combined_score
+                        logger.info("Search update: user=%s, movie=%s, old_score=%.2f, new_score=%.2f, predicted=%.2f, combined=%.2f", user_id, movie_id, current_score, new_score, predicted, combined_score)
+
+                logger.info("Features after update for user %s: ratings=%s", user_id, features.get("ratings", {}))
+
+                # persist features to cache and DB (cache disabled)
+                # await self.cache.set_user_features(user_id, features)
+            except Exception as e:
+                logger.error("Failed to update user features: %s", e, exc_info=True)
+                raise
+
+            # Invalidate recommendations cache for this user and schedule an immediate refresh
+            try:
+                await self.cache.invalidate_recommendations(user_id)
+            except Exception:
+                logger.debug("Failed to invalidate recommendations cache for user %s", user_id, exc_info=True)
+
+            try:
+                from app.routes import recommendations
+
+                engine = getattr(recommendations, "recommendation_engine", None)
+
+                if engine:
+                    async def _refresh_recs():
+                        try:
+                            recs = await engine.get_recommendations(user_id=user_id, features=features, k=20, context="home")
+                            await self.cache.set_recommendations(user_id, recs)
+                        except Exception:
+                            logger.exception("Failed to refresh recommendations for user %s", user_id)
+
+                    # Schedule refresh in background so event processing isn't blocked by recommender errors
+                    try:
+                        asyncio.create_task(_refresh_recs())
+                    except Exception:
+                        logger.exception("Failed to schedule recommendation refresh for user %s", user_id)
+            except Exception:
+                logger.debug("Recommendation engine not available for immediate refresh", exc_info=True)
+
+            # upsert into user_features table
+            try:
+                q = select(UserFeatures).where(UserFeatures.user_id == user_id)
+                res = await session.execute(q)
+                row = res.scalar_one_or_none()
+                if row:
+                    row.features = features
+                    session.add(row)
+                    await session.commit()
+                    logger.info("Updated user_features for user %s in DB", user_id)
+                else:
+                    uf = UserFeatures(user_id=user_id, features=features)
+                    session.add(uf)
+                    await session.commit()
+                    logger.info("Inserted new user_features for user %s in DB", user_id)
+            except Exception as e:
+                logger.error("Failed to upsert user features to DB: %s", e, exc_info=True)
+                raise
+
+            # Kafka publishing disabled — using DB/cache only
+
             return {
-                "requestId": req_id,
-                "status": "accepted",
-                "serverTimestamp": server_ts.isoformat() + "Z"
+                "requestId": request_id,
+                "status": "ok",
+                "serverTimestamp": datetime.now(timezone.utc).isoformat()
             }
-            
         except Exception as e:
-            await session.rollback()
-            logger.error(f"Error processing event {req_id}: {e}")
+            logger.error("Event processing failed for user %s, event %s: %s", user_id, event_type, e, exc_info=True)
             raise
-    
-    async def get_user_events(
-        self,
-        user_id: str,
-        event_type: Optional[str],
-        limit: int,
-        session: AsyncSession
-    ) -> list:
-        """Get user events from database"""
-        query = select(InteractionEvent).where(
-            InteractionEvent.user_id == user_id
-        )
-        
-        if event_type:
-            query = query.where(InteractionEvent.event_type == event_type.lower())
-        
-        query = query.order_by(InteractionEvent.server_timestamp.desc()).limit(limit)
-        
-        result = await session.execute(query)
-        events = result.scalars().all()
-        
-        return [
-            {
-                "id": str(e.id),
-                "requestId": str(e.request_id),
-                "movieId": str(e.movie_id) if e.movie_id else None,
-                "eventType": e.event_type,
-                "eventData": e.event_data,
-                "clientTimestamp": e.client_timestamp.isoformat() if e.client_timestamp else None,
-                "serverTimestamp": e.server_timestamp.isoformat()
-            }
-            for e in events
-        ]

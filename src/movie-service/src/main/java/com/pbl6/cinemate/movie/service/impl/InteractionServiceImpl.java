@@ -37,39 +37,39 @@ public class InteractionServiceImpl implements InteractionService {
     // ============== Recommendations with Full Movie Details ==============
 
     @Override
-    public RecommendedMoviesResponse getRecommendedMovies(UUID userId, int count, String context) {
+    public List<MovieWithScoreResponse> getRecommendedMovies(UUID userId, int count, String context) {
         try {
             // Get raw recommendations from interaction service
-            RecommendationResponse rawResponse = interactionClient.getRecommendations(userId, count, context);
+            RecommendationResponse rawResponse = interactionClient.getRecommendations(userId, count, context, true);
 
             if (rawResponse.isEmpty()) {
                 log.debug("No recommendations found for userId={}", userId);
-                return RecommendedMoviesResponse.empty(userId, context);
+                return List.of();
             }
 
-            // Enrich with movie details
+            // Enrich with movie details and sort by score
             return enrichRecommendations(rawResponse);
 
         } catch (Exception e) {
             log.error("Failed to get recommendations: userId={}, error={}", userId, e.getMessage());
-            return RecommendedMoviesResponse.empty(userId, context);
+            return List.of();
         }
     }
 
     @Override
-    public RecommendedMoviesResponse getHomeRecommendations(UUID userId, int count) {
+    public List<MovieWithScoreResponse> getHomeRecommendations(UUID userId, int count) {
         return getRecommendedMovies(userId, count, "home");
     }
 
     @Override
-    public RecommendedMoviesResponse getSimilarMovies(UUID userId, UUID movieId, int count) {
+    public List<MovieWithScoreResponse> getSimilarMovies(UUID userId, UUID movieId, int count) {
         // For similar movies, we pass movie context and the service handles it
         return getRecommendedMovies(userId, count, "similar:" + movieId.toString());
     }
 
     @Override
     public RecommendationResponse getRawRecommendations(UUID userId, int count, String context) {
-        return interactionClient.getRecommendations(userId, count, context);
+        return interactionClient.getRecommendations(userId, count, context, true);
     }
 
     // ============== Health ==============
@@ -88,13 +88,13 @@ public class InteractionServiceImpl implements InteractionService {
     // ============== Private Helper Methods ==============
 
     /**
-     * Enrich raw recommendations with full movie details
+     * Enrich raw recommendations with full movie details and return sorted list
      */
-    private RecommendedMoviesResponse enrichRecommendations(RecommendationResponse rawResponse) {
+    private List<MovieWithScoreResponse> enrichRecommendations(RecommendationResponse rawResponse) {
         List<UUID> movieIds = rawResponse.getMovieIds();
 
         if (movieIds.isEmpty()) {
-            return RecommendedMoviesResponse.from(rawResponse, List.of());
+            return List.of();
         }
 
         // Fetch all movies in batch
@@ -111,7 +111,7 @@ public class InteractionServiceImpl implements InteractionService {
                         Function.identity()));
 
         // Build enriched response maintaining order from recommendations
-        List<RecommendedMoviesResponse.RecommendedMovieItem> items = movieIds.stream()
+        List<MovieWithScoreResponse> items = movieIds.stream()
                 .filter(movieMap::containsKey) // Only include movies that exist
                 .map(movieId -> {
                     Movie movie = movieMap.get(movieId);
@@ -120,14 +120,31 @@ public class InteractionServiceImpl implements InteractionService {
                     // Get movie details
                     MovieResponse movieResponse = buildMovieResponse(movie);
 
-                    return new RecommendedMoviesResponse.RecommendedMovieItem(
-                            movieResponse,
-                            recItem != null ? recItem.score() : 0.0,
-                            recItem != null ? recItem.reasons() : List.of());
+                    return new MovieWithScoreResponse(
+                            movieResponse.id(),
+                            movieResponse.title(),
+                            movieResponse.description(),
+                            movieResponse.status(),
+                            movieResponse.horizontalPoster(),
+                            movieResponse.verticalPoster(),
+                            movieResponse.releaseDate(),
+                            movieResponse.trailerUrl(),
+                            movieResponse.age(),
+                            movieResponse.year(),
+                            movieResponse.country(),
+                            movieResponse.isVip(),
+                            movieResponse.rank(),
+                            movieResponse.duration(),
+                            movieResponse.categories(),
+                            movieResponse.actors(),
+                            movieResponse.directors(),
+                            recItem != null ? recItem.score() : 0.0);
                 })
+                .sorted((a, b) -> Double.compare(b.score(), a.score())) // Sort by score descending
+                .limit(10) // Return top 10
                 .toList();
 
-        return RecommendedMoviesResponse.from(rawResponse, items);
+        return items;
     }
 
     /**

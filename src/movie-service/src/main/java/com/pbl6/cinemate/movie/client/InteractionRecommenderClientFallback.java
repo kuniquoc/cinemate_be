@@ -42,7 +42,7 @@ public class InteractionRecommenderClientFallback implements InteractionRecommen
     }
 
     @Override
-    public RecommendationResponse getRecommendations(UUID userId, Integer k, String context) {
+    public RecommendationResponse getRecommendations(UUID userId, Integer k, String context, Boolean retrain) {
         log.warn("Fallback: Failed to get recommendations for user {}", userId);
         return new RecommendationResponse(
                 userId,
@@ -60,25 +60,6 @@ public class InteractionRecommenderClientFallback implements InteractionRecommen
                 userId,
                 Map.of(),
                 "fallback",
-                Instant.now());
-    }
-
-    @Override
-    public FeatureRefreshResponse refreshUserFeatures(UUID userId, Integer daysBack) {
-        log.warn("Fallback: Failed to refresh features for user {}", userId);
-        return new FeatureRefreshResponse(
-                userId,
-                "failed",
-                0,
-                Instant.now());
-    }
-
-    @Override
-    public FeedbackResponse submitFeedback(FeedbackRequest request) {
-        log.warn("Fallback: Failed to submit feedback for user {}", request.userId());
-        return new FeedbackResponse(
-                UUID.randomUUID(),
-                "failed",
                 Instant.now());
     }
 

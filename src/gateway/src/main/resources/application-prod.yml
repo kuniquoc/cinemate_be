@@ -43,7 +43,7 @@ spring:
 
             # Interaction Recommender Routes (Production)
             - id: interaction-recommender-prod
-              uri: ${INTERACTION_RECOMMENDER_URL:http://interaction-recommender:8080}
+              uri: ${INTERACTION_RECOMMENDER_URL:http://interaction-recommender:8000}
               predicates:
                 - Path=/api/v1/events/**,/api/v1/recommendations/**,/api/v1/features/**,/api/v1/feedback/**,/api/v1/health/**
 

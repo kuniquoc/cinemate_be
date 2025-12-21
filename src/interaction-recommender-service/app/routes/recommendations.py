@@ -1,11 +1,13 @@
 """
 API Routes for recommendations
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+import asyncio
 
 from app.database import get_db
 from app.cache import cache
@@ -17,6 +19,11 @@ from app.schemas import (
     UserFeaturesResponse
 )
 from app.config import get_settings
+from app import model_trainer
+from app.cache import cache as global_cache
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1", tags=["Recommendations"])
 
@@ -48,6 +55,7 @@ async def get_recommendations(
     user_id: str,
     k: int = Query(default=20, ge=1, le=100, description="Number of recommendations"),
     context: str = Query(default="home", description="Context: home, detail, search, similar"),
+    retrain: bool = Query(default=False, description="Trigger immediate retrain before generating recommendations"),
     session: AsyncSession = Depends(get_db),
     engine: RecommendationEngine = Depends(get_recommendation_engine),
     extractor: FeatureExtractor = Depends(get_feature_extractor)
@@ -62,61 +70,96 @@ async def get_recommendations(
     Returns a list of recommended movies with scores and reasons.
     """
     try:
-        # Get user features
-        features = await cache.get_user_features(user_id)
-        cached = features is not None
+        # Get user features (cache disabled)
+        # features = await cache.get_user_features(user_id)
+        # cached = features is not None
         
-        if features is None:
+        # if features is None:
             # Try database
-            from sqlalchemy import select
-            from app.models import UserFeatures
-            
-            result = await session.execute(
-                select(UserFeatures).where(UserFeatures.user_id == user_id)
-            )
-            row = result.scalar_one_or_none()
-            
-            if row:
-                features = row.features
-                # Cache for next time
-                await cache.set_user_features(user_id, features)
-            else:
-                # New user - use default features
-                features = {
-                    "totalInteractions": 0,
-                    "watchHistory": [],
-                    "favorites": [],
-                    "ratings": {}
-                }
+        from sqlalchemy import select
+        from app.models import UserFeatures
+        
+        result = await session.execute(
+            select(UserFeatures).where(UserFeatures.user_id == user_id)
+        )
+        row = result.scalar_one_or_none()
+        
+        features = None
+        if row:
+            features = row.features
+            # Cache for next time
+            # await cache.set_user_features(user_id, features)
+        # New user - use default features
+        if features is None:
+            features = {
+                "totalInteractions": 0,
+                "watchHistory": [],
+                "favorites": [],
+                "ratings": {}
+            }
         
         # Get recommendations
-        recommendations = await engine.get_recommendations(
-            user_id=user_id,
-            features=features,
-            k=k,
-            context=context
-        )
+        # Optionally trigger retrain in background (non-blocking) to avoid client timeouts
+        if retrain:
+            try:
+                logger.info("Retrain requested for user %s - scheduling background retrain", user_id)
+                # schedule the engine's offline retrain in background; it will train and reload when done
+                try:
+                    asyncio.create_task(engine._schedule_retrain())
+                except Exception:
+                    # Fallback: call trainer in thread but do not await reload to avoid blocking
+                    asyncio.create_task(asyncio.to_thread(
+                        model_trainer.train_and_save_from_db,
+                        settings.database_url,
+                        engine.model_path,
+                    ))
+
+                # Invalidate any cached recommendations for this user so we compute fresh list next time
+                try:
+                    await global_cache.invalidate_recommendations(user_id)
+                except Exception:
+                    logger.debug("Failed to invalidate cache for user %s", user_id)
+            except Exception:
+                logger.exception("Failed to schedule retrain for user %s", user_id)
+
+        try:
+                recommendations = await engine.get_recommendations(
+                    user_id=user_id,
+                    features=features,
+                    k=k,
+                    context=context
+                )
+        except Exception as e:
+            logger.exception("Recommendation engine failed for user %s: %s", user_id, e)
+            # Fail open for downstream callers: return empty recommendations
+            return RecommendationResponse(
+                userId=user_id,
+                modelVersion=getattr(engine, "model_version", ""),
+                cached=False,
+                recommendations=[],
+                generatedAt=datetime.utcnow(),
+                context=context,
+            )
         
         # Format response
         rec_items = [
-            RecommendationItem(
-                movieId=r["movieId"],
-                score=r["score"],
-                reasons=r.get("reasons", [])
-            )
+            {"movieId": r["movieId"], "score": r["score"], "reasons": r.get("reasons", [])}
             for r in recommendations
         ]
-        
-        return RecommendationResponse(
-            userId=user_id,
-            modelVersion=engine.model_version,
-            cached=cached,
-            recommendations=rec_items,
-            generatedAt=datetime.utcnow(),
-            context=context
-        )
+
+        payload = {
+            "userId": user_id,
+            "modelVersion": engine.model_version,
+            "cached": False,  # Cache disabled
+            "recommendations": rec_items,
+            "generatedAt": datetime.now(timezone.utc).isoformat(),
+            "context": context,
+        }
+
+        return JSONResponse(content=payload)
         
     except Exception as e:
+        logger.exception("Failed to get recommendations for user %s: %s", user_id, e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get recommendations: {str(e)}"
@@ -144,8 +187,10 @@ async def get_user_features(
             from sqlalchemy import select
             from app.models import UserFeatures
             
+            from sqlalchemy import cast, String
+
             result = await session.execute(
-                select(UserFeatures).where(UserFeatures.user_id == user_id)
+                select(UserFeatures).where(cast(UserFeatures.user_id, String) == user_id)
             )
             row = result.scalar_one_or_none()
             
@@ -175,40 +220,4 @@ async def get_user_features(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get user features: {str(e)}"
-        )
-
-
-@router.post("/features/{user_id}/refresh")
-async def refresh_user_features(
-    user_id: str,
-    days_back: int = Query(default=90, ge=1, le=365),
-    session: AsyncSession = Depends(get_db),
-    extractor: FeatureExtractor = Depends(get_feature_extractor)
-):
-    """
-    Recompute user features from historical events
-    
-    - **user_id**: User identifier
-    - **days_back**: Number of days of history to consider (default: 90)
-    
-    Triggers a full feature recomputation for the user.
-    """
-    try:
-        features = await extractor.compute_full_features(
-            user_id=user_id,
-            session=session,
-            days_back=days_back
-        )
-        
-        return {
-            "userId": user_id,
-            "status": "refreshed",
-            "featureCount": len(features),
-            "refreshedAt": datetime.utcnow().isoformat() + "Z"
-        }
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to refresh features: {str(e)}"
         )

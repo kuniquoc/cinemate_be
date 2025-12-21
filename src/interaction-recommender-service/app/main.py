@@ -17,13 +17,11 @@ from fastapi.responses import JSONResponse
 from app.config import get_settings
 from app.database import init_db, close_db, get_db_session
 from app.cache import cache
-from app.kafka_client import kafka_manager
 from app.feature_extractor import FeatureExtractor
 from app.recommendation_engine import RecommendationEngine
 from app.routes import (
     events_router,
     recommendations_router,
-    feedback_router,
     health_router
 )
 # import the health handler so we can expose a root /health path
@@ -52,22 +50,16 @@ async def handle_kafka_message(data: Dict[str, Any]) -> None:
     global feature_extractor
     
     try:
-        logger.debug(f"Processing Kafka message: {data.get('requestId', 'unknown')}")
-        
+        logger.debug(f"Processing message: {data.get('requestId', 'unknown')}")
+
         async with get_db_session() as session:
             await feature_extractor.extract_features(data, session)
-            
-            # Optionally publish processed features
+
+            # Feature extraction completed; persisted to DB/cache only
             if settings.enable_feature_extraction:
                 user_id = data.get("userId")
-                features = await cache.get_user_features(user_id)
-                if features:
-                    await kafka_manager.publish_processed_features({
-                        "userId": user_id,
-                        "features": features,
-                        "eventId": data.get("eventId"),
-                        "processedAt": datetime.now(timezone.utc).isoformat()
-                    })
+                # features are available in cache via FeatureExtractor
+                _ = await cache.get_user_features(user_id)
         
         logger.debug(f"Message processed: {data.get('requestId', 'unknown')}")
         
@@ -104,6 +96,12 @@ async def lifespan(app: FastAPI):
     # Initialize recommendation engine
     recommendation_engine = RecommendationEngine(cache)
     await recommendation_engine.load_model()
+    # Start background model monitor for periodic retrain checks
+    try:
+        asyncio.create_task(recommendation_engine.start_periodic_monitor())
+    except Exception:
+        # if scheduling fails, log and continue
+        logger.exception("Failed to schedule recommendation engine monitor")
     
     # Initialize feature extractor
     feature_extractor = FeatureExtractor(cache)
@@ -113,17 +111,7 @@ async def lifespan(app: FastAPI):
     recommendations.recommendation_engine = recommendation_engine
     recommendations.feature_extractor = feature_extractor
     
-    # Initialize Kafka
-    if settings.enable_kafka:
-        try:
-            await kafka_manager.start_producer()
-            logger.info("Kafka producer started")
-            
-            if settings.enable_consumers:
-                await kafka_manager.start_consumer(handle_kafka_message)
-                logger.info("Kafka consumer started")
-        except Exception as e:
-            logger.warning(f"Kafka initialization failed, continuing without Kafka: {e}")
+    # Kafka is not used; service relies on DB/cache only
     
     logger.info(f"Service started - Version: {settings.app_version}")
     
@@ -132,10 +120,11 @@ async def lifespan(app: FastAPI):
     # Shutdown
     logger.info("Shutting down Interaction Recommender Service...")
     
-    # Stop Kafka
-    if settings.enable_kafka:
-        await kafka_manager.stop_consumer()
-        await kafka_manager.stop_producer()
+    # No Kafka shutdown actions required
+
+    # Stop model monitor
+    if recommendation_engine:
+        await recommendation_engine.stop_periodic_monitor()
     
     # Close Redis
     await cache.disconnect()
@@ -218,7 +207,7 @@ async def log_requests(request: Request, call_next):
 app.include_router(health_router)
 app.include_router(events_router)
 app.include_router(recommendations_router)
-app.include_router(feedback_router)
+# Feedback endpoint disabled to simplify service for minimal user-data run
 
 
 # Expose a root-level /health to satisfy Docker healthchecks

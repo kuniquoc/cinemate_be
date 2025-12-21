@@ -38,6 +38,8 @@ services:
       - FRONTEND_URL=${FRONTEND_URL}
       - ADMIN_URL=${ADMIN_URL}
       - MINIO_SERVICE_URL=http://minio:9000
+      - PAYMENT_SERVICE_URL=http://payment-service:8080
+      - INTERACTION_RECOMMENDER_URL=http://interaction-recommender:8000
     depends_on:
       auth-service:
         condition: service_started
@@ -254,9 +256,6 @@ services:
       - ./env/interaction-recommender.env
     environment:
       - DATABASE_URL=postgresql+asyncpg://${INTERACTION_POSTGRES_USER}:${INTERACTION_POSTGRES_PASSWORD}@interaction-postgres:5432/interaction_db
-      - ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}
-      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
-      - KAFKA_BOOTSTRAP_SERVERS=cinemate-broker:29092
       - REDIS_URL=redis://cinemate-redis:6379
     volumes:
       - interaction-recommender-models:/app/models

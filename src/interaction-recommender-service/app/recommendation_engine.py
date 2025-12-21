@@ -1,320 +1,369 @@
-"""
-Recommendation engine for movie suggestions
-"""
-import logging
-import os
-from datetime import datetime
-from typing import Dict, Any, List, Optional
-from pathlib import Path
 import asyncio
+import logging
+from typing import Any, Dict, List
+import os
 
-import joblib
 import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.decomposition import TruncatedSVD
+import joblib
 
+from app.cache import cache
+from app.database import AsyncSessionLocal
+from app.models import Movie, Rating
 from app.config import get_settings
-from app.cache import RedisCache
-
-logger = logging.getLogger(__name__)
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 class RecommendationEngine:
-    """
-    ML-based recommendation engine
-    Supports loading .pkl models and generating recommendations
-    """
-    
-    def __init__(self, cache: RedisCache):
-        self.cache = cache
-        self.model = None
+    def __init__(self, cache_client=None):
+        self.cache = cache_client or cache
         self.model_version = settings.model_version
+        self.movies = []
+        self.movie_index = {}
+        self.tfidf = None
+        self.tfidf_matrix = None
+        self.user_index = {}
+        self.svd = None
+        self._monitor_task = None
         self.model_path = settings.model_path
-        self.loaded_at: Optional[datetime] = None
-        self._lock = asyncio.Lock()
-    
-    async def load_model(self) -> bool:
-        """Load recommendation model from disk"""
-        async with self._lock:
-            try:
-                if os.path.exists(self.model_path):
-                    self.model = joblib.load(self.model_path)
-                    self.loaded_at = datetime.utcnow()
-                    logger.info(f"Model loaded from {self.model_path}")
-                    return True
-                else:
-                    logger.warning(f"Model file not found at {self.model_path}, using fallback")
-                    self.model = None
-                    self.loaded_at = datetime.utcnow()
-                    return False
-            except Exception as e:
-                logger.error(f"Failed to load model: {e}")
-                self.model = None
-                return False
-    
-    async def reload_model(self, new_path: Optional[str] = None) -> Dict[str, Any]:
-        """Reload model, optionally from a new path"""
-        previous_version = self.model_version
-        
-        if new_path:
-            self.model_path = new_path
-        
-        success = await self.load_model()
-        
-        if success:
-            # Increment version
-            self.model_version = f"v{datetime.utcnow().strftime('%Y.%m.%d')}-{datetime.utcnow().strftime('%H%M%S')}"
-        
-        return {
-            "success": success,
-            "previous_version": previous_version,
-            "new_version": self.model_version,
-            "reloaded_at": datetime.utcnow()
-        }
-    
-    async def get_recommendations(
-        self,
-        user_id: str,
-        features: Dict[str, Any],
-        k: int = 20,
-        context: str = "default",
-        exclude_watched: bool = True
-    ) -> List[Dict[str, Any]]:
-        """
-        Generate movie recommendations for a user
-        
-        Args:
-            user_id: User identifier
-            features: User feature vector
-            k: Number of recommendations to return
-            context: Context for recommendations (home, detail, search, etc.)
-            exclude_watched: Whether to exclude already watched movies
-            
-        Returns:
-            List of recommendation items with scores and reasons
-        """
-        # Check cache first
-        cached = await self.cache.get_recommendations(user_id, context)
-        if cached:
-            recommendations = cached.get("recommendations", [])[:k]
-            return recommendations
-        
-        # Generate recommendations
-        if self.model is not None:
-            recommendations = await self._model_based_recommendations(
-                user_id, features, k, context, exclude_watched
-            )
+
+    async def load_model(self):
+        # Disabled loading persisted model to always use fresh data
+        # if os.path.exists(self.model_path):
+        #     try:
+        #         data = joblib.load(self.model_path)
+        #         self.movies = data.get("movies", [])
+        #         self.tfidf = data.get("tfidf")
+        #         self.tfidf_matrix = data.get("tfidf_matrix")
+        #         self.svd = data.get("svd")
+        #         self.user_index = data.get("user_ids_map", {})
+        #         self.movie_index = {m["movie_id"]: i for i, m in enumerate(self.movies)}
+        #         logger.info("Loaded persisted recommender model from %s", self.model_path)
+        #         # ensure persisted model includes movies
+        #         if not self.movies:
+        #             raise RuntimeError("Persisted model contains no movies; DB must contain movie data")
+        #         return
+        #     except Exception as e:
+        #         logger.debug("Failed to load model file: %s", e)
+        # Otherwise fetch movie list from movie service and persist; require movie service to return data
+        await self._build_from_service_and_save()
+
+    async def _build_from_service_and_save(self):
+        # Try cache first
+        movies = await self.cache.get_movies()
+        if movies:
+            self.movies = movies
         else:
-            # Fallback to heuristic-based recommendations
-            recommendations = await self._heuristic_recommendations(
-                user_id, features, k, context, exclude_watched
-            )
-        
-        # Cache recommendations
-        cache_data = {
-            "recommendations": recommendations,
-            "model_version": self.model_version,
-            "generated_at": datetime.utcnow().isoformat()
-        }
-        await self.cache.set_recommendations(user_id, cache_data, context)
-        
-        return recommendations
-    
-    async def _model_based_recommendations(
-        self,
-        user_id: str,
-        features: Dict[str, Any],
-        k: int,
-        context: str,
-        exclude_watched: bool
-    ) -> List[Dict[str, Any]]:
-        """Generate recommendations using ML model"""
+            # call movie service
+            import httpx
+            settings = get_settings()
+            base = settings.movie_service_url.rstrip("/")
+            url = base + "/api/v1/movies"
+            try:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    resp = await client.get(url)
+                    if resp.status_code >= 400:
+                        raise RuntimeError(f"movie service returned {resp.status_code}")
+                    data = resp.json()
+                    # expect list of movie dicts; be tolerant of different API shapes
+                    def _extract_movies(obj):
+                        # direct list
+                        if isinstance(obj, list):
+                            return obj
+                        if not isinstance(obj, dict):
+                            return None
+                        # common container keys
+                        for key in ("movies", "data", "results", "items"):
+                            v = obj.get(key)
+                            if isinstance(v, list):
+                                return v
+                        # try to find any list-of-dicts value that looks like movies
+                        for v in obj.values():
+                            if isinstance(v, list) and v:
+                                first = v[0]
+                                if isinstance(first, dict) and any(k in first for k in ("movie_id", "id", "title")):
+                                    return v
+                        return None
+
+                    movies_list = _extract_movies(data)
+                    if movies_list is not None:
+                        self.movies = movies_list
+                        # Normalize movie dicts so we always have a `movie_id`, `title`,
+                        # `genres`, and `overview` keys used throughout the engine.
+                        normalized = []
+                        for m in self.movies:
+                            if not isinstance(m, dict):
+                                continue
+                            mid = m.get("movie_id") or m.get("movieId") or m.get("id") or m.get("movieID")
+                            if mid is None:
+                                logger.debug("Skipping movie entry without id: %s", m)
+                                continue
+                            norm = {
+                                "movie_id": str(mid),
+                                "title": m.get("title") or m.get("name") or "",
+                                "genres": m.get("genres") or m.get("genre") or self._join_categories(m.get("categories", [])),
+                                "overview": m.get("overview") or m.get("description") or "",
+                            }
+                            # preserve original fields for compatibility
+                            norm.update(m)
+                            normalized.append(norm)
+
+                        self.movies = normalized
+                    else:
+                        logger.warning("Unexpected movie service response format; proceeding with empty movie list")
+                        self.movies = []
+            except Exception as e:
+                logger.error(f"failed to fetch movies from movie service: {e}; proceeding with empty movie list")
+                self.movies = []
+
+            # cache movies
+            await self.cache.set_movies(self.movies)
+
+        # Build TF-IDF
+        corpus = [((m.get("genres") or "") + " " + (m.get("overview") or "")) for m in self.movies]
         try:
-            # Prepare feature vector
-            feature_vector = self._features_to_vector(features)
-            
-            # Get candidate movies (in production, this would query movie catalog)
-            candidates = await self._get_candidate_movies(features, exclude_watched)
-            
-            if not candidates:
-                return await self._heuristic_recommendations(
-                    user_id, features, k, context, exclude_watched
-                )
-            
-            # Score candidates using model
-            scores = []
-            for movie_id in candidates:
-                try:
-                    # Combine user features with movie features
-                    # In production: query movie features from movie-service or cache
-                    score = self._score_candidate(feature_vector, movie_id)
-                    scores.append((movie_id, score))
-                except Exception as e:
-                    logger.debug(f"Error scoring movie {movie_id}: {e}")
-                    continue
-            
-            # Sort by score and take top k
-            scores.sort(key=lambda x: x[1], reverse=True)
-            top_k = scores[:k]
-            
-            # Format results
-            recommendations = []
-            for movie_id, score in top_k:
-                reasons = self._generate_reasons(features, movie_id, score)
-                recommendations.append({
-                    "movieId": movie_id,
-                    "score": float(score),
-                    "reasons": reasons
-                })
-            
-            return recommendations
-            
-        except Exception as e:
-            logger.error(f"Error in model-based recommendations: {e}")
-            return await self._heuristic_recommendations(
-                user_id, features, k, context, exclude_watched
-            )
-    
-    async def _heuristic_recommendations(
-        self,
-        user_id: str,
-        features: Dict[str, Any],
-        k: int,
-        context: str,
-        exclude_watched: bool
-    ) -> List[Dict[str, Any]]:
-        """
-        Fallback heuristic-based recommendations
-        Uses user features to generate simple recommendations
-        """
-        recommendations = []
-        
-        # Get user preferences
-        favorites = features.get("favorites", [])
-        high_rated = features.get("highRatedMovies", [])
-        watch_history = features.get("watchHistory", [])
-        
-        # Combine preference indicators
-        preference_movies = set(favorites + high_rated)
-        watched_set = set(watch_history) if exclude_watched else set()
-        
-        # Generate candidate scores based on similarity to preferences
-        # In production, this would query similar movies from movie-service
-        candidate_pool = await self._generate_fallback_candidates(k * 2)
-        
-        for i, movie_id in enumerate(candidate_pool):
-            if movie_id in watched_set:
-                continue
-            
-            # Simple scoring based on position and random factor
-            base_score = 1.0 - (i / len(candidate_pool)) * 0.5
-            
-            # Boost if similar to favorites (placeholder logic)
-            if movie_id in preference_movies:
-                base_score = min(1.0, base_score + 0.2)
-            
-            reasons = ["popular", "trending"]
-            if movie_id in preference_movies:
-                reasons.append("similar_to_favorites")
-            
-            recommendations.append({
-                "movieId": movie_id,
-                "score": round(base_score, 4),
-                "reasons": reasons
-            })
-            
-            if len(recommendations) >= k:
-                break
-        
-        return recommendations
-    
-    def _features_to_vector(self, features: Dict[str, Any]) -> np.ndarray:
-        """Convert feature dict to numpy vector for model input"""
-        # Extract numerical features
-        vector = [
-            features.get("totalInteractions", 0),
-            features.get("watchCount", 0),
-            features.get("searchCount", 0),
-            features.get("ratingCount", 0),
-            features.get("favoriteCount", 0),
-            features.get("avgRating", 0),
-            features.get("avgWatchDuration", 0),
-            features.get("totalWatchTime", 0),
-            len(features.get("watchHistory", [])),
-            len(features.get("favorites", [])),
-        ]
-        return np.array(vector, dtype=np.float32)
-    
-    def _score_candidate(self, user_vector: np.ndarray, movie_id: str) -> float:
-        """Score a candidate movie for a user"""
-        try:
-            if hasattr(self.model, 'predict_proba'):
-                # Classification model
-                # In production: combine with movie features
-                score = self.model.predict_proba([user_vector])[0][1]
-            elif hasattr(self.model, 'predict'):
-                # Regression model
-                score = self.model.predict([user_vector])[0]
-            else:
-                # Generic scoring
-                score = np.random.random() * 0.5 + 0.5
-            
-            return float(min(1.0, max(0.0, score)))
+            self.tfidf = TfidfVectorizer(stop_words="english")
+            self.tfidf_matrix = self.tfidf.fit_transform(corpus).toarray()
         except Exception:
-            return np.random.random() * 0.3 + 0.5
-    
-    async def _get_candidate_movies(
-        self, 
-        features: Dict[str, Any],
-        exclude_watched: bool
-    ) -> List[str]:
-        """
-        Get candidate movies for scoring
-        In production, this would query movie-service or a candidate index
-        """
-        # Placeholder: generate fake movie IDs
-        # In production: call movie-service API or use pre-computed candidate sets
-        candidates = [f"movie-{i:04d}" for i in range(200)]
-        
-        if exclude_watched:
-            watched = set(features.get("watchHistory", []))
-            candidates = [m for m in candidates if m not in watched]
-        
-        return candidates
-    
-    async def _generate_fallback_candidates(self, count: int) -> List[str]:
-        """Generate fallback candidate movie IDs"""
-        # In production: query popular/trending movies from movie-service
-        return [f"movie-{i:04d}" for i in range(count)]
-    
-    def _generate_reasons(
-        self, 
-        features: Dict[str, Any], 
-        movie_id: str, 
-        score: float
-    ) -> List[str]:
-        """Generate human-readable reasons for recommendation"""
-        reasons = []
-        
-        if score > 0.8:
-            reasons.append(f"cf:{score:.2f}")
-        
-        if movie_id in features.get("favorites", []):
-            reasons.append("in_favorites")
-        
-        if features.get("avgRating", 0) > 4.0:
-            reasons.append("matches_taste")
-        
-        if not reasons:
-            reasons = ["collaborative_filtering", "content_based"]
-        
-        return reasons
-    
-    def get_model_info(self) -> Dict[str, Any]:
-        """Get information about loaded model"""
-        return {
-            "version": self.model_version,
-            "path": self.model_path,
-            "loaded_at": self.loaded_at.isoformat() if self.loaded_at else None,
-            "status": "loaded" if self.model is not None else "fallback"
-        }
+            self.tfidf = None
+            self.tfidf_matrix = None
+
+        # Diagnostic logging to help debug zero-score issues
+        try:
+            nonempty_count = sum(1 for c in corpus if c.strip())
+            logger.info(
+                "Recommender build: movies=%d, corpus_nonempty=%d, tfidf_shape=%s",
+                len(self.movies),
+                nonempty_count,
+                None if self.tfidf_matrix is None else self.tfidf_matrix.shape,
+            )
+            if nonempty_count == 0 and self.movies:
+                logger.warning("All movie corpus is empty; content-based recommendations will be zero. Sample movie: %s", self.movies[0] if self.movies else None)
+                logger.warning("Sample corpus: %s", corpus[:2] if corpus else "No corpus")
+        except Exception:
+            logger.debug("Failed to log recommender diagnostics", exc_info=True)
+
+        # Build index only for movies that have a valid id; skip others
+        movie_index = {}
+        for idx, m in enumerate(self.movies):
+            if not isinstance(m, dict):
+                continue
+            mid = m.get("movie_id") or m.get("movieId") or m.get("id")
+            if mid is None:
+                logger.debug("Skipping movie without id when building index: %s", m)
+                continue
+            movie_index[str(mid)] = idx
+        self.movie_index = movie_index
+
+        # Build collaborative model
+        await self._build_collaborative()
+
+        # Save model to disk if possible
+        try:
+            payload = {
+                "movies": self.movies,
+                "tfidf": self.tfidf,
+                "tfidf_matrix": self.tfidf_matrix,
+                "svd": self.svd,
+                "user_ids_map": self.user_index,
+            }
+            os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
+            joblib.dump(payload, self.model_path)
+            logger.info("Saved recommender model to %s", self.model_path)
+        except Exception as e:
+            logger.debug("Failed to persist model: %s", e)
+
+    async def _build_collaborative(self):
+        # Load ratings from user_features instead of ratings table
+        async with AsyncSessionLocal() as session:
+            try:
+                result = await session.execute(select(UserFeatures.user_id, UserFeatures.features))
+                rows = []
+                for row in result:
+                    user_id = row[0]
+                    features = row[1]
+                    ratings = features.get("ratings", {})
+                    for movie_id, rating in ratings.items():
+                        rows.append({"user_id": user_id, "movie_id": movie_id, "rating": rating})
+            except Exception:
+                rows = []
+
+        if not rows:
+            self.svd = None
+            return
+
+        try:
+            logger.info("Loaded %d ratings rows for collaborative build", len(rows))
+        except Exception:
+            logger.debug("Failed to log ratings rows count", exc_info=True)
+
+        user_ids = list({r["user_id"] for r in rows})
+        movie_ids = list({r["movie_id"] for r in rows})
+        self.user_index = {u: i for i, u in enumerate(user_ids)}
+        movie_index = {m: i for i, m in enumerate(movie_ids)}
+
+        mat = np.zeros((len(user_ids), len(movie_ids)))
+        for r in rows:
+            try:
+                u = self.user_index[r["user_id"]]
+                m = movie_index[r["movie_id"]]
+                mat[u, m] = r["rating"]
+            except Exception:
+                continue
+
+        # Decompose with TruncatedSVD
+        try:
+            n_comp = min(20, max(1, min(mat.shape) - 1))
+            svd = TruncatedSVD(n_components=n_comp)
+            latent = svd.fit_transform(mat)
+            self.svd = (svd, user_ids, movie_ids, latent)
+        except Exception as e:
+            logger.debug("SVD build failed: %s", e)
+            self.svd = None
+
+    async def start_periodic_monitor(self):
+        return None
+
+    async def stop_periodic_monitor(self):
+        return None
+
+    async def _schedule_retrain(self):
+        try:
+            await self._build_collaborative()
+            logger.info("Scheduled retrain completed successfully")
+        except Exception:
+            logger.exception("Scheduled retrain failed", exc_info=True)
+
+    async def get_recommendations(self, user_id: str, features: Dict[str, Any], k: int = 20, context: str = "home") -> List[Dict[str, Any]]:
+        # Always recompute (cache disabled)
+        # cached = await self.cache.get_recommendations(user_id)
+        # if cached:
+        #     return cached[:k]
+
+        # Recompute content-based and collaborative on the fly if model not persisted
+        if self.tfidf is None or self.tfidf_matrix is None:
+            # try to rebuild content part
+            await self.load_model()
+
+        # Auto retrain collaborative always to ensure fresh data
+        logger.info("Auto retraining collaborative model for fresh data...")
+        await self._build_collaborative()
+
+        # Determine last watched
+        last_watch = None
+        if features and features.get("watchHistory"):
+            last_watch = features["watchHistory"][-1].get("movieId")
+
+        content_scores = {}
+        if self.tfidf_matrix is not None:
+            # Build user profile from ratings in features
+            user_ratings = features.get("ratings", {}) if features else {}
+            if user_ratings:
+                user_vector = np.zeros(self.tfidf_matrix.shape[1])
+                total_weight = 0.0
+                for movie_id, rating in user_ratings.items():
+                    if movie_id in self.movie_index:
+                        idx = self.movie_index[movie_id]
+                        user_vector += self.tfidf_matrix[idx] * rating
+                        total_weight += rating
+                if total_weight > 0:
+                    user_vector /= total_weight  # Normalize by total rating weight
+                    try:
+                        sim = cosine_similarity(user_vector.reshape(1, -1), self.tfidf_matrix).flatten()
+                        for i, s in enumerate(sim):
+                            content_scores[self.movies[i]["movie_id"]] = float(s)
+                    except Exception as e:
+                        logger.warning("Failed to compute content similarity: %s", e)
+                        content_scores = {}
+            else:
+                # Fallback to last_watch or favorites if no ratings
+                last_watch = None
+                if features and features.get("watchHistory"):
+                    last_watch = features["watchHistory"][-1].get("movieId")
+                if last_watch and last_watch in self.movie_index:
+                    idx = self.movie_index[last_watch]
+                    sim = cosine_similarity(self.tfidf_matrix[idx], self.tfidf_matrix).flatten()
+                    for i, s in enumerate(sim):
+                        content_scores[self.movies[i]["movie_id"]] = float(s)
+                else:
+                    for fav in features.get("favorites", []) if features else []:
+                        if fav in self.movie_index:
+                            idx = self.movie_index[fav]
+                            sim = cosine_similarity(self.tfidf_matrix[idx], self.tfidf_matrix).flatten()
+                            for i, s in enumerate(sim):
+                                content_scores[self.movies[i]["movie_id"]] = max(content_scores.get(self.movies[i]["movie_id"], 0), float(s))
+
+        # Collaborative scores
+        collab_scores = {}
+        if self.svd:
+            try:
+                svd, user_ids, movie_ids, latent = self.svd
+                if user_id in user_ids:
+                    uidx = user_ids.index(user_id)
+                    user_vec = latent[uidx]
+                    movie_latent = svd.components_.T
+                    scores = movie_latent.dot(user_vec)
+                    for i, mid in enumerate(movie_ids):
+                        collab_scores[mid] = float(scores[i])
+            except Exception:
+                logger.debug("Collaborative scoring failed", exc_info=True)
+                collab_scores = {}
+
+        logger.info("User %s: content_scores keys=%d, collab_scores keys=%d", user_id, len(content_scores), len(collab_scores))
+
+        # Hybrid
+
+        # Hybrid
+        final_scores = {}
+        for m in self.movie_index.keys():
+            c = content_scores.get(m, 0.0)
+            cf = collab_scores.get(m, None)
+            if cf is not None:
+                score = 0.6 * cf + 0.4 * c
+            else:
+                score = c
+            final_scores[m] = float(score)
+
+        # Keep zero scores if no signal is available; do not apply artificial fallback
+
+        recs = sorted(final_scores.items(), key=lambda x: x[1], reverse=True)
+        out = [{"movieId": movie_id, "score": float(score), "reasons": ["hybrid"]} for movie_id, score in recs[:k]]
+
+        # await self.cache.set_recommendations(user_id, out)  # Cache disabled
+
+        return out
+
+    async def predict_rating(self, user_id: str, movie_id: str) -> float:
+        """Predict rating for a user-movie pair using collaborative filtering."""
+        if not self.svd:
+            return 0.0
+        try:
+            svd, user_ids, movie_ids, latent = self.svd
+            if user_id in user_ids and movie_id in movie_ids:
+                uidx = user_ids.index(user_id)
+                midx = movie_ids.index(movie_id)
+                user_vec = latent[uidx]
+                movie_vec = svd.components_.T[midx]
+                score = movie_vec.dot(user_vec)
+                return float(score)
+            else:
+                return 0.0
+        except Exception:
+            logger.debug("Failed to predict rating", exc_info=True)
+            return 0.0
+
+    def _join_categories(self, categories):
+        """Join category names into a string for genres fallback."""
+        if not categories:
+            return ""
+        names = []
+        for cat in categories:
+            if isinstance(cat, dict) and "name" in cat:
+                names.append(cat["name"])
+            elif isinstance(cat, str):
+                names.append(cat)
+        return " ".join(names)

@@ -40,3 +40,5 @@ minio:
   movie-bucket: ${MINIO_BUCKET_NAME:movies}
   image-bucket: ${MINIO_IMAGE_BUCKET:images}
   video-bucket: ${MINIO_VIDEO_BUCKET:videos}
+
+

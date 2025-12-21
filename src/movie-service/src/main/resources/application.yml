@@ -77,13 +77,6 @@ app:
   seed:
     enabled: ${SEED_ENABLED:false}
 
-# Interaction Recommender Service Configuration
-interaction:
-  recommender:
-    service:
-      url: ${INTERACTION_RECOMMENDER_URL:http://interaction-recommender-service:8000}
-      enabled: ${INTERACTION_RECOMMENDER_ENABLED:true}
-
 # Internal Service URLs for Admin Dashboard
 auth:
   service:
@@ -96,3 +89,7 @@ customer:
 payment:
   service:
     url: ${PAYMENT_SERVICE_URL:http://payment-service:8080}
+
+interaction:
+  service:
+    url: ${INTERACTION_SERVICE_URL:http://interaction-recommender:8000}

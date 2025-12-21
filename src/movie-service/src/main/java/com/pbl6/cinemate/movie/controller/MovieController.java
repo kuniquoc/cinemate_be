@@ -426,14 +426,19 @@ public class MovieController {
                 if (keyword != null && !keyword.isBlank()) {
                         try {
                                 UUID userId = userPrincipal != null ? userPrincipal.getId() : null;
-                                int resultsCount = data.getContent() != null ? data.getContent().size() : 0;
-                                var searchReq = SearchEventRequest.create(
-                                                userId,
-                                                keyword,
-                                                resultsCount,
-                                                null,
-                                                null);
-                                interactionClient.trackSearchEvent(searchReq);
+                                // only send events for authenticated users to satisfy recommender schema
+                                if (userId != null) {
+                                        int resultsCount = data.getContent() != null ? data.getContent().size() : 0;
+                                        var searchReq = SearchEventRequest.create(
+                                                        userId,
+                                                        keyword,
+                                                        resultsCount,
+                                                        null,
+                                                        null);
+                                        interactionClient.trackSearchEvent(searchReq);
+                                } else {
+                                        log.debug("Skipping search event for anonymous user");
+                                }
                         } catch (Exception e) {
                                 log.debug("Failed to send search event: {}", e.getMessage());
                         }
