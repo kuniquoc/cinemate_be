@@ -47,11 +47,6 @@ management:
         enabled: true
 
 app:
-  auth:
-    access-token-secret: ${ACCESS_TOKEN_SECRET}
-    access-token-expiration-msec: 900000
-    refresh-token-secret: ${REFRESH_TOKEN_SECRET}
-    refresh-token-expiration-msec: 604800000
   email:
     from: ${EMAIL_FROM:noreply@cinemate.com}
     from-name: ${EMAIL_FROM_NAME:Cinemate Team}
@@ -62,9 +57,3 @@ movie:
   service:
     url: ${MOVIE_SERVICE_URL:http://movie-service:8080}
 
-vnpay:
-  url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
-  tmn-code: 1HFIAMAT
-  hash-secret: CADXA3EU1ARGTN6ZDVVDEVGTZWDEDSSB
-  return-url: https://d5e2025a0f1e.ngrok-free.app/api/payments/vnpay-return
-  ipn-url: https://d5e2025a0f1e.ngrok-free.app/api/payments/vnpay-ipn

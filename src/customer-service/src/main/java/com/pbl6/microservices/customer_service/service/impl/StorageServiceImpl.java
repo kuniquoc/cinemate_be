@@ -27,8 +27,7 @@ public class StorageServiceImpl implements StorageService {
             "image/jpg",
             "image/png",
             "image/gif",
-            "image/webp"
-    );
+            "image/webp");
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
     private final MinioClient minioClient;
     private final AppProperties appProperties;
@@ -51,18 +50,15 @@ public class StorageServiceImpl implements StorageService {
                             .object(fileName)
                             .stream(inputStream, file.getSize(), -1)
                             .contentType(contentType)
-                            .build()
-            );
+                            .build());
 
             inputStream.close();
 
             // Return the URL to access the file
             // TO DO: using deployed url
-            String fileUrl = String.format("%s/%s/%s",
-                    "http://localhost:9000",
+            String fileUrl = String.format("%s/%s",
                     appProperties.getMinio().getBucketName(),
-                    fileName
-            );
+                    fileName);
 
             log.info("File uploaded successfully: {}", fileUrl);
             return fileUrl;

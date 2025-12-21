@@ -42,7 +42,6 @@ public class FamilyPlanController {
         private final FamilyPlanService familyPlanService;
         private final ModelMapper modelMapper;
         private final MovieServiceClient movieServiceClient;
-        private final ObjectMapper objectMapper;
 
         @Value("${app.frontend.url:http://localhost:3000}")
         private String frontendUrl;
