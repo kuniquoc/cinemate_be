@@ -204,4 +204,20 @@ public class AccountServiceImpl implements AccountService {
                 .map(UserMapper::toUserResponse)
                 .toList();
     }
+    
+    @Override
+    public List<UserEmailResponse> searchUsersByEmail(String searchText) {
+        if (searchText == null || searchText.trim().isEmpty()) {
+            return List.of();
+        }
+        
+        return userRepository.findByEmailContainingIgnoreCase(searchText.trim())
+                .stream()
+                .filter(user -> user.getDeletedAt() == null && user.getIsEnabled())
+                .map(user -> UserEmailResponse.builder()
+                        .userId(user.getId())
+                        .email(user.getEmail())
+                        .build())
+                .toList();
+    }
 }
