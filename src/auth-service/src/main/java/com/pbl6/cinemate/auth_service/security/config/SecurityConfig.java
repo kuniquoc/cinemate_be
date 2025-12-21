@@ -37,6 +37,7 @@ public class SecurityConfig {
             ApiPath.AUTH + "/verify-jwt",
             ApiPath.AUTH + "/verify-email",
             ApiPath.AUTH + "/verify-token",
+            "/api/public/users/**",
             "/api/v1/users/**",
             "/api/v3/api-docs/**",
             "/swagger-ui/**",
