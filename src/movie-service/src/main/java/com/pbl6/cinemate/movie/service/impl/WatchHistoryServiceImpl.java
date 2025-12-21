@@ -5,6 +5,8 @@ import com.pbl6.cinemate.movie.dto.response.*;
 import com.pbl6.cinemate.movie.entity.Movie;
 import com.pbl6.cinemate.movie.entity.WatchHistory;
 import com.pbl6.cinemate.movie.repository.*;
+import com.pbl6.cinemate.movie.client.InteractionRecommenderClient;
+import com.pbl6.cinemate.movie.client.dto.WatchEventRequest;
 import com.pbl6.cinemate.movie.service.WatchHistoryService;
 import com.pbl6.cinemate.shared.dto.general.PaginatedResponse;
 import com.pbl6.cinemate.shared.exception.NotFoundException;
@@ -30,6 +32,7 @@ public class WatchHistoryServiceImpl implements WatchHistoryService {
         private final WatchHistoryRepository watchHistoryRepository;
         private final MovieRepository movieRepository;
         private final MovieCategoryRepository movieCategoryRepository;
+        private final InteractionRecommenderClient interactionClient;
 
         @Transactional
         @Override
@@ -58,6 +61,24 @@ public class WatchHistoryServiceImpl implements WatchHistoryService {
 
                 watchHistoryRepository.save(watchHistory);
                 log.info("Watch progress saved successfully for movie ID: {} by customer ID: {}", movieId, customerId);
+
+                // Best-effort: send watch event to interaction recommender
+                try {
+                        Integer watchDuration = request.totalDuration() != null ? request.totalDuration().intValue()
+                                        : null;
+                        Double progress = watchHistory.getProgressPercent();
+                        var watchReq = WatchEventRequest.create(
+                                        customerId,
+                                        movieId,
+                                        watchDuration,
+                                        null,
+                                        null,
+                                        null,
+                                        progress);
+                        interactionClient.trackWatchEvent(watchReq);
+                } catch (Exception e) {
+                        log.debug("Failed to send watch event: {}", e.getMessage());
+                }
         }
 
         @Transactional(readOnly = true)

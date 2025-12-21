@@ -7,6 +7,8 @@ import com.pbl6.cinemate.movie.service.MovieActorService;
 import com.pbl6.cinemate.movie.service.MovieDirectorService;
 import com.pbl6.cinemate.movie.service.MovieService;
 import com.pbl6.cinemate.movie.service.ReviewService;
+import com.pbl6.cinemate.movie.client.InteractionRecommenderClient;
+import com.pbl6.cinemate.movie.client.dto.SearchEventRequest;
 import com.pbl6.cinemate.movie.service.impl.ReviewServiceImpl;
 import com.pbl6.cinemate.shared.dto.general.PaginatedResponse;
 import com.pbl6.cinemate.shared.dto.general.ResponseData;
@@ -38,15 +40,18 @@ public class MovieController {
         private final MovieDirectorService movieDirectorService;
         private final ReviewService reviewService;
         private final CustomerServiceClient customerServiceClient;
+        private final InteractionRecommenderClient interactionClient;
 
         public MovieController(MovieService movieService, MovieActorService movieActorService,
                         MovieDirectorService movieDirectorService, ReviewServiceImpl reviewService,
-                        CustomerServiceClient customerServiceClient) {
+                        CustomerServiceClient customerServiceClient,
+                        InteractionRecommenderClient interactionClient) {
                 this.movieService = movieService;
                 this.movieActorService = movieActorService;
                 this.movieDirectorService = movieDirectorService;
                 this.reviewService = reviewService;
                 this.customerServiceClient = customerServiceClient;
+                this.interactionClient = interactionClient;
         }
 
         @Operation(summary = "Get movie status", description = "Get the processing status and available qualities of a movie")
@@ -416,6 +421,23 @@ public class MovieController {
 
                 PaginatedResponse<MovieResponse> data = movieService.getMovies(keyword, page - 1, size, sortBy,
                                 sortDirection, userRole);
+
+                // Track search event if keyword provided (best-effort)
+                if (keyword != null && !keyword.isBlank()) {
+                        try {
+                                UUID userId = userPrincipal != null ? userPrincipal.getId() : null;
+                                int resultsCount = data.getContent() != null ? data.getContent().size() : 0;
+                                var searchReq = SearchEventRequest.create(
+                                                userId,
+                                                keyword,
+                                                resultsCount,
+                                                null,
+                                                null);
+                                interactionClient.trackSearchEvent(searchReq);
+                        } catch (Exception e) {
+                                log.debug("Failed to send search event: {}", e.getMessage());
+                        }
+                }
 
                 String message = (keyword != null && !keyword.isBlank())
                                 ? "Movies search results retrieved successfully"

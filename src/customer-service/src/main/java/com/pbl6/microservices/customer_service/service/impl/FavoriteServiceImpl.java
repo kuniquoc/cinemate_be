@@ -8,6 +8,8 @@ import com.pbl6.microservices.customer_service.entity.Favorite;
 import com.pbl6.microservices.customer_service.payload.request.FavoriteCreateRequest;
 import com.pbl6.microservices.customer_service.payload.response.FavoriteResponse;
 import com.pbl6.microservices.customer_service.repository.CustomerRepository;
+import com.pbl6.microservices.customer_service.client.InteractionRecommenderClient;
+import com.pbl6.microservices.customer_service.client.dto.FavoriteEventRequest;
 import com.pbl6.microservices.customer_service.repository.FavoriteRepository;
 import com.pbl6.microservices.customer_service.service.FavoriteService;
 import lombok.RequiredArgsConstructor;
@@ -32,13 +34,14 @@ public class FavoriteServiceImpl implements FavoriteService {
     private final FavoriteRepository favoriteRepository;
     private final MovieServiceClient movieServiceClient;
     private final CustomerRepository customerRepository;
+    private final InteractionRecommenderClient interactionClient;
 
     @Override
     @Transactional
     public FavoriteResponse addFavorite(UUID customerId, FavoriteCreateRequest request) {
         // Ensure customer record exists (auto-create if missing)
         ensureCustomerExists(customerId);
-        
+
         // TO D0: Validate movie existence via Movie Service
         if (favoriteRepository.existsByCustomerIdAndMovieId(customerId, request.getMovieId())) {
             throw new IllegalArgumentException("Movie already in favorites");
@@ -49,6 +52,12 @@ public class FavoriteServiceImpl implements FavoriteService {
                 .createdAt(Instant.now())
                 .build();
         favorite = favoriteRepository.save(favorite);
+        // Best-effort: send favorite 'add' event
+        try {
+            interactionClient.trackFavoriteEvent(FavoriteEventRequest.create(customerId, request.getMovieId(), "add"));
+        } catch (Exception e) {
+            log.debug("Failed to send favorite add event: {}", e.getMessage());
+        }
         return toResponse(favorite);
     }
 
@@ -77,6 +86,12 @@ public class FavoriteServiceImpl implements FavoriteService {
     public void removeFavorite(UUID customerId, UUID movieId) {
         // TO DO: Validate movie existence via Movie Service
         favoriteRepository.deleteByCustomerIdAndMovieId(customerId, movieId);
+        // Best-effort: send favorite 'remove' event
+        try {
+            interactionClient.trackFavoriteEvent(FavoriteEventRequest.create(customerId, movieId, "remove"));
+        } catch (Exception e) {
+            log.debug("Failed to send favorite remove event: {}", e.getMessage());
+        }
     }
 
     /**
@@ -103,7 +118,7 @@ public class FavoriteServiceImpl implements FavoriteService {
                     try {
                         MovieServiceResponse response = movieServiceClient.getMovieById(favorite.getMovieId());
                         if (response != null && response.getData() != null) {
-                            log.info("data {}", response.getData() );
+                            log.info("data {}", response.getData());
                             return response.getData();
                         }
                         log.warn("Movie service returned null data for movieId={}", favorite.getMovieId());

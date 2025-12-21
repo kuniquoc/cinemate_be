@@ -7,6 +7,8 @@ import com.pbl6.cinemate.movie.entity.Movie;
 import com.pbl6.cinemate.movie.entity.Review;
 import com.pbl6.cinemate.movie.repository.MovieRepository;
 import com.pbl6.cinemate.movie.repository.ReviewRepository;
+import com.pbl6.cinemate.movie.client.InteractionRecommenderClient;
+import com.pbl6.cinemate.movie.client.dto.RatingEventRequest;
 import com.pbl6.cinemate.movie.service.ReviewService;
 import com.pbl6.cinemate.shared.exception.BadRequestException;
 import com.pbl6.cinemate.shared.exception.NotFoundException;
@@ -28,11 +30,12 @@ public class ReviewServiceImpl implements ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final MovieRepository movieRepository;
+    private final InteractionRecommenderClient interactionClient;
 
     @Transactional
     @Override
     public ReviewResponse createReview(UUID movieId, UUID customerId, ReviewCreationRequest request, String userName,
-                                       String userAvatar) {
+            String userAvatar) {
         log.info("Creating review for movie ID: {} by customer ID: {}", movieId, customerId);
 
         // Validate movie exists
@@ -49,6 +52,16 @@ public class ReviewServiceImpl implements ReviewService {
         Review review = new Review(movie, customerId, request.content(), request.stars(),
                 userName, userAvatar);
         Review savedReview = reviewRepository.save(review);
+
+        // Best-effort: send rating event
+        try {
+            interactionClient.trackRatingEvent(RatingEventRequest.create(
+                    customerId,
+                    movieId,
+                    (double) savedReview.getStars()));
+        } catch (Exception e) {
+            log.debug("Failed to send rating event: {}", e.getMessage());
+        }
 
         return mapToReviewResponse(savedReview);
     }
@@ -125,7 +138,25 @@ public class ReviewServiceImpl implements ReviewService {
         if (request.stars() != null) {
             review.setStars(request.stars());
         }
+        Double previous = null;
+        if (request.stars() != null) {
+            previous = Double.valueOf(review.getStars());
+        }
+
         Review updatedReview = reviewRepository.save(review);
+
+        // Best-effort: send rating event on update
+        try {
+            if (request.stars() != null) {
+                interactionClient.trackRatingEvent(RatingEventRequest.create(
+                        updatedReview.getCustomerId(),
+                        updatedReview.getMovie().getId(),
+                        request.stars().doubleValue(),
+                        previous));
+            }
+        } catch (Exception e) {
+            log.debug("Failed to send rating event on update: {}", e.getMessage());
+        }
 
         return mapToReviewResponse(updatedReview);
     }
