@@ -25,7 +25,7 @@ import java.util.List;
  * Provides endpoints for admin dashboard statistics and chart data
  */
 @RestController
-@RequestMapping("/api/admin/dashboard")
+@RequestMapping("/api/v1/dashboard")
 @RequiredArgsConstructor
 @Tag(name = "Admin Dashboard", description = "Admin dashboard statistics and analytics")
 public class AdminDashboardController {
@@ -49,8 +49,8 @@ public class AdminDashboardController {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/chart")
     public ResponseEntity<ResponseData> getChartData(
-            @Parameter(description = "Start date (inclusive)", example = "2024-01-01") @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
-            @Parameter(description = "End date (inclusive)", example = "2024-12-31") @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
+            @Parameter(description = "Start date (inclusive)") @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
+            @Parameter(description = "End date (inclusive)") @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
             HttpServletRequest httpServletRequest) {
 
         List<ChartDataResponse> chartData = adminDashboardService.getChartData(startDate, endDate);
