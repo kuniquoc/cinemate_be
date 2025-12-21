@@ -23,11 +23,8 @@ public class SecurityConfig {
                         ApiPath.UPDATE_PROFILE,
                         "/actuator/health"
         };
-        // expose actuator health for Docker / orchestration healthchecks
-        // e.g., curl http://localhost:8080/actuator/health
-        // Internal endpoints accessible only within Docker network
         public final String[] INTERNAL_ENDPOINT = {
-                        "/internal/**"
+                        "/api/internal/**"
         };
         private final JwtAuthFilter jwtAuthFilter;
         private final JwtAuthEntryPoint jwtAuthEntryPoint;

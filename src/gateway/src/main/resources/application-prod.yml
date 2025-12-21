@@ -15,7 +15,7 @@ spring:
             - id: movie-service-prod
               uri: ${MOVIE_SERVICE_URL:http://movie-service:8080}
               predicates:
-                - Path=/api/v1/movies/**,/api/v1/actors/**,/api/v1/categories/**,/api/v1/directors/**,/api/v1/recommendations/**,/api/v1/upload-image/**,/api/v1/upload-video/**
+                - Path=/api/v1/movies/**,/api/v1/actors/**,/api/v1/categories/**,/api/v1/directors/**,/api/v1/recommendations/**,/api/v1/upload-image/**,/api/v1/upload-video/**,/api/v1/dashboard/**
 
             # Auth Service Routes (Production)
             - id: auth-service-prod
