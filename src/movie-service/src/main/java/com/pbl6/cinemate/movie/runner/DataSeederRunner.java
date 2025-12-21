@@ -32,8 +32,6 @@ public class DataSeederRunner implements ApplicationRunner {
         private final ActorRepository actorRepository;
         private final DirectorRepository directorRepository;
         private final MovieRepository movieRepository;
-        private final ReviewRepository reviewRepository;
-        private final WatchHistoryRepository watchHistoryRepository;
 
         // Data definitions
         private static final List<CategoryData> CATEGORY_DATA = Arrays.asList(

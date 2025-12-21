@@ -34,8 +34,8 @@ public class CustomerServiceClientFallback implements CustomerServiceClient {
     }
 
     @Override
-    public List<Map<String, Object>> getFavoriteStats(Instant startDate, Instant endDate) {
-        log.warn("Fallback: Failed to get favorite stats from customer-service");
+    public List<Map<String, Object>> getFavoriteStats(String startDate, String endDate) {
+        log.warn("Fallback: Failed to get favorite stats from customer-service ({} - {})", startDate, endDate);
         return Collections.emptyList();
     }
 }

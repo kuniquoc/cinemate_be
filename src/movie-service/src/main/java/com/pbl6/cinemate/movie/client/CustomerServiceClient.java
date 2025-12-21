@@ -32,6 +32,6 @@ public interface CustomerServiceClient {
 
     @GetMapping("/api/internal/stats/favorites")
     List<Map<String, Object>> getFavoriteStats(
-            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
-            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate);
+            @RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate);
 }

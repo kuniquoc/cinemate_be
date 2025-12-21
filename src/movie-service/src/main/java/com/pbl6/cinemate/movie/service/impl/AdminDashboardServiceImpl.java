@@ -63,8 +63,11 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         // Get watch views grouped by date and category from local database
         List<Object[]> watchData = watchHistoryRepository.countWatchViewsByDateAndCategory(startDate, endDate);
 
-        // Get favorite stats from customer service
-        List<Map<String, Object>> favoriteData = customerServiceClient.getFavoriteStats(startDate, endDate);
+        // Get favorite stats from customer service (pass ISO-8601 strings to Feign
+        // client)
+        List<Map<String, Object>> favoriteData = customerServiceClient.getFavoriteStats(
+                startDate != null ? startDate.toString() : null,
+                endDate != null ? endDate.toString() : null);
 
         // Build a map to aggregate data by (date, category)
         // Key: "date|category", Value: ChartDataResponse
