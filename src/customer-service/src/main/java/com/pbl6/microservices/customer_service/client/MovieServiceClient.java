@@ -21,6 +21,6 @@ public interface MovieServiceClient {
      * Calls: GET /api/movies/{id}
      * Returns: ResponseData wrapper containing MovieInfoResponse
      */
-    @GetMapping("/api/movies/{id}")
+    @GetMapping("/api/v1/movies/{id}")
     MovieServiceResponse getMovieById(@PathVariable("id") UUID id);
 }

@@ -97,7 +97,7 @@ public class CustomerController {
 
         @DeleteMapping("/favorites/{movieId}")
         public ResponseEntity<ResponseData> removeFavorite(@CurrentUser UserPrincipal userPrincipal,
-                        @PathVariable UUID movieId,
+                        @PathVariable("movieId") UUID movieId,
                         HttpServletRequest httpRequest) {
                 favoriteService.removeFavorite(userPrincipal.getUserId(), movieId);
                 return ResponseEntity.ok(ResponseData.success(null, "Favorite removed", httpRequest.getRequestURI(),

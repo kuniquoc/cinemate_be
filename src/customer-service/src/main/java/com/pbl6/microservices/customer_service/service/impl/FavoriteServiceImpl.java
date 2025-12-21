@@ -3,9 +3,11 @@ package com.pbl6.microservices.customer_service.service.impl;
 import com.pbl6.microservices.customer_service.client.MovieServiceClient;
 import com.pbl6.microservices.customer_service.client.dto.MovieDetailResponse;
 import com.pbl6.microservices.customer_service.client.dto.MovieServiceResponse;
+import com.pbl6.microservices.customer_service.entity.Customer;
 import com.pbl6.microservices.customer_service.entity.Favorite;
 import com.pbl6.microservices.customer_service.payload.request.FavoriteCreateRequest;
 import com.pbl6.microservices.customer_service.payload.response.FavoriteResponse;
+import com.pbl6.microservices.customer_service.repository.CustomerRepository;
 import com.pbl6.microservices.customer_service.repository.FavoriteRepository;
 import com.pbl6.microservices.customer_service.service.FavoriteService;
 import lombok.RequiredArgsConstructor;
@@ -29,10 +31,14 @@ import java.util.stream.Collectors;
 public class FavoriteServiceImpl implements FavoriteService {
     private final FavoriteRepository favoriteRepository;
     private final MovieServiceClient movieServiceClient;
+    private final CustomerRepository customerRepository;
 
     @Override
     @Transactional
     public FavoriteResponse addFavorite(UUID customerId, FavoriteCreateRequest request) {
+        // Ensure customer record exists (auto-create if missing)
+        ensureCustomerExists(customerId);
+        
         // TO D0: Validate movie existence via Movie Service
         if (favoriteRepository.existsByCustomerIdAndMovieId(customerId, request.getMovieId())) {
             throw new IllegalArgumentException("Movie already in favorites");
@@ -57,6 +63,9 @@ public class FavoriteServiceImpl implements FavoriteService {
         Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Favorite> favoritePage = favoriteRepository.findByCustomerId(customerId, pageable);
 
+        log.info("favorites: {}", favoritePage.getContent());
+        log.info("number {}", favoritePage.getNumber());
+
         // Enrich with movie details
         List<MovieDetailResponse> enrichedMovies = enrichFavorites(favoritePage.getContent());
 
@@ -70,13 +79,31 @@ public class FavoriteServiceImpl implements FavoriteService {
         favoriteRepository.deleteByCustomerIdAndMovieId(customerId, movieId);
     }
 
+    /**
+     * Ensures customer record exists for the given account ID.
+     * Auto-creates customer if not found to satisfy FK constraint.
+     */
+    private void ensureCustomerExists(UUID accountId) {
+        if (!customerRepository.existsByAccountId(accountId)) {
+            log.info("Customer record not found for account_id: {}. Creating default customer record.", accountId);
+            Customer customer = Customer.builder()
+                    .accountId(accountId)
+                    .firstName("User")
+                    .lastName("")
+                    .build();
+            customerRepository.save(customer);
+        }
+    }
+
     // Enrich favorites with movie details - returns movie data directly
     private List<MovieDetailResponse> enrichFavorites(List<Favorite> favorites) {
+        log.info("vao ham ");
         return favorites.stream()
                 .map(favorite -> {
                     try {
                         MovieServiceResponse response = movieServiceClient.getMovieById(favorite.getMovieId());
                         if (response != null && response.getData() != null) {
+                            log.info("data {}", response.getData() );
                             return response.getData();
                         }
                         log.warn("Movie service returned null data for movieId={}", favorite.getMovieId());
