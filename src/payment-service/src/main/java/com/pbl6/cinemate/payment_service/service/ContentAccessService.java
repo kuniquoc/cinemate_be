@@ -36,59 +36,106 @@ public class ContentAccessService {
         log.info("Checking content access for user: {}, categoryIds: {}, watchTime: {}",
                 userId, movieCategoryIds, currentWatchTimeMinutes);
 
-        Subscription subscription;
-
-        // Step 1: Check if user is a FAMILY MEMBER first
-        List<FamilyMember> familyMembers = familyMemberRepository.findByUserId(userId);
-
-        if (!familyMembers.isEmpty()) {
-            // User is a family member - get subscription from family member
-            FamilyMember member = familyMembers.get(0);
-            subscription = member.getSubscription();
-            log.debug("User {} is a family member of subscription {}", userId, subscription.getId());
-        } else {
-            // User is NOT a family member - check for regular subscription
-            Optional<Subscription> regularSub = subscriptionRepository
-                    .findActiveSubscriptionByUserId(userId);
-
-            if (regularSub.isEmpty()) {
-                log.warn("No active subscription found for user: {}", userId);
-                return denied("No active subscription found");
-            }
-
-            subscription = regularSub.get();
-            log.debug("User {} has a regular subscription {}", userId, subscription.getId());
+        // Step 1: Determine subscription source (family member or personal subscriber)
+        SubscriptionSource subscriptionSource = determineSubscriptionSource(userId);
+        
+        if (subscriptionSource == null) {
+            log.warn("No active subscription or family membership found for user: {}", userId);
+            return denied("No active subscription found. Please subscribe to access content.");
         }
 
-        // Step 2: Verify subscription is ACTIVE
-        if (subscription.getStatus() != SubscriptionStatus.ACTIVE) {
-            log.warn("Subscription {} is not active (status: {})", subscription.getId(), subscription.getStatus());
-            return denied("Subscription is not active");
+        // Step 2: Validate subscription status
+        ContentAccessResponse validationResult = validateSubscription(
+                subscriptionSource.subscription, 
+                subscriptionSource.isFamilyMember);
+        
+        if (!validationResult.getAllowed()) {
+            return validationResult;
         }
 
-        // Check if subscription has expired (additional safety check)
-        if (subscription.getEndDate() != null &&
-                subscription.getEndDate().isBefore(Instant.now())) {
-            log.warn("Subscription {} has expired (end date: {})", subscription.getId(), subscription.getEndDate());
-            return denied("Subscription has expired");
-        }
+        log.debug("Subscription {} is active and valid for user {}", 
+                subscriptionSource.subscription.getId(), userId);
 
-        log.debug("Subscription {} is active and valid", subscription.getId());
-
-        // Step 3: Check if user is a kid (has parent control)
+        // Step 3: Check if user is a kid (has parental controls)
         List<ParentControl> parentControls = parentControlRepository.findByKidId(userId);
 
         if (parentControls.isEmpty()) {
-            // Not a kid - full access (Premium subscriber, Family Owner, or Adult Member)
-            log.debug("User {} has full access - no parental controls", userId);
+            // Not a kid - grant full access
+            log.info("User {} granted full access - no parental controls", userId);
             return allowed(false);
         }
 
-        // Step 4: Apply parental controls (this is a kid)
+        // Step 4: Apply parental controls (user is a kid)
         log.info("User {} is a kid with parental controls - applying restrictions", userId);
         ParentControl control = parentControls.get(0);
 
         return applyParentalControls(control, movieCategoryIds, currentWatchTimeMinutes, userId);
+    }
+
+    /**
+     * Determine if user accesses content via family membership or personal subscription
+     */
+    private SubscriptionSource determineSubscriptionSource(UUID userId) {
+        // Check if user is a family member first
+        List<FamilyMember> familyMembers = familyMemberRepository.findByUserId(userId);
+
+        if (!familyMembers.isEmpty()) {
+            // User is a family member - get subscription from family
+            FamilyMember member = familyMembers.get(0);
+            Subscription subscription = member.getSubscription();
+            log.debug("User {} is a family member (owner: {}) of subscription {}", 
+                    userId, member.getIsOwner(), subscription.getId());
+            return new SubscriptionSource(subscription, true, member.getIsOwner());
+        }
+
+        // User is NOT a family member - check for personal subscription
+        Optional<Subscription> personalSub = subscriptionRepository
+                .findActiveSubscriptionByUserId(userId);
+
+        if (personalSub.isEmpty()) {
+            log.warn("No active personal subscription found for user: {}", userId);
+            return null;
+        }
+
+        log.debug("User {} has a personal subscription {}", userId, personalSub.get().getId());
+        return new SubscriptionSource(personalSub.get(), false, false);
+    }
+
+    /**
+     * Validate that subscription is active and not expired
+     */
+    private ContentAccessResponse validateSubscription(Subscription subscription, boolean isFamilyMember) {
+        String subscriptionType = isFamilyMember ? "Family plan" : "Personal";
+
+        // Check if subscription status is ACTIVE
+        if (subscription.getStatus() != SubscriptionStatus.ACTIVE) {
+            log.warn("{} subscription {} is not active (status: {})", 
+                    subscriptionType, subscription.getId(), subscription.getStatus());
+            
+            String message = isFamilyMember 
+                    ? "Family plan subscription is inactive. Please contact family owner."
+                    : String.format("Personal subscription is %s. Please reactivate or subscribe.", 
+                            subscription.getStatus().toString().toLowerCase());
+            
+            return denied(message);
+        }
+
+        // Check if subscription has expired
+        if (subscription.getEndDate() != null &&
+                subscription.getEndDate().isBefore(Instant.now())) {
+            log.warn("{} subscription {} has expired (end date: {})", 
+                    subscriptionType, subscription.getId(), subscription.getEndDate());
+            
+            String message = isFamilyMember
+                    ? "Family plan subscription has expired. Please contact family owner."
+                    : String.format("Personal subscription expired on %s. Please renew.", 
+                            subscription.getEndDate().toString());
+            
+            return denied(message);
+        }
+
+        // Subscription is valid
+        return allowed(false);
     }
 
     /**
@@ -108,7 +155,7 @@ public class ContentAccessService {
                 log.warn("Content blocked for kid {}: category '{}' is restricted", userId, categoryId);
                 return ContentAccessResponse.builder()
                         .allowed(false)
-                        .reason(String.format("Content restricted by parent: category %s is blocked", categoryId))
+                        .reason(String.format("Content category '%s' is blocked by parental controls.", categoryId))
                         .isKid(true)
                         .blockedCategoryIds(blockedCategoryIds)
                         .remainingWatchTimeMinutes(calculateRemainingTime(control, currentWatchTimeMinutes))
@@ -124,7 +171,7 @@ public class ContentAccessService {
                     userId, currentWatchTimeMinutes, watchTimeLimit);
             return ContentAccessResponse.builder()
                     .allowed(false)
-                    .reason(String.format("Daily watch time limit reached (%d/%d minutes)",
+                    .reason(String.format("Daily watch time limit reached (%d/%d minutes). Try again tomorrow.",
                             currentWatchTimeMinutes, watchTimeLimit))
                     .isKid(true)
                     .blockedCategoryIds(blockedCategoryIds)
@@ -133,7 +180,7 @@ public class ContentAccessService {
         }
 
         // All checks passed - kid can watch
-        log.info("Content access granted for kid {}", userId);
+        log.info("Content access granted for kid {} with parental controls", userId);
         return ContentAccessResponse.builder()
                 .allowed(true)
                 .isKid(true)
@@ -194,5 +241,20 @@ public class ContentAccessService {
         }
         int remaining = limit - currentWatchTimeMinutes;
         return Math.max(0, remaining);
+    }
+
+    /**
+     * Internal class to hold subscription source information
+     */
+    private static class SubscriptionSource {
+        final Subscription subscription;
+        final boolean isFamilyMember;
+        final boolean isOwner;
+
+        SubscriptionSource(Subscription subscription, boolean isFamilyMember, boolean isOwner) {
+            this.subscription = subscription;
+            this.isFamilyMember = isFamilyMember;
+            this.isOwner = isOwner;
+        }
     }
 }
