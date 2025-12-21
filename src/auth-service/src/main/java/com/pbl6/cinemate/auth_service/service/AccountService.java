@@ -31,4 +31,6 @@ public interface AccountService {
     List<UserResponse> getAccountsByRole(UUID roleId);
 
     List<UserResponse> getAccountsByStatus(Boolean isEnabled);
+    
+    List<UserEmailResponse> searchUsersByEmail(String searchText);
 }
