@@ -32,10 +32,52 @@ public class MovieTranscodeServiceImpl implements MovieTranscodeService {
     private String movieBucket;
 
     public MovieTranscodeServiceImpl(FFmpegService ffmpeg, MinioStorageService minio,
-                                     MovieRepository repo) {
+            MovieRepository repo) {
         this.ffmpeg = ffmpeg;
         this.minio = minio;
         this.repo = repo;
+    }
+
+    private void saveDurationIfPresent(Movie movie, FFmpegService.VideoMetadata metadata) {
+        if (metadata == null)
+            return;
+        long dur = metadata.durationSeconds();
+        if (dur > 0 && dur <= Integer.MAX_VALUE) {
+            movie.setDuration((int) dur);
+            repo.save(movie);
+        }
+    }
+
+    private List<FFmpegService.Variant> selectVariants(List<FFmpegService.Variant> allVariants,
+            FFmpegService.VideoMetadata metadata) {
+        int maxHeight = Math.min(metadata.height(), 1080);
+        List<FFmpegService.Variant> variants = allVariants.stream()
+                .filter(v -> {
+                    int variantHeight = Integer.parseInt(v.resolution().split("x")[1]);
+                    return variantHeight <= maxHeight;
+                })
+                .toList();
+        if (variants.isEmpty()) {
+            return List.of(allVariants.get(0));
+        }
+        return variants;
+    }
+
+    private void uploadTranscodedFolder(UUID movieId) {
+        Path baseFolder = Paths.get("/tmp/movies", String.valueOf(movieId));
+        String basePath = String.join("/", "hls", movieId.toString());
+        String uploadPrefix = basePath + "/";
+        minio.uploadFolder(baseFolder.toFile(), movieBucket, uploadPrefix);
+    }
+
+    private void updateMovieAfterTranscode(Movie movie, List<FFmpegService.Variant> variants) {
+        List<String> qualities = variants.stream()
+                .map(FFmpegService.Variant::name)
+                .toList();
+        movie.setQualities(qualities);
+        movie.setProcessStatus(MovieProcessStatus.COMPLETED);
+        movie.setStatus(MovieStatus.PRIVATE);
+        repo.save(movie);
     }
 
     @Transactional
@@ -47,8 +89,9 @@ public class MovieTranscodeServiceImpl implements MovieTranscodeService {
             movie.setProcessStatus(MovieProcessStatus.PROCESSING);
             repo.save(movie);
 
-            // Get video metadata to determine max quality
+            // Get video metadata to determine max quality and duration/codecs
             FFmpegService.VideoMetadata metadata = ffmpeg.getVideoMetadata(inputFile);
+            saveDurationIfPresent(movie, metadata);
             log.info("Video metadata for movie {}: {}x{}, bitrate: {}",
                     movieId, metadata.width(), metadata.height(), metadata.bitrate());
 
@@ -59,15 +102,7 @@ public class MovieTranscodeServiceImpl implements MovieTranscodeService {
                     new FFmpegService.Variant("720p", "1280x720", "2500k", "128k", 2500_000),
                     new FFmpegService.Variant("1080p", "1920x1080", "4000k", "192k", 5000_000));
 
-            // Filter variants based on video resolution
-            // Only transcode to qualities <= source quality (max 1080p)
-            int maxHeight = Math.min(metadata.height(), 1080);
-            List<FFmpegService.Variant> variants = allVariants.stream()
-                    .filter(v -> {
-                        int variantHeight = Integer.parseInt(v.resolution().split("x")[1]);
-                        return variantHeight <= maxHeight;
-                    })
-                    .toList();
+            List<FFmpegService.Variant> variants = selectVariants(allVariants, metadata);
 
             if (variants.isEmpty()) {
                 // If no variants match (e.g., video is smaller than 360p), use the smallest
@@ -76,22 +111,12 @@ public class MovieTranscodeServiceImpl implements MovieTranscodeService {
             }
 
             log.info("Transcoding movie {} to {} variants: {}",
-                    movieId, variants.size(),
-                    variants.stream().map(FFmpegService.Variant::name).toList());
+                    movieId, variants.size(), variants.stream().map(FFmpegService.Variant::name).toList());
 
-            ffmpeg.transcode(inputFile, movieId, variants);
-            Path baseFolder = Paths.get("/tmp/movies", String.valueOf(movieId));
-            String basePath = String.join("/", "hls", movieId.toString());
-            String uploadPrefix = basePath + "/";
-            minio.uploadFolder(baseFolder.toFile(), movieBucket, uploadPrefix);
+            ffmpeg.transcode(inputFile, movieId, variants, metadata);
+            uploadTranscodedFolder(movieId);
 
-            List<String> qualities = variants.stream()
-                    .map(FFmpegService.Variant::name)
-                    .toList();
-            movie.setQualities(qualities);
-            movie.setProcessStatus(MovieProcessStatus.COMPLETED);
-            movie.setStatus(MovieStatus.PRIVATE); // Set to PRIVATE after successful transcoding
-            repo.save(movie);
+            updateMovieAfterTranscode(movie, variants);
 
             log.info("Successfully transcoded movie with id: {}", movieId);
         } catch (Exception e) {

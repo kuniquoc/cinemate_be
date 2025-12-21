@@ -51,6 +51,9 @@ public class Movie extends AbstractBaseEntity {
     @Column(name = "rank")
     private Integer rank;
 
+    // Duration in seconds (nullable)
+    private Integer duration;
+
     @Builder.Default
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<MovieCategory> movieCategories = new HashSet<>();

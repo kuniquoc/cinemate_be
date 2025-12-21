@@ -6,14 +6,15 @@ import java.util.Map;
 import java.util.UUID;
 
 public interface FFmpegService {
-    Map<String, Path> transcode(Path inputFile, UUID movieId, List<Variant> variants);
+    Map<String, Path> transcode(Path inputFile, UUID movieId, List<Variant> variants, VideoMetadata metadata);
 
     VideoMetadata getVideoMetadata(Path inputFile);
 
     record Variant(String name, String resolution,
-                   String videoBitrate, String audioBitrate, int bandwidth) {
+            String videoBitrate, String audioBitrate, int bandwidth) {
     }
 
-    record VideoMetadata(int width, int height, long bitrate) {
+    record VideoMetadata(int width, int height, long bitrate, long durationSeconds, String videoCodec,
+            String audioCodec) {
     }
 }

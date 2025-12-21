@@ -15,7 +15,7 @@ public final class MovieUtils {
     }
 
     public static MovieResponse mapToMovieResponse(Movie movie, List<CategoryResponse> categories,
-                                                   List<ActorResponse> actors, List<DirectorResponse> directors) {
+            List<ActorResponse> actors, List<DirectorResponse> directors) {
         return new MovieResponse(
                 movie.getId(),
                 movie.getTitle(),
@@ -30,13 +30,14 @@ public final class MovieUtils {
                 movie.getCountry(),
                 movie.getIsVip(),
                 movie.getRank(),
+                movie.getDuration(),
                 categories,
                 actors,
                 directors);
     }
 
     public static MovieInfoResponse mapToMovieInfoResponse(Movie movie, List<ActorResponse> actors,
-                                                           List<DirectorResponse> directors, List<CategoryResponse> categories, Long lastWatchedPosition) {
+            List<DirectorResponse> directors, List<CategoryResponse> categories, Long lastWatchedPosition) {
         List<String> qualities = movie.getQualities() != null ? movie.getQualities() : List.of();
         return new MovieInfoResponse(
                 movie.getId(),
@@ -53,6 +54,7 @@ public final class MovieUtils {
                 movie.getCountry(),
                 movie.getIsVip(),
                 movie.getRank(),
+                movie.getDuration(),
                 actors,
                 directors,
                 categories,
