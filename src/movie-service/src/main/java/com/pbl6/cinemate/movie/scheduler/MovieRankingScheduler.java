@@ -1,6 +1,7 @@
 package com.pbl6.cinemate.movie.scheduler;
 
 import com.pbl6.cinemate.movie.entity.Movie;
+import com.pbl6.cinemate.movie.enums.MovieStatus;
 import com.pbl6.cinemate.movie.repository.MovieRepository;
 import com.pbl6.cinemate.movie.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,13 +20,13 @@ public class MovieRankingScheduler {
     private final MovieRepository movieRepository;
     private final ReviewRepository reviewRepository;
 
-    @Scheduled(cron = "0 0 2 * * *") // Run daily at 2:00 AM
+    @Scheduled(cron = "0 */10 * * * *") // Run every 10 minutes
     @Transactional
     public void updateMovieRankings() {
-        log.info("Starting daily movie ranking update");
+        log.info("Starting movie ranking update for public movies");
 
         try {
-            List<Movie> allMovies = movieRepository.findAll();
+            List<Movie> allMovies = movieRepository.findByStatus(MovieStatus.PUBLIC);
 
             // Calculate average rating for each movie and sort by rating
             List<MovieRating> movieRatings = allMovies.stream()
@@ -33,7 +34,15 @@ public class MovieRankingScheduler {
                         Double avgRating = reviewRepository.findAverageStarsByMovieId(movie.getId());
                         return new MovieRating(movie, avgRating != null ? avgRating : 0.0);
                     })
-                    .sorted((a, b) -> Double.compare(b.averageRating(), a.averageRating())) // Sort descending
+                    .sorted((a, b) -> {
+                        // Primary: Sort by rating descending (highest first)
+                        int ratingCompare = Double.compare(b.averageRating(), a.averageRating());
+                        if (ratingCompare != 0) {
+                            return ratingCompare;
+                        }
+                        // Secondary: Sort by title ascending (alphabetical A-Z) when ratings are equal
+                        return a.movie().getTitle().compareToIgnoreCase(b.movie().getTitle());
+                    })
                     .toList();
 
             // Assign ranks based on sorted order
@@ -56,7 +65,7 @@ public class MovieRankingScheduler {
                 }
             }
 
-            log.info("Completed movie ranking update. Updated {} movies", updatedCount);
+            log.info("Completed movie ranking update. Updated {} public movies", updatedCount);
         } catch (Exception e) {
             log.error("Failed to update movie rankings: {}", e.getMessage(), e);
         }
@@ -66,7 +75,7 @@ public class MovieRankingScheduler {
     @Transactional(readOnly = true)
     public void logRankingStatistics() {
         try {
-            List<Movie> allMovies = movieRepository.findAll();
+            List<Movie> allMovies = movieRepository.findByStatus(MovieStatus.PUBLIC);
 
             double averageRank = allMovies.stream()
                     .filter(m -> m.getRank() != null)
@@ -78,7 +87,7 @@ public class MovieRankingScheduler {
                     .filter(m -> m.getRank() != null && m.getRank() > 0)
                     .count();
 
-            log.info("Movie ranking statistics - Total movies: {}, Movies with reviews: {}, Average rank: {:.2f}",
+            log.info("Movie ranking statistics - Total public movies: {}, Movies with ranks: {}, Average rank: {:.2f}",
                     allMovies.size(), moviesWithReviews, averageRank);
         } catch (Exception e) {
             log.error("Failed to log ranking statistics: {}", e.getMessage());

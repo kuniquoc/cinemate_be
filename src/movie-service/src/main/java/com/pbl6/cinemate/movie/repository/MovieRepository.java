@@ -35,4 +35,9 @@ public interface MovieRepository extends JpaRepository<Movie, UUID> {
 
     @Query("SELECT m FROM Movie m ORDER BY m.rank ASC NULLS LAST")
     List<Movie> findTop10ByOrderByRankAsc(Pageable pageable);
+    
+    List<Movie> findByStatus(MovieStatus status);
+    
+    @Query("SELECT m FROM Movie m WHERE m.status = :status AND m.rank IS NOT NULL ORDER BY m.rank ASC")
+    List<Movie> findTop10ByStatusOrderByRankAsc(@Param("status") MovieStatus status, Pageable pageable);
 }
