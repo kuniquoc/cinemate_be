@@ -385,7 +385,7 @@ public class MovieServiceImpl implements MovieService {
     @Override
     public List<MovieResponse> getTopTenMovies() {
         var pageable = PageRequest.of(0, 10);
-        List<Movie> topMovies = repo.findTop10ByOrderByRankAsc(pageable);
+        List<Movie> topMovies = repo.findTop10ByStatusOrderByRankAsc(MovieStatus.PUBLIC, pageable);
         return topMovies.stream().map(movie -> {
             List<CategoryResponse> categories = getCategoriesForMovie(movie.getId());
             List<ActorResponse> actors = getActorsForMovie(movie.getId());
