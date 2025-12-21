@@ -22,10 +22,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
         public final String[] PUBLIC_ENDPOINT = {
-                        "/api/payments/vnpay-return",
-                        "/api/payments/vnpay-ipn",
-                        "/api/subscription-plans/**",
-                        "/actuator/health"
+                        "/api/v1/payments/vnpay-return",
+                        "/api/v1/payments/vnpay-ipn",
+                        "/api/v1/subscription-plans/**",
+                        "/actuator/health",
+                        "/api/internal/**"
         };
         // allow actuator health checks without auth
         // (Docker healthchecks call /actuator/health)

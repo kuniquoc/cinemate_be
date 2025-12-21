@@ -118,6 +118,9 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
       - MINIO_ENDPOINT=http://minio:9000
+      - AUTH_SERVICE_URL=http://auth-service:8585
+      - CUSTOMER_SERVICE_URL=http://customer-service:8080
+      - PAYMENT_SERVICE_URL=http://payment-service:8080
     depends_on:
       movie-postgres:
         condition: service_healthy
@@ -303,6 +306,8 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=cinemate-broker:29092
       - VNPAY_TMN_CODE=${VNPAY_TMN_CODE}
       - VNPAY_HASH_SECRET=${VNPAY_HASH_SECRET}
+      - VNPAY_RETURN_URL=${VNPAY_RETURN_URL}
+      - VNPAY_IPN_URL=${VNPAY_IPN_URL}
       - SMTP_HOST=smtp.gmail.com
       - SMTP_PORT=587
       - SMTP_EMAIL=${SMTP_EMAIL}

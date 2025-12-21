@@ -83,3 +83,16 @@ interaction:
     service:
       url: ${INTERACTION_RECOMMENDER_URL:http://interaction-recommender-service:8000}
       enabled: ${INTERACTION_RECOMMENDER_ENABLED:true}
+
+# Internal Service URLs for Admin Dashboard
+auth:
+  service:
+    url: ${AUTH_SERVICE_URL:http://auth-service:8585}
+
+customer:
+  service:
+    url: ${CUSTOMER_SERVICE_URL:http://customer-service:8080}
+
+payment:
+  service:
+    url: ${PAYMENT_SERVICE_URL:http://payment-service:8080}

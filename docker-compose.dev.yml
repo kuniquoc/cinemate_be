@@ -110,6 +110,9 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
       - MINIO_ENDPOINT=http://minio:9000
+      - AUTH_SERVICE_URL=http://auth-service:8585
+      - CUSTOMER_SERVICE_URL=http://customer-service:8080
+      - PAYMENT_SERVICE_URL=http://payment-service:8080
     depends_on:
       - movie-postgres
       - minio
@@ -282,6 +285,8 @@ services:
       - SMTP_PORT=587
       - SMTP_EMAIL=${SMTP_EMAIL}
       - SMTP_APP_PASSWORD=${SMTP_APP_PASSWORD}
+      - VNPAY_RETURN_URL=${VNPAY_RETURN_URL}
+      - VNPAY_IPN_URL=${VNPAY_IPN_URL}
     depends_on:
       - payment-postgres
 

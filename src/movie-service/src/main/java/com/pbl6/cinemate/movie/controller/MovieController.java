@@ -1,6 +1,6 @@
 package com.pbl6.cinemate.movie.controller;
 
-import com.pbl6.cinemate.movie.client.CustomerClient;
+import com.pbl6.cinemate.movie.client.CustomerServiceClient;
 import com.pbl6.cinemate.movie.dto.request.*;
 import com.pbl6.cinemate.movie.dto.response.*;
 import com.pbl6.cinemate.movie.service.MovieActorService;
@@ -37,16 +37,16 @@ public class MovieController {
         private final MovieActorService movieActorService;
         private final MovieDirectorService movieDirectorService;
         private final ReviewService reviewService;
-        private final CustomerClient customerClient;
+        private final CustomerServiceClient customerServiceClient;
 
         public MovieController(MovieService movieService, MovieActorService movieActorService,
                         MovieDirectorService movieDirectorService, ReviewServiceImpl reviewService,
-                        CustomerClient customerClient) {
+                        CustomerServiceClient customerServiceClient) {
                 this.movieService = movieService;
                 this.movieActorService = movieActorService;
                 this.movieDirectorService = movieDirectorService;
                 this.reviewService = reviewService;
-                this.customerClient = customerClient;
+                this.customerServiceClient = customerServiceClient;
         }
 
         @Operation(summary = "Get movie status", description = "Get the processing status and available qualities of a movie")
@@ -227,7 +227,7 @@ public class MovieController {
                 // Get avatar from customer-service (with circuit breaker fallback)
                 String userAvatar = null;
                 try {
-                        var customerInfo = customerClient.getCustomerInfo(userPrincipal.getId());
+                        var customerInfo = customerServiceClient.getCustomerInfo(userPrincipal.getId());
                         if (customerInfo != null) {
                                 userAvatar = customerInfo.getAvatarUrl();
                                 // Use customer name if JWT name is null
