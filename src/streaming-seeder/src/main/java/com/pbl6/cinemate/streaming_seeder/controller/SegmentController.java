@@ -64,12 +64,11 @@ public class SegmentController {
 
     @GetMapping("/movies/{movieId}/master.m3u8")
     public ResponseEntity<Resource> getMasterPlaylist(
-            @PathVariable("movieId") String movieId,
-            @CurrentUser UserPrincipal userPrincipal) throws IOException {
+            @PathVariable("movieId") String movieId) throws IOException {
         if (!validator.isSafeIdentifier(movieId)) {
             return ResponseEntity.badRequest().build();
         }
-        
+
         return serveSegment(movieId, null, "master");
     }
 
@@ -77,20 +76,18 @@ public class SegmentController {
     public ResponseEntity<Resource> getInitSegment(
             @PathVariable("movieId") String movieId,
             @PathVariable("qualityId") String qualityId,
-            @PathVariable("ext") String ext,
-            @CurrentUser UserPrincipal userPrincipal) throws IOException {
+            @PathVariable("ext") String ext) throws IOException {
         if (!validator.isSafeIdentifier(movieId) || !validator.isSafeIdentifier(qualityId)) {
             return ResponseEntity.badRequest().build();
-        }   
-        
+        }
+
         return serveSegment(movieId, qualityId, "init");
     }
 
     @GetMapping("/movies/{movieId}/{qualityId}/playlist.m3u8")
     public ResponseEntity<Resource> getVariantPlaylist(
             @PathVariable("movieId") String movieId,
-            @PathVariable("qualityId") String qualityId,
-            @CurrentUser UserPrincipal userPrincipal) throws IOException {
+            @PathVariable("qualityId") String qualityId) throws IOException {
         if (!validator.isSafeIdentifier(movieId) || !validator.isSafeIdentifier(qualityId)) {
             return ResponseEntity.badRequest().build();
         }
@@ -102,65 +99,65 @@ public class SegmentController {
     public ResponseEntity<Resource> getSegment(
             @PathVariable("movieId") String movieId,
             @PathVariable("qualityId") String qualityId,
-            @PathVariable("segmentId") String segmentId,
-            @CurrentUser UserPrincipal userPrincipal) throws IOException {
+            @PathVariable("segmentId") String segmentId) throws IOException {
         if (!validator.isSafeIdentifier(movieId) || !validator.isSafeIdentifier(qualityId)
                 || !validator.isSafeIdentifier(segmentId)) {
             return ResponseEntity.badRequest().build();
         }
-        
-        
+
         return serveSegment(movieId, qualityId, segmentId);
     }
 
     /**
      * Check if user has access to the content
-     * @param movieId The movie ID
+     * 
+     * @param movieId       The movie ID
      * @param userPrincipal The authenticated user
-     * @throws ContentAccessDeniedException if user doesn't have access with detailed reason
+     * @throws ContentAccessDeniedException if user doesn't have access with
+     *                                      detailed reason
      */
     private void checkAccess(String movieId, UserPrincipal userPrincipal) {
         try {
             UUID movieUUID = UUID.fromString(movieId);
-            
+
             // Get movie category IDs from movie-service
             List<UUID> categoryIds = movieServiceClient.getMovieCategoryIds(movieUUID);
-            
+
             if (categoryIds == null || categoryIds.isEmpty()) {
                 log.warn("No categories found for movie: {}", movieId);
                 // Allow access if no categories (shouldn't happen in production)
                 return;
             }
-            
+
             // Check content access via payment-service
             ResponseEntity<Map<String, Object>> response = paymentServiceClient.checkContentAccess(
                     userPrincipal.getId(),
                     categoryIds,
                     0 // We don't track watch time in streaming-seeder
             );
-            
+
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 Map<String, Object> body = response.getBody();
                 Object data = body.get("data");
-                
+
                 if (data instanceof Map) {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> accessData = (Map<String, Object>) data;
                     Object allowed = accessData.get("allowed");
-                    
+
                     if (allowed instanceof Boolean) {
                         boolean hasAccess = (Boolean) allowed;
-                        
+
                         if (!hasAccess) {
                             // Extract detailed error information
-                            String reason = (String) accessData.getOrDefault("reason", 
+                            String reason = (String) accessData.getOrDefault("reason",
                                     "You don't have access to this content");
                             Boolean isKid = (Boolean) accessData.get("isKid");
                             Integer remainingTime = (Integer) accessData.get("remainingWatchTimeMinutes");
-                            
+
                             @SuppressWarnings("unchecked")
                             List<Object> blockedCategoryIdsRaw = (List<Object>) accessData.get("blockedCategoryIds");
-                            
+
                             // Convert to List<UUID> - handle both String and UUID types
                             List<UUID> blockedCategoryIds = null;
                             if (blockedCategoryIdsRaw != null && !blockedCategoryIdsRaw.isEmpty()) {
@@ -176,17 +173,18 @@ public class SegmentController {
                                         .filter(Objects::nonNull)
                                         .collect(java.util.stream.Collectors.toList());
                             }
-                            
+
                             // Clean up reason message - remove UUID mention if it's a category block
                             if (reason.contains("category") && reason.contains("is blocked")) {
                                 reason = "Content restricted by parent";
                             }
-                            
+
                             // Fetch category names if there are blocked categories
                             List<String> blockedCategoryNames = null;
                             if (blockedCategoryIds != null && !blockedCategoryIds.isEmpty()) {
                                 try {
-                                    Map<String, String> categoryNamesMap = movieServiceClient.getCategoryNames(blockedCategoryIds);
+                                    Map<String, String> categoryNamesMap = movieServiceClient
+                                            .getCategoryNames(blockedCategoryIds);
                                     blockedCategoryNames = blockedCategoryIds.stream()
                                             .map(id -> categoryNamesMap.getOrDefault(id.toString(), id.toString()))
                                             .collect(java.util.stream.Collectors.toList());
@@ -198,40 +196,37 @@ public class SegmentController {
                                             .collect(java.util.stream.Collectors.toList());
                                 }
                             }
-                            
-                            log.info("Content access denied for user {} on movie {}: {}", 
+
+                            log.info("Content access denied for user {} on movie {}: {}",
                                     userPrincipal.getId(), movieId, reason);
-                            
+
                             throw new ContentAccessDeniedException(
-                                    reason, 
-                                    isKid, 
-                                    remainingTime, 
-                                    blockedCategoryNames
-                            );
+                                    reason,
+                                    isKid,
+                                    remainingTime,
+                                    blockedCategoryNames);
                         }
-                        
-                        log.info("Content access granted for user {} on movie {}", 
+
+                        log.info("Content access granted for user {} on movie {}",
                                 userPrincipal.getId(), movieId);
                         return;
                     }
                 }
             }
-            
-            log.warn("Failed to check content access for user {} on movie {}: response status={}, body={}", 
+
+            log.warn("Failed to check content access for user {} on movie {}: response status={}, body={}",
                     userPrincipal.getId(), movieId, response.getStatusCode(), response.getBody());
             throw new ContentAccessDeniedException(
-                    "Unable to verify content access. Please try again later."
-            );
-            
+                    "Unable to verify content access. Please try again later.");
+
         } catch (ContentAccessDeniedException e) {
             // Re-throw our custom exception
             throw e;
         } catch (Exception e) {
-            log.error("Error checking content access for movie {}: {} - {}", 
+            log.error("Error checking content access for movie {}: {} - {}",
                     movieId, e.getClass().getSimpleName(), e.getMessage(), e);
             throw new ContentAccessDeniedException(
-                    "An error occurred while verifying your access to this content. Please try again later."
-            );
+                    "An error occurred while verifying your access to this content. Please try again later.");
         }
     }
 

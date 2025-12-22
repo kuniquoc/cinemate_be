@@ -9,21 +9,21 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(scanBasePackages = {
-        "com.pbl6.cinemate.streaming_seeder",
-        "com.pbl6.cinemate.shared"
+                "com.pbl6.cinemate.streaming_seeder",
+                "com.pbl6.cinemate.shared"
 }, exclude = {
-        DataSourceAutoConfiguration.class,
-        HibernateJpaAutoConfiguration.class
+                DataSourceAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class
 })
 @EnableScheduling
 @EnableFeignClients(basePackages = "com.pbl6.cinemate.streaming_seeder.client")
 @ConfigurationPropertiesScan(basePackages = {
-        "com.pbl6.cinemate.streaming_seeder",
-        "com.pbl6.cinemate.shared"
+                "com.pbl6.cinemate.streaming_seeder",
+                "com.pbl6.cinemate.shared"
 })
 public class StreamingSeederApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(StreamingSeederApplication.class, args);
-    }
+        public static void main(String[] args) {
+                SpringApplication.run(StreamingSeederApplication.class, args);
+        }
 }
